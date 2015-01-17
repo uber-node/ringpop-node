@@ -1,0 +1,8 @@
+coverage
+*.swp
+coverage/*
+node_modules/*
+npm-debug.log
+hosts.json
+notes.txt
+notes.txt~
