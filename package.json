@@ -43,7 +43,7 @@
     "opn": "^1.0.1",
     "pre-commit": "^0.0.9",
     "tape": "^3.0.3",
-    "tchannel": "git+ssh://git@github.com:uber/tchannel#v1.2.1",
+    "tchannel": "git+ssh://git@github.com:uber/tchannel#v1.2.4",
     "time-mock": "^0.1.2",
     "tryit": "^1.0.1"
   },
