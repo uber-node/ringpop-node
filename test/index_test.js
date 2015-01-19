@@ -52,3 +52,28 @@ test('key hashes to only server', function t(assert) {
     ringpop.destroy();
     assert.end();
 });
+
+test('protocol join disallows joining itself', function t(assert) {
+    assert.plan(2);
+
+    var itself = '127.0.0.1:3000';
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: itself });
+    ringpop.protocolJoin({ source: itself }, function(err) {
+        assert.ok(err, 'an error occurred');
+        assert.equals(err.type, 'ringpop.invalid-join.source', 'a node cannot join itself');
+        assert.end();
+    });
+});
+
+test('protocol join disallows joining different app clusters', function t(assert) {
+    assert.plan(2);
+
+    var node1 = { app: 'mars', hostPort: '127.0.0.1:3000' };
+    var node2 = { app: 'jupiter', source: '127.0.0.1:3001' };
+    var ringpop = new RingPop(node1);
+    ringpop.protocolJoin(node2, function(err) {
+        assert.ok(err, 'an error occurred');
+        assert.equals(err.type, 'ringpop.invalid-join.app', 'a node cannot join a different app cluster');
+        assert.end();
+    });
+});

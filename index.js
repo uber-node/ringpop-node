@@ -21,8 +21,10 @@ var clearTimeout = require('timers').clearTimeout;
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
 var metrics = require('metrics');
+var TypedError = require('error/typed');
 
 var AdminJoiner = require('./lib/swim').AdminJoiner;
+var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
 var Dissemination = require('./lib/members').Dissemination;
 var HashRing = require('./lib/ring');
 var Membership = require('./lib/members').Membership;
@@ -32,11 +34,24 @@ var PingReqSender = require('./lib/swim').PingReqSender;
 var PingSender = require('./lib/swim').PingSender;
 var safeParse = require('./lib/util').safeParse;
 var RequestProxy = require('./lib/request-proxy');
-var createRingPopTChannel = require('./lib/tchannel.js')
-    .createRingPopTChannel;
 
 var IP_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
+
+var InvalidJoinAppError = TypedError({
+    type: 'ringpop.invalid-join.app',
+    message: 'A node tried joining a different app cluster. The expected app' +
+        ' ({expected}) did not match the actual app ({actual}).',
+    expected: null,
+    actual: null
+});
+
+var InvalidJoinSourceError = TypedError({
+    type: 'ringpop.invalid-join.source',
+    message:  'A node tried joining a cluster by attempting to join itself.' +
+        ' The joiner ({actual}) must join someone else.',
+    actual: null
+});
 
 function RingPop(options) {
     if (!(this instanceof RingPop)) {
@@ -324,19 +339,22 @@ RingPop.prototype.handleTick = function handleTick(cb) {
 RingPop.prototype.protocolJoin = function protocolJoin(options, callback) {
     this.stat('increment', 'join.recv');
 
-    var source = options.source;
-    var incarnationNumber = options.incarnationNumber;
+    var joinerAddress = options.source;
+    if (joinerAddress === this.whoami()) {
+        return callback(InvalidJoinSourceError({ actual: joinerAddress }));
+    }
 
-    if (source === this.whoami()) {
-        return callback(new Error('Tried joining cluster with itself'));
+    var joinerApp = options.app;
+    if (joinerApp !== this.app) {
+        return callback(InvalidJoinAppError({ expected: this.app, actual: joinerApp }));
     }
 
     this.serverRate.mark();
     this.totalRate.mark();
 
     this.membership.addMember({
-        address: source,
-        incarnationNumber: incarnationNumber
+        address: joinerAddress,
+        incarnationNumber: options.incarnationNumber
     });
 
     callback(null, {
