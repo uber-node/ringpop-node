@@ -33,3 +33,33 @@ test('checksum is changed when membership is updated', function t(assert) {
     assert.doesNotEqual(membership.checksum, prevChecksum, 'checksum is changed');
     assert.end();
 });
+
+test('change with higher incarnation number results in leave override', function t(assert) {
+    var member = { status: 'alive', incarnationNumber: 1 };
+    var change = { status: 'leave', incarnationNumber: 2 };
+
+    var update = Membership.evalOverride(member, change);
+
+    assert.equals(update.type, 'leave', 'results in leave');
+    assert.end();
+});
+
+test('change with same incarnation number does not result in leave override', function t(assert) {
+    var member = { status: 'alive', incarnationNumber: 1 };
+    var change = { status: 'leave', incarnationNumber: 1 };
+
+    var update = Membership.evalOverride(member, change);
+
+    assert.notok(update, 'no override');
+    assert.end();
+});
+
+test('change with lower incarnation number does not result in leave override', function t(assert) {
+    var member = { status: 'alive', incarnationNumber: 1 };
+    var change = { status: 'leave', incarnationNumber: 0 };
+
+    var update = Membership.evalOverride(member, change);
+
+    assert.notok(update, 'no override');
+    assert.end();
+});

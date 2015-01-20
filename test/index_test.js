@@ -53,6 +53,104 @@ test('key hashes to only server', function t(assert) {
     assert.end();
 });
 
+test('admin join rejoins if member has previously left', function t(assert) {
+    assert.plan(3);
+
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    ringpop.addLocalMember({ incarnationNumber: 1 });
+    ringpop.adminLeave(function(err, res1, res2) {
+        assert.equals(res2, 'ok', 'node left cluster');
+
+        ringpop.membership.localMember.incarnationNumber = 2;
+        ringpop.adminJoin(null, function(err, res1, res2) {
+            assert.equals(res2, 'rejoined', 'node rejoined cluster');
+            assert.equals(ringpop.membership.localMember.status, 'alive', 'local member is alive');
+
+            ringpop.destroy();
+            assert.end();
+        });
+    });
+});
+
+test('admin join cannot be performed before local member is added to membership', function t(assert) {
+    assert.plan(2);
+
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    ringpop.adminJoin(null, function(err) {
+        assert.ok(err, 'an error occurred');
+        assert.equals(err.type, 'ringpop.invalid-local-member', 'invalid local member error');
+        assert.end();
+    });
+});
+
+test('admin leave prevents redundant leave', function t(assert) {
+    assert.plan(2);
+
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    ringpop.addLocalMember({ incarnationNumber: 1 });
+    ringpop.membership.makeLeave();
+    ringpop.adminLeave(function(err) {
+        assert.ok(err, 'an error occurred');
+        assert.equals(err.type, 'ringpop.invalid-leave.redundant', 'cannot leave cluster twice');
+        assert.end();
+    });
+});
+
+test('admin leave makes local member leave', function t(assert) {
+    assert.plan(3);
+
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    ringpop.addLocalMember({ incarnationNumber: 1 });
+    ringpop.adminLeave(function(err, _, res2) {
+        assert.notok(err, 'an error did not occur');
+        assert.ok('leave', ringpop.membership.localMember.status, 'local member has correct status');
+        assert.equals('ok', res2, 'admin leave was successful');
+        assert.end();
+    });
+});
+
+test('admin leave stops gossip', function t(assert) {
+    assert.plan(2);
+
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    ringpop.addLocalMember({ incarnationNumber: 1 });
+    ringpop.gossip.start();
+    ringpop.adminLeave(function(err) {
+        assert.notok(err, 'an error did not occur');
+        assert.equals(true, ringpop.gossip.isStopped, 'gossip is stopped');
+        assert.end();
+    });
+});
+
+test('admin leave stops suspicion subprotocol', function t(assert) {
+    assert.plan(2);
+
+    var local = '127.0.0.1:3000';
+    var remote = { address: '127.0.0.2:3000' };
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: local });
+    ringpop.addLocalMember({ incarnationNumber: 1 });
+    ringpop.membership.addMember(remote);
+    ringpop.suspicion.start(remote);
+
+    ringpop.adminLeave(function(err) {
+        assert.notok(err, 'an error did not occur');
+        assert.equals(true, ringpop.suspicion.isStoppedAll, 'suspicion subprotocol is stopped');
+        assert.end();
+    });
+});
+
+test('admin leave cannot be attempted before local member is added', function t(assert) {
+    assert.plan(2);
+
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+
+    ringpop.adminLeave(function(err) {
+        assert.ok(err, 'an error occurred');
+        assert.equals(err.type, 'ringpop.invalid-local-member', 'an invalid leave occurred');
+        assert.end();
+    });
+});
+
 test('protocol join disallows joining itself', function t(assert) {
     assert.plan(2);
 

@@ -25,5 +25,15 @@ module.exports = {
         address: '127.0.0.1:3000',
         incarnationNumber: 123456789
     },
+    remoteMember: {
+        address: '127.0.0.1:3001',
+        incarnationNumber: 123456789
+    },
+    remoteMember2: {
+        address: '127.0.0.1:3002',
+        incarnationNumber: 123456789
+    },
+    getLocalMemberAddress: noop,
+    shuffle: noop,
     update: noop
 };
