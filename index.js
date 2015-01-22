@@ -192,8 +192,7 @@ RingPop.prototype.bootstrap = function bootstrap(bootstrapFile, callback) {
 
     this.adminJoin(function(err) {
         if (err) {
-            var failedMsg = 'ringpop bootstrap failed';
-            self.logger.error(failedMsg, {
+            self.logger.error('ringpop bootstrap failed', {
                 err: err.message,
                 address: self.hostPort
             });
