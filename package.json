@@ -11,12 +11,12 @@
     "ringpop": "./main.js"
   },
   "scripts": {
-    "jshint": "jshint --verbose *.js",
-    "cover": "istanbul cover --print detail --report html test/index.js",
-    "view-cover": "opn coverage/index.html",
     "test": "npm run jshint && node test/index.js",
+    "add-licence": "uber-licence",
     "check-licence": "uber-licence --dry",
-    "add-licence": "uber-licence"
+    "cover": "istanbul cover --print detail --report html test/index.js",
+    "jshint": "jshint --verbose *.js",
+    "view-cover": "opn coverage/index.html"
   },
   "dependencies": {
     "body": "^4.5.0",
