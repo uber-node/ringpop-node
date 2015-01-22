@@ -14,7 +14,9 @@
     "jshint": "jshint --verbose *.js",
     "cover": "istanbul cover --print detail --report html test/index.js",
     "view-cover": "opn coverage/index.html",
-    "test": "npm run jshint && node test/index.js"
+    "test": "npm run jshint && node test/index.js",
+    "check-licence": "uber-licence --dry",
+    "add-licence": "uber-licence"
   },
   "dependencies": {
     "body": "^4.5.0",
@@ -41,11 +43,14 @@
     "tape": "^3.0.3",
     "tchannel": "^1.2.5",
     "time-mock": "^0.1.2",
-    "tryit": "^1.0.1"
+    "tryit": "^1.0.1",
+    "uber-licence": "git+ssh://git@github.com:uber/uber-licence"
   },
   "pre-commit": [
+    "check-licence",
     "test"
   ],
+  "pre-commit.silent": true,
   "itape": {
     "trace": {
       "debuglog": [
