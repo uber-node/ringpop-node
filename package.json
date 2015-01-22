@@ -19,19 +19,17 @@
   "dependencies": {
     "async": "^0.9.0",
     "body": "^4.5.0",
-    "cli-color": "^0.3.2",
-    "commander": "^2.6.0",
-    "debuglog": "^1.0.1",
     "error": "^5.0.0",
-    "express": "^4.9.5",
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "readable-stream": "^1.0.33",
-    "time-mock": "^0.1.2",
     "underscore": "^1.5.2"
   },
   "devDependencies": {
     "benchmark": "^1.0.0",
+    "cli-color": "^0.3.2",
+    "commander": "^2.6.0",
+    "debuglog": "^1.0.1",
     "format-stack": "^1.2.0",
     "glob": "^4.3.1",
     "hammock": "git://github.com/Raynos/hammock#use-streams",
