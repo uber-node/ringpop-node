@@ -7,7 +7,6 @@
     "Mark Yen <mark@uber.com>"
   ],
   "version": "3.0.2",
-  "private": true,
   "bin": {
     "ringpop": "./main.js"
   },
