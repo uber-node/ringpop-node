@@ -22,6 +22,7 @@
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "readable-stream": "^1.0.33",
+    "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
   "devDependencies": {
@@ -31,7 +32,6 @@
     "debuglog": "^1.0.1",
     "format-stack": "^1.2.0",
     "glob": "^4.3.1",
-    "hammock": "git://github.com/Raynos/hammock#use-streams",
     "istanbul": "^0.3.5",
     "itape": "^1.5.0",
     "jshint": "^2.5.6",
