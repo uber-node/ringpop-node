@@ -53,9 +53,21 @@ var InvalidJoinSourceError = TypedError({
     actual: null
 });
 
+var AppRequiredError = TypedError({
+    type: 'ringpop.options-app.required',
+    message: 'Expected `options.app` to be a non-empty string.\n' +
+        'Must specify an app for ringpop to work.\n'
+});
+
 function RingPop(options) {
     if (!(this instanceof RingPop)) {
         return new RingPop(options);
+    }
+
+    if (typeof options.app !== 'string' ||
+        options.app.length === 0
+    ) {
+        throw AppRequiredError();
     }
 
     this.app = options.app;
