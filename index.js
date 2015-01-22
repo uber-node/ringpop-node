@@ -197,7 +197,7 @@ RingPop.prototype.bootstrap = function bootstrap(bootstrapFile, callback) {
                 err: err.message,
                 address: self.hostPort
             });
-            if (callback) callback(new Error(failedMsg));
+            if (callback) callback(err);
             return;
         }
 
