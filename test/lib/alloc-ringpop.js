@@ -28,7 +28,7 @@ var RingPop = require('../../index.js');
 module.exports = allocRingpop;
 
 function allocRingpop(name, options) {
-    var host = 'localhost';
+    var host = '127.0.0.1';
     var port = semiRandPort();
 
     var hostPort = host + ':' + String(port);
