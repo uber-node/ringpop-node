@@ -20,7 +20,7 @@
 
 'use strict';
 
-var hammock = require('hammock');
+var hammock = require('uber-hammock');
 var tryIt = require('tryit');
 
 module.exports = allocResponse;
