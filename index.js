@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 'use strict';
 
-var clearTimeout = require('timers').clearTimeout;
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
 var metrics = require('metrics');
