@@ -17,10 +17,23 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 'use strict';
 
-require('./handle_or_proxy_test.js');
-require('./lookup_self_test.js');
-require('./proxy_req_test.js');
-require('./request_proxy_test.js');
-require('./admin_join_test.js');
+var test = require('tape');
+
+var allocRingpop = require('../lib/alloc-ringpop.js');
+
+test('bootstrap with self', function t(assert) {
+    var ringpop = allocRingpop();
+
+    ringpop.bootstrap([ringpop.hostPort], onBootstrap);
+
+    function onBootstrap(err) {
+        assert.ok(err);
+        assert.equal(err.type, 'ringpop.swim.no-hosts');
+
+        ringpop.destroy();
+        assert.end();
+    }
+});

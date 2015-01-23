@@ -11,10 +11,12 @@
     "ringpop": "./main.js"
   },
   "scripts": {
-    "jshint": "jshint --verbose *.js",
+    "test": "npm run jshint && node test/index.js",
+    "add-licence": "uber-licence",
+    "check-licence": "uber-licence --dry",
     "cover": "istanbul cover --print detail --report html test/index.js",
-    "view-cover": "opn coverage/index.html",
-    "test": "npm run jshint && node test/index.js"
+    "jshint": "jshint --verbose *.js",
+    "view-cover": "opn coverage/index.html"
   },
   "dependencies": {
     "body": "^4.5.0",
@@ -41,11 +43,14 @@
     "tape": "^3.0.3",
     "tchannel": "^1.2.5",
     "time-mock": "^0.1.2",
-    "tryit": "^1.0.1"
+    "tryit": "^1.0.1",
+    "uber-licence": "git+ssh://git@github.com:uber/uber-licence"
   },
   "pre-commit": [
+    "check-licence",
     "test"
   ],
+  "pre-commit.silent": true,
   "itape": {
     "trace": {
       "debuglog": [
