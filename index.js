@@ -17,6 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+'use strict';
+
 var clearTimeout = require('timers').clearTimeout;
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
@@ -35,7 +37,7 @@ var PingSender = require('./lib/swim').PingSender;
 var safeParse = require('./lib/util').safeParse;
 var RequestProxy = require('./lib/request-proxy');
 
-var IP_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
+var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
 
 var InvalidJoinAppError = TypedError({
@@ -53,9 +55,55 @@ var InvalidJoinSourceError = TypedError({
     actual: null
 });
 
+var AppRequiredError = TypedError({
+    type: 'ringpop.options-app.required',
+    message: 'Expected `options.app` to be a non-empty string.\n' +
+        'Must specify an app for ringpop to work.\n'
+});
+
+var OptionsRequiredError = TypedError({
+    type: 'ringpop.options.required',
+    message: 'Expected `options` argument to be passed.\n' +
+        'Must specify options for `RingPop({ ... })`.\n'
+});
+
+var HostPortRequiredError = TypedError({
+    type: 'ringpop.options-host-port.required',
+    message: 'Expected `options.hostPort` to be valid.\n' +
+        'Got {hostPort} which is not {reason}.\n' +
+        'Must specify a HOST:PORT string.\n',
+    hostPort: null,
+    reason: null
+});
+
 function RingPop(options) {
     if (!(this instanceof RingPop)) {
         return new RingPop(options);
+    }
+
+    if (!options) {
+        throw OptionsRequiredError();
+    }
+
+    if (typeof options.app !== 'string' ||
+        options.app.length === 0
+    ) {
+        throw AppRequiredError();
+    }
+
+    var isString = typeof options.hostPort === 'string';
+    var parts = options.hostPort && options.hostPort.split(':');
+    var isColonSeparated = parts && parts.length === 2;
+    var isPort = parts && parts[1] &&
+        !isNaN(parseInt(parts[1], 10));
+
+    if (!isString || !isColonSeparated || !isPort) {
+        throw HostPortRequiredError({
+            hostPort: options.hostPort,
+            reason: !isString ? 'a string' :
+                !isColonSeparated ? 'a valid hostPort pattern' :
+                !isPort ? 'a valid port' : 'correct'
+        });
     }
 
     this.app = options.app;
@@ -260,13 +308,13 @@ RingPop.prototype.checkForHostnameIpMismatch = function checkForHostnameIpMismat
         return true;
     }
 
-    if (IP_PATTERN.test(this.hostPort)) {
+    if (HOST_PORT_PATTERN.test(this.hostPort)) {
         var ipMsg = 'your ringpop host identifier looks like an IP address and there are' +
             ' bootstrap hosts that appear to be specified with hostnames. these inconsistencies' +
             ' may lead to subtle node communication issues';
 
         return testMismatch(ipMsg, function(host) {
-            return !IP_PATTERN.test(host);
+            return !HOST_PORT_PATTERN.test(host);
         });
     } else {
         var hostMsg = 'your ringpop host identifier looks like a hostname and there are' +
@@ -274,7 +322,7 @@ RingPop.prototype.checkForHostnameIpMismatch = function checkForHostnameIpMismat
             ' may lead to subtle node communication issues';
 
         return testMismatch(hostMsg, function(host) {
-            return IP_PATTERN.test(host);
+            return HOST_PORT_PATTERN.test(host);
         });
     }
 
