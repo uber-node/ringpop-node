@@ -95,7 +95,7 @@ function RingPop(options) {
     var isString = typeof options.hostPort === 'string';
     var parts = options.hostPort && options.hostPort.split(':');
     var isColonSeparated = parts && parts.length === 2;
-    var isIP = parts && parts[0] && parts[0].match(IP_PATTERN);
+    var isIP = parts && parts[0] && IP_PATTERN.test(parts[0]);
     var isPort = parts && parts[1] &&
         !isNaN(parseInt(parts[1], 10));
 
