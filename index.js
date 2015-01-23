@@ -94,16 +94,16 @@ function RingPop(options) {
 
     var isString = typeof options.hostPort === 'string';
     var parts = options.hostPort && options.hostPort.split(':');
-    var isColonSeperated = parts && parts.length === 2;
+    var isColonSeparated = parts && parts.length === 2;
     var isIP = parts && parts[0] && parts[0].match(IP_PATTERN);
     var isPort = parts && parts[1] &&
         !isNaN(parseInt(parts[1], 10));
 
-    if (!isString || !isColonSeperated || !isIP || !isPort) {
+    if (!isString || !isColonSeparated || !isIP || !isPort) {
         throw HostPortRequiredError({
             hostPort: options.hostPort,
             reason: !isString ? 'a string' :
-                !isColonSeperated ? 'a valid hostPort pattern' :
+                !isColonSeparated ? 'a valid hostPort pattern' :
                 !isIP ? 'a valid ip' :
                 !isPort ? 'a valid port' : 'correct'
         });
