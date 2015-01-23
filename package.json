@@ -44,7 +44,7 @@
     "tchannel": "^1.2.5",
     "time-mock": "^0.1.2",
     "tryit": "^1.0.1",
-    "uber-licence": "git+ssh://git@github.com:uber/uber-licence"
+    "uber-licence": "^1.1.0"
   },
   "pre-commit": [
     "check-licence",
