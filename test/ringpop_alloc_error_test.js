@@ -40,19 +40,19 @@ test('ringpop with invalid hostPort', function t(assert) {
         });
     }, /Got silly me which is not a valid hostPort pattern/);
 
-    assert.throws(function throwIt() {
+    assert.doesNotThrow(function throwIt() {
         Ringpop({
             app: 'foo',
             hostPort: 'localhost:4000'
         });
-    }, /Got localhost:4000 which is not a valid ip/);
+    });
 
     assert.throws(function throwIt() {
         Ringpop({
             app: 'foo',
             hostPort: 'localhost:not_a_port'
         });
-    }, /Got localhost:not_a_port which is not a valid ip/);
+    }, /Got localhost:not_a_port which is not a valid port/);
 
     assert.end();
 });

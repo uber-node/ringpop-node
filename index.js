@@ -37,7 +37,6 @@ var PingSender = require('./lib/swim').PingSender;
 var safeParse = require('./lib/util').safeParse;
 var RequestProxy = require('./lib/request-proxy');
 
-var IP_PATTERN = /^(\d+.\d+.\d+.\d+)$/;
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
 
@@ -95,16 +94,14 @@ function RingPop(options) {
     var isString = typeof options.hostPort === 'string';
     var parts = options.hostPort && options.hostPort.split(':');
     var isColonSeparated = parts && parts.length === 2;
-    var isIP = parts && parts[0] && IP_PATTERN.test(parts[0]);
     var isPort = parts && parts[1] &&
         !isNaN(parseInt(parts[1], 10));
 
-    if (!isString || !isColonSeparated || !isIP || !isPort) {
+    if (!isString || !isColonSeparated || !isPort) {
         throw HostPortRequiredError({
             hostPort: options.hostPort,
             reason: !isString ? 'a string' :
                 !isColonSeparated ? 'a valid hostPort pattern' :
-                !isIP ? 'a valid ip' :
                 !isPort ? 'a valid port' : 'correct'
         });
     }
