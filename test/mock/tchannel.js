@@ -17,11 +17,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+'use strict';
+
+var noop = require('./noop.js');
+
 module.exports = {
-    channel: require('./channel.js'),
-    logger: require('./logger.js'),
-    membership: require('./membership.js'),
-    noop: require('./noop.js'),
-    requestProxy: require('./request-proxy.js'),
-    tchannel: require('./tchannel.js')
+    send: noop
 };

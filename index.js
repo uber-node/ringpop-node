@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
+var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
 var metrics = require('metrics');
@@ -40,6 +41,7 @@ var Suspicion = require('./lib/swim.js').Suspicion;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
+var PROXY_REQ_PROPS = ['key', 'dest', 'req', 'res'];
 
 var AppRequiredError = TypedError({
     type: 'ringpop.options-app.required',
@@ -79,7 +81,14 @@ var InvalidLocalMemberError = TypedError({
 var OptionsRequiredError = TypedError({
     type: 'ringpop.options.required',
     message: 'Expected `options` argument to be passed.\n' +
-        'Must specify options for `RingPop({ ... })`.\n'
+        'Must specify options for `{method}`.\n',
+    method: null
+});
+
+var PropertyRequiredError = TypedError({
+    type: 'ringpop.options.property-required',
+    message: 'Expected `{property}` to be defined within options argument.',
+    property: null
 });
 
 var RedundantLeaveError = TypedError({
@@ -93,7 +102,7 @@ function RingPop(options) {
     }
 
     if (!options) {
-        throw OptionsRequiredError();
+        throw OptionsRequiredError({ method: 'RingPop' });
     }
 
     if (typeof options.app !== 'string' ||
@@ -795,10 +804,15 @@ RingPop.prototype.handleIncomingRequest =
         this.requestProxy.handleRequest(header, body, cb);
     };
 
-RingPop.prototype.proxyReq =
-    function proxyReq(destination, req, res, opts) {
-        this.requestProxy.proxyReq(destination, req, res, opts);
-    };
+RingPop.prototype.proxyReq = function proxyReq(opts) {
+    if (!opts) {
+        throw OptionsRequiredError({ method: 'proxyReq' });
+    }
+
+    this.validateProps(opts, PROXY_REQ_PROPS);
+
+    this.requestProxy.proxyReq(opts);
+};
 
 RingPop.prototype.handleOrProxy =
     function handleOrProxy(key, req, res, opts) {
@@ -807,8 +821,23 @@ RingPop.prototype.handleOrProxy =
         if (this.whoami() === dest) {
             return true;
         } else {
-            this.proxyReq(dest, req, res, opts);
+            this.proxyReq(_.extend(opts, {
+                key: key,
+                dest: dest,
+                req: req,
+                res: res,
+            }));
         }
     };
+
+RingPop.prototype.validateProps = function validateProps(opts, props) {
+    for (var i = 0; i < props.length; i++) {
+        var prop = props[i];
+
+        if (!opts[prop]) {
+            throw PropertyRequiredError({ property: prop });
+        }
+    }
+};
 
 module.exports = RingPop;
