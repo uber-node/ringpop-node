@@ -20,10 +20,13 @@
 
 'use strict';
 
+var _ = require('underscore');
 var test = require('tape');
 
 var allocRingpop = require('./lib/alloc-ringpop.js');
 var bootstrap = require('./lib/bootstrap.js');
+var mocks = require('./mock');
+var Ringpop = require('../index.js');
 
 test('proxyReq() proxies the request', function t(assert) {
     var left = allocRingpop('left');
@@ -42,4 +45,44 @@ test('proxyReq() proxies the request', function t(assert) {
         right.destroy();
         assert.end();
     });
+});
+
+test('proxyReq enforces required args', function t(assert) {
+    var ringpop = new Ringpop({
+        app: 'test',
+        hostPort: '127.0.0.1:3000'
+    });
+    ringpop.requestProxy = mocks.requestProxy;
+
+    function assertProxyReqThrows(opts) {
+        try {
+            ringpop.proxyReq(opts);
+            assert.fail('no exception thrown');
+        } catch (e) {
+            assert.pass('exception thrown');
+            return e;
+        }
+    }
+
+    function assertPropertyRequiredError(property, opts, newOpts) {
+        opts = _.extend(opts || {}, newOpts);
+
+        var exception = assertProxyReqThrows(opts);
+        assert.equals(exception.type, 'ringpop.options.property-required', 'err type is correct');
+        assert.equals(property, exception.property, 'err property is correct');
+
+        return opts
+    }
+
+    var exception = assertProxyReqThrows();
+    assert.equals(exception.type, 'ringpop.options.required', 'err type is correct');
+
+    var opts = assertPropertyRequiredError('key');
+    opts = assertPropertyRequiredError('dest', opts, { key: 'KEY0' });
+    opts = assertPropertyRequiredError('req', opts, { dest: '127.0.0.1:3000' });
+    opts = assertPropertyRequiredError('res', opts, { req: {} });
+
+    opts = _.extend(opts, { res: {} });
+    assert.doesNotThrow(function() { ringpop.proxyReq(opts); });
+    assert.end();
 });
