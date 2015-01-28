@@ -16,6 +16,7 @@
     "check-licence": "uber-licence --dry",
     "cover": "istanbul cover --print detail --report html test/index.js",
     "jshint": "jshint --verbose *.js",
+    "travis": "npm run cover -s && istanbul report lcov && ((cat coverage/lcov.info | coveralls) || exit 0)",
     "view-cover": "opn coverage/index.html"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
   "devDependencies": {
     "benchmark": "^1.0.0",
     "cli-color": "^0.3.2",
+    "coveralls": "^2.11.2",
     "commander": "^2.6.0",
     "debuglog": "^1.0.1",
     "format-stack": "^1.2.0",
