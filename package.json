@@ -6,7 +6,7 @@
     "Jeff Wolski <wolski@uber.com>",
     "Mark Yen <mark@uber.com>"
   ],
-  "version": "6.0.0",
+  "version": "6.1.0",
   "bin": {
     "ringpop": "./main.js"
   },
