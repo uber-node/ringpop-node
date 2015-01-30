@@ -21,6 +21,7 @@
 function noop() {}
 
 module.exports = {
+    trace: noop,
     debug: noop,
     info: noop,
     warn: noop,

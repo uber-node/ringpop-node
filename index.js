@@ -482,11 +482,11 @@ RingPop.prototype.protocolPingReq = function protocolPingReq(options, callback) 
     this.membership.update(changes);
 
     var self = this;
-    this.logger.debug('ping-req send ping source=' + source + ' target=' + target, 'p');
+    this.debugLog('ping-req send ping source=' + source + ' target=' + target, 'p');
     var start = new Date();
     this.sendPing(target, function (isOk, body) {
         self.stat('timing', 'ping-req-ping', start);
-        self.logger.debug('ping-req recv ping source=' + source + ' target=' + target + ' isOk=' + isOk, 'p');
+        self.debugLog('ping-req recv ping source=' + source + ' target=' + target + ' isOk=' + isOk, 'p');
         if (isOk) {
             self.membership.update(body.changes);
         }
@@ -503,7 +503,9 @@ RingPop.prototype.lookup = function lookup(key) {
     var dest = this.ring.lookup(key + '');
 
     if (!dest) {
-        this.logger.debug('could not find destination for ' + key);
+        this.logger.debug('could not find destination for a key', {
+            key: key
+        });
         return this.whoami();
     }
 
@@ -750,7 +752,7 @@ RingPop.prototype.sendPingReq = function sendPingReq(unreachableMember, callback
 
     if (otherMembers.length > 0) {
         otherMembers.forEach(function (member) {
-            self.logger.debug('ping-req send peer=' + member.address +
+            self.debugLog('ping-req send peer=' + member.address +
                 ' target=' + unreachableMember.address, 'p');
             return new PingReqSender(self, member, unreachableMember, onComplete);
         });
@@ -763,18 +765,14 @@ RingPop.prototype.setDebugFlag = function setDebugFlag(flag) {
     this.debugFlags[flag] = true;
 };
 
+RingPop.prototype.debugLog = function debugLog(msg, flag) {
+    if (this.debugFlags && this.debugFlags[flag]) {
+        this.logger.info(msg);
+    }
+};
+
 RingPop.prototype.setLogger = function setLogger(logger) {
-    var self = this;
-    this.logger = {
-        debug: function(msg, flag) {
-            if (self.debugFlags && self.debugFlags[flag]) {
-                logger.info(msg);
-            }
-        },
-        error: logger.error.bind(logger),
-        info: logger.info.bind(logger),
-        warn: logger.warn.bind(logger)
-    };
+    this.logger = logger;
 };
 
 RingPop.prototype.startProtocolRateTimer = function startProtocolRateTimer() {
@@ -816,11 +814,24 @@ RingPop.prototype.proxyReq = function proxyReq(opts) {
 
 RingPop.prototype.handleOrProxy =
     function handleOrProxy(key, req, res, opts) {
+        this.logger.trace('handleOrProxy for a key', {
+            key: key,
+            url: req && req.url
+        });
+
         var dest = this.lookup(key);
 
         if (this.whoami() === dest) {
+            this.logger.trace('handleOrProxy was handled', {
+                key: key,
+                url: req && req.url
+            });
             return true;
         } else {
+            this.logger.trace('handleOrProxy was proxied', {
+                key: key,
+                url: req && req.url
+            });
             this.proxyReq(_.extend(opts, {
                 key: key,
                 dest: dest,
