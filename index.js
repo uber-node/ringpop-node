@@ -814,11 +814,24 @@ RingPop.prototype.proxyReq = function proxyReq(opts) {
 
 RingPop.prototype.handleOrProxy =
     function handleOrProxy(key, req, res, opts) {
+        this.logger.trace('handleOrProxy for a key', {
+            key: key,
+            url: req && req.url
+        });
+
         var dest = this.lookup(key);
 
         if (this.whoami() === dest) {
+            this.logger.trace('handleOrProxy was handled', {
+                key: key,
+                url: req && req.url
+            });
             return true;
         } else {
+            this.logger.trace('handleOrProxy was proxied', {
+                key: key,
+                url: req && req.url
+            });
             this.proxyReq(_.extend(opts, {
                 key: key,
                 dest: dest,
