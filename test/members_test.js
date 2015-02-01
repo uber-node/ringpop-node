@@ -63,3 +63,22 @@ test('change with lower incarnation number does not result in leave override', f
     assert.notok(update, 'no override');
     assert.end();
 });
+
+test('member is able to go from alive to faulty without going through suspect', function t(assert) {
+    var aliveMember = {
+        status: 'alive',
+        incarnationNumber: 0
+    };
+
+    assert.notok(Membership.evalOverride(aliveMember, {
+        status: 'faulty',
+        incarnationNumber: -1
+    }), 'no override when incarnation number is lower');
+
+    assert.ok(Membership.evalOverride(aliveMember, {
+        status: 'faulty',
+        incarnationNumber: 0
+    }), 'override when incarnation number is same');
+
+    assert.end();
+});
