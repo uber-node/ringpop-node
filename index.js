@@ -832,12 +832,12 @@ RingPop.prototype.handleOrProxy =
                 key: key,
                 url: req && req.url
             });
-            this.proxyReq(_.extend(opts, {
+            this.proxyReq(_.defaults({
                 key: key,
                 dest: dest,
                 req: req,
                 res: res,
-            }));
+            }, opts));
         }
     };
 

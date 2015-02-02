@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+var mock = require('./mock');
 var RingPop = require('../index.js');
 var test = require('tape');
 
@@ -174,4 +175,18 @@ test('protocol join disallows joining different app clusters', function t(assert
         assert.equals(err.type, 'ringpop.invalid-join.app', 'a node cannot join a different app cluster');
         assert.end();
     });
+});
+
+test('no opts does not break handleOrProxy', function t(assert) {
+    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    ringpop.lookup = function() { return '127.0.0.1:3001'; };
+    ringpop.requestProxy = mock.requestProxy;
+
+    var key = 'KEY0';
+    var req = {};
+    var res = {};
+    var opts = null;
+    var handleOrProxy = ringpop.handleOrProxy.bind(ringpop, key, req, res, opts);
+    assert.doesNotThrow(handleOrProxy, null, 'handleOrProxy does not throw');
+    assert.end();
 });
