@@ -20,7 +20,7 @@
     "view-cover": "opn coverage/index.html"
   },
   "dependencies": {
-    "body": "^4.5.0",
+    "body": "^4.6.0",
     "error": "^5.0.0",
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
