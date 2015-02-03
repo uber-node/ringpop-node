@@ -22,6 +22,7 @@
 var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
+var hammock = require('uber-hammock');
 var metrics = require('metrics');
 var TypedError = require('error/typed');
 
@@ -838,6 +839,37 @@ RingPop.prototype.handleOrProxy =
                 req: req,
                 res: res,
             }, opts));
+        }
+    };
+
+RingPop.prototype.handleOrProxyAll =
+    function handleOrProxyAll(opts) {
+        var self = this;
+        var keys = opts.keys;
+        var req = opts.req;
+        var localHandler = opts.localHandler;
+
+        var reses = {};
+        var dests = mapUniq(keys, this.lookup.bind(this));
+        dests.forEach(function(dest) {
+            var res = hammock.Response();
+            if (self.whoami() === dest) {
+                process.nextTick(localHandler.bind(null, req, res));
+            } else {
+                process.nextTick(self.proxyReq.bind(self, _.defaults({
+                    dest: dest,
+                    res: res
+                }, opts)));
+            }
+            reses[dest] = res;
+        });
+        return reses;
+
+        function mapUniq(list, iteratee) {
+            return Object.keys(list.reduce(function(acc, val) {
+                acc[iteratee(val)] = null;
+                return acc;
+            }, {}));
         }
     };
 
