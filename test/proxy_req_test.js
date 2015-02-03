@@ -77,8 +77,8 @@ test('proxyReq enforces required args', function t(assert) {
     var exception = assertProxyReqThrows();
     assert.equals(exception.type, 'ringpop.options.required', 'err type is correct');
 
-    var opts = assertPropertyRequiredError('key');
-    opts = assertPropertyRequiredError('dest', opts, { key: 'KEY0' });
+    var opts = assertPropertyRequiredError('keys');
+    opts = assertPropertyRequiredError('dest', opts, { keys: ['KEY0'] });
     opts = assertPropertyRequiredError('req', opts, { dest: '127.0.0.1:3000' });
     opts = assertPropertyRequiredError('res', opts, { req: {} });
 

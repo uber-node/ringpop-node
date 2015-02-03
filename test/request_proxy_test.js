@@ -44,11 +44,11 @@ test('request proxy sends custom ringpop metadata in head', function t(assert) {
     var proxy = createRequestProxy();
     proxy.ringpop.channel.send = function(options, arg1, arg2, arg3, callback) {
         var head = JSON.parse(arg2);
-        assert.equals(head.ringpopKey, key, 'sends key in head');
+        assert.deepEquals(head.ringpopKeys, [key], 'sends key in head');
         assert.end();
     };
     proxy.proxyReq({
-        key: key,
+        keys: [key],
         req: allocRequest({}),
         dest: dest
     });
@@ -59,8 +59,8 @@ test('request proxy emits head', function t(assert) {
 
     var proxy = createRequestProxy();
     var headExpected = {
-        checksum: proxy.ringpop.membership.checksum,
-        ringpopKey: 'KEY0'
+        ringpopChecksum: proxy.ringpop.membership.checksum,
+        ringpopKeys: ['KEY0']
     };
     proxy.ringpop.on('request', function(req, res, head) {
         assert.ok(req, 'req exists');

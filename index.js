@@ -41,7 +41,7 @@ var Suspicion = require('./lib/swim.js').Suspicion;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
-var PROXY_REQ_PROPS = ['key', 'dest', 'req', 'res'];
+var PROXY_REQ_PROPS = ['keys', 'dest', 'req', 'res'];
 
 var AppRequiredError = TypedError({
     type: 'ringpop.options-app.required',
@@ -833,7 +833,7 @@ RingPop.prototype.handleOrProxy =
                 url: req && req.url
             });
             this.proxyReq(_.defaults({
-                key: key,
+                keys: [key],
                 dest: dest,
                 req: req,
                 res: res,
