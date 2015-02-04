@@ -19,7 +19,10 @@
 // THE SOFTWARE.
 'use strict';
 
+var _ = require('underscore');
+var jsonBody = require('body/json');
 var test = require('tape');
+var tryIt = require('tryit');
 
 var allocCluster = require('../lib/alloc-cluster.js');
 
@@ -53,4 +56,80 @@ test('handleOrProxy() proxies for not me', function t(assert) {
             assert.end();
         });
     });
+});
+
+test('handleOrProxyAll() proxies and calls local handler', function t(assert) {
+    var handlerCallCounts = {};
+    var cluster = allocCluster({
+        createHandler: createServerHandler
+    }, function onReady() {
+        var k = cluster.keys;
+        var keys = [k.one, k.two, k.two, k.three]
+
+        var reses = cluster.requestAll({
+            keys: keys,
+            host: 'one',
+            localHandler: createServerHandler('one'),
+            json: { hello: true }
+        });
+
+        var hosts = Object.keys(reses);
+        assert.equal(hosts.length, 3);
+        var onLastResponse = _.after(hosts.length, _onLastResponse);
+        hosts.forEach(function(host) {
+            var res = reses[host];
+            res.on('response', onResponse);
+            res.on('response', onLastResponse);
+        });
+
+        function onResponse(err, data) {
+            assert.ifError(err);
+            assert.equal(data.statusCode, 200);
+            tryIt(function parse() {
+                data.body = JSON.parse(data.body);
+                assert.equal(data.body.payload.hello, true);
+            }, assert.ifError);
+        }
+        function _onLastResponse() {
+            assert.equal(handlerCallCounts.one, 1);
+            assert.equal(handlerCallCounts.two, 1);
+            assert.equal(handlerCallCounts.three, 1);
+
+            cluster.destroy();
+            assert.end();
+        }
+    });
+
+    function createServerHandler(name) {
+        return function serverHandle(req, res) {
+            if (handlerCallCounts[name]) {
+                handlerCallCounts[name]++;
+            } else {
+                handlerCallCounts[name] = 1;
+            }
+
+            if (req.headers['content-type'] === 'application/json') {
+                jsonBody(req, {cache: true}, onBody);
+            } else {
+                onBody(null, undefined);
+            }
+
+            function onBody(err, result) {
+                if (err) {
+                    res.statusCode = 500;
+                    return res.end(err.message);
+                }
+
+                res.statusCode = 200;
+                res.end(JSON.stringify({
+                    host: name,
+                    url: req.url,
+                    headers: req.headers,
+                    method: req.method,
+                    httpVersion: req.httpVersion,
+                    payload: result
+                }));
+            }
+        };
+    }
 });
