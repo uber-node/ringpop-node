@@ -60,7 +60,8 @@ function allocCluster(options, onReady) {
             three: three.whoami() + '0'
         },
         destroy: destroy,
-        request: request
+        request: request,
+        requestAll: requestAll
     };
     return cluster;
 
@@ -89,6 +90,12 @@ function allocCluster(options, onReady) {
             cluster[host].emit('request', req, res);
         }
         return handle;
+    }
+
+    function requestAll(opts) {
+        var host = opts.host;
+        opts.req = allocRequest(opts);
+        return cluster[host].handleOrProxyAll(opts);
     }
 }
 

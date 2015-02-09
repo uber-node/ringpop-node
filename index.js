@@ -22,6 +22,7 @@
 var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
+var hammock = require('uber-hammock');
 var metrics = require('metrics');
 var TypedError = require('error/typed');
 
@@ -841,6 +842,40 @@ RingPop.prototype.handleOrProxy =
         }
     };
 
+RingPop.prototype.handleOrProxyAll =
+    function handleOrProxyAll(opts) {
+        var self = this;
+        var keys = opts.keys;
+        var req = opts.req;
+        var localHandler = opts.localHandler;
+        var whoami = this.whoami();
+
+        var dests = mapUniq(keys, this.lookup.bind(this));
+        return dests.reduce(function(responses, dest) {
+            var res = hammock.Response();
+            if (whoami === dest) {
+                self.logger.trace('handleOrProxyAll was handled', {
+                    keys: keys,
+                    url: req && req.url
+                });
+                process.nextTick(localHandler.bind(null, req, res));
+            } else {
+                self.logger.trace('handleOrProxyAll was proxied', {
+                    keys: keys,
+                    url: req && req.url
+                });
+                process.nextTick(self.proxyReq.bind(self, {
+                    keys: keys,
+                    req: req,
+                    res: res,
+                    dest: dest
+                }));
+            }
+            responses[dest] = res;
+            return responses;
+        }, {});
+    };
+
 RingPop.prototype.validateProps = function validateProps(opts, props) {
     for (var i = 0; i < props.length; i++) {
         var prop = props[i];
@@ -850,5 +885,12 @@ RingPop.prototype.validateProps = function validateProps(opts, props) {
         }
     }
 };
+
+function mapUniq(list, iteratee) {
+    return Object.keys(list.reduce(function(acc, val) {
+        acc[iteratee(val)] = null;
+        return acc;
+    }, {}));
+}
 
 module.exports = RingPop;
