@@ -848,29 +848,32 @@ RingPop.prototype.handleOrProxyAll =
         var keys = opts.keys;
         var req = opts.req;
         var localHandler = opts.localHandler;
+        var whoami = this.whoami();
 
-        var reses = {};
         var dests = mapUniq(keys, this.lookup.bind(this));
-        dests.forEach(function(dest) {
+        return dests.reduce(function(responses, dest) {
             var res = hammock.Response();
-            if (self.whoami() === dest) {
+            if (whoami === dest) {
+                self.logger.trace('handleOrProxyAll was handled', {
+                    keys: keys,
+                    url: req && req.url
+                });
                 process.nextTick(localHandler.bind(null, req, res));
             } else {
-                process.nextTick(self.proxyReq.bind(self, _.defaults({
-                    dest: dest,
-                    res: res
-                }, opts)));
+                self.logger.trace('handleOrProxyAll was proxied', {
+                    keys: keys,
+                    url: req && req.url
+                });
+                process.nextTick(self.proxyReq.bind(self, {
+                    keys: keys,
+                    req: req,
+                    res: res,
+                    dest: dest
+                }));
             }
-            reses[dest] = res;
-        });
-        return reses;
-
-        function mapUniq(list, iteratee) {
-            return Object.keys(list.reduce(function(acc, val) {
-                acc[iteratee(val)] = null;
-                return acc;
-            }, {}));
-        }
+            responses[dest] = res;
+            return responses;
+        }, {});
     };
 
 RingPop.prototype.validateProps = function validateProps(opts, props) {
@@ -882,5 +885,12 @@ RingPop.prototype.validateProps = function validateProps(opts, props) {
         }
     }
 };
+
+function mapUniq(list, iteratee) {
+    return Object.keys(list.reduce(function(acc, val) {
+        acc[iteratee(val)] = null;
+        return acc;
+    }, {}));
+}
 
 module.exports = RingPop;
