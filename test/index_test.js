@@ -190,3 +190,88 @@ test('no opts does not break handleOrProxy', function t(assert) {
     assert.doesNotThrow(handleOrProxy, null, 'handleOrProxy does not throw');
     assert.end();
 });
+
+test('registers stats hook', function t(assert) {
+    var ringpop = new RingPop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000'
+    });
+
+    ringpop.registerStatsHook({
+        name: 'myhook',
+        getStats: function getIt() {
+            return {
+                numQueues: 10
+            };
+        }
+    });
+
+    assert.ok(ringpop.isStatsHookRegistered('myhook'), 'hook has been registered');
+    assert.end();
+});
+
+test('stats include stat hooks', function t(assert) {
+    var ringpop = new RingPop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000'
+    });
+
+    assert.notok(ringpop.getStats().hooks, 'no stats for no stat hooks');
+
+    var stats = { numQueues: 10 };
+    ringpop.registerStatsHook({
+        name: 'myhook',
+        getStats: function getIt() {
+            return stats;
+        }
+    });
+
+    assert.deepEqual(ringpop.getStats().hooks.myhook, stats, 'returns hook stats');
+    assert.end();
+});
+
+test('fails all hook registration preconditions', function t(assert) {
+    var ringpop = new RingPop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000'
+    });
+
+    function throwsType(fn) {
+        try {
+            fn();
+        } catch (e) {
+            return e.type;
+        }
+
+        return null;
+    }
+
+    assert.equals(throwsType(function throwIt() {
+        ringpop.registerStatsHook();
+    }), 'ringpop.argument-required', 'missing hook argument');
+
+    assert.equals(throwsType(function throwIt() {
+        ringpop.registerStatsHook({
+            getStats: function getIt() { return {}; }
+        });
+    }), 'ringpop.field-required', 'missing name field');
+
+    assert.equals(throwsType(function throwIt() {
+        ringpop.registerStatsHook({
+            name: 'myhook'
+        });
+    }), 'ringpop.method-required', 'missing getStats method');
+
+    assert.equals(throwsType(function throwIt() {
+        ringpop.registerStatsHook({
+            name: 'myhook',
+            getStats: function getIt() { return {}; }
+        });
+        ringpop.registerStatsHook({
+            name: 'myhook',
+            getStats: function getIt() { return {}; }
+        });
+    }), 'ringpop.duplicate-hook', 'registered hook twice');
+
+    assert.end();
+});

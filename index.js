@@ -24,11 +24,11 @@ var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
 var hammock = require('uber-hammock');
 var metrics = require('metrics');
-var TypedError = require('error/typed');
 
 var AdminJoiner = require('./lib/swim').AdminJoiner;
 var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
 var Dissemination = require('./lib/members').Dissemination;
+var errors = require('./lib/errors.js');
 var Gossip = require('./lib/swim.js').Gossip;
 var HashRing = require('./lib/ring');
 var Membership = require('./lib/members').Membership;
@@ -44,72 +44,19 @@ var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
 var PROXY_REQ_PROPS = ['keys', 'dest', 'req', 'res'];
 
-var AppRequiredError = TypedError({
-    type: 'ringpop.options-app.required',
-    message: 'Expected `options.app` to be a non-empty string.\n' +
-        'Must specify an app for ringpop to work.\n'
-});
-
-var HostPortRequiredError = TypedError({
-    type: 'ringpop.options-host-port.required',
-    message: 'Expected `options.hostPort` to be valid.\n' +
-        'Got {hostPort} which is not {reason}.\n' +
-        'Must specify a HOST:PORT string.\n',
-    hostPort: null,
-    reason: null
-});
-
-var InvalidJoinAppError = TypedError({
-    type: 'ringpop.invalid-join.app',
-    message: 'A node tried joining a different app cluster. The expected app' +
-        ' ({expected}) did not match the actual app ({actual}).',
-    expected: null,
-    actual: null
-});
-
-var InvalidJoinSourceError = TypedError({
-    type: 'ringpop.invalid-join.source',
-    message:  'A node tried joining a cluster by attempting to join itself.' +
-        ' The joiner ({actual}) must join someone else.',
-    actual: null
-});
-
-var InvalidLocalMemberError = TypedError({
-    type: 'ringpop.invalid-local-member',
-    message: 'Operation could not be performed because local member has not been added to membership'
-});
-
-var OptionsRequiredError = TypedError({
-    type: 'ringpop.options.required',
-    message: 'Expected `options` argument to be passed.\n' +
-        'Must specify options for `{method}`.\n',
-    method: null
-});
-
-var PropertyRequiredError = TypedError({
-    type: 'ringpop.options.property-required',
-    message: 'Expected `{property}` to be defined within options argument.',
-    property: null
-});
-
-var RedundantLeaveError = TypedError({
-    type: 'ringpop.invalid-leave.redundant',
-    message: 'A node cannot leave its cluster when it has already left.'
-});
-
 function RingPop(options) {
     if (!(this instanceof RingPop)) {
         return new RingPop(options);
     }
 
     if (!options) {
-        throw OptionsRequiredError({ method: 'RingPop' });
+        throw errors.OptionsRequiredError({ method: 'RingPop' });
     }
 
     if (typeof options.app !== 'string' ||
         options.app.length === 0
     ) {
-        throw AppRequiredError();
+        throw errors.AppRequiredError();
     }
 
     var isString = typeof options.hostPort === 'string';
@@ -119,7 +66,7 @@ function RingPop(options) {
         !isNaN(parseInt(parts[1], 10));
 
     if (!isString || !isColonSeparated || !isPort) {
-        throw HostPortRequiredError({
+        throw errors.HostPortRequiredError({
             hostPort: options.hostPort,
             reason: !isString ? 'a string' :
                 !isColonSeparated ? 'a valid hostPort pattern' :
@@ -168,6 +115,8 @@ function RingPop(options) {
     this.statHostPort = this.hostPort.replace(':', '_');
     this.statPrefix = 'ringpop.' + this.statHostPort;
     this.statKeys = {};
+    this.statsHooks = {};
+
     this.destroyed = false;
     this.joiner = null;
 }
@@ -213,7 +162,7 @@ RingPop.prototype.addLocalMember = function addLocalMember(info) {
 RingPop.prototype.adminJoin = function adminJoin(target, callback) {
     if (!this.membership.localMember) {
         process.nextTick(function() {
-            callback(InvalidLocalMemberError());
+            callback(errors.InvalidLocalMemberError());
         });
         return;
     }
@@ -242,14 +191,14 @@ RingPop.prototype.adminJoin = function adminJoin(target, callback) {
 RingPop.prototype.adminLeave = function adminLeave(callback) {
     if (!this.membership.localMember) {
         process.nextTick(function() {
-            callback(InvalidLocalMemberError());
+            callback(errors.InvalidLocalMemberError());
         });
         return;
     }
 
     if (this.membership.localMember.status === 'leave') {
         process.nextTick(function() {
-            callback(RedundantLeaveError());
+            callback(errors.RedundantLeaveError());
         });
         return;
     }
@@ -396,8 +345,23 @@ RingPop.prototype.protocolRate = function () {
     return Math.max(observed, this.minProtocolPeriod);
 };
 
+RingPop.prototype.getStatsHooksStats = function getStatsHooksStats() {
+    if (Object.keys(this.statsHooks).length === 0) {
+        return null;
+    }
+
+    var self = this;
+    function reduceToStats(stats, name) {
+        stats[name] = self.statsHooks[name].getStats();
+        return stats;
+    }
+
+    return Object.keys(this.statsHooks).reduce(reduceToStats, {});
+};
+
 RingPop.prototype.getStats = function getStats() {
     return {
+        hooks: this.getStatsHooksStats(),
         membership: this.membership.getStats(),
         process: {
             memory: process.memoryUsage(),
@@ -421,17 +385,21 @@ RingPop.prototype.handleTick = function handleTick(cb) {
     });
 };
 
+RingPop.prototype.isStatsHookRegistered = function isStatsHookRegistered(name) {
+    return !!this.statsHooks[name];
+};
+
 RingPop.prototype.protocolJoin = function protocolJoin(options, callback) {
     this.stat('increment', 'join.recv');
 
     var joinerAddress = options.source;
     if (joinerAddress === this.whoami()) {
-        return callback(InvalidJoinSourceError({ actual: joinerAddress }));
+        return callback(errors.InvalidJoinSourceError({ actual: joinerAddress }));
     }
 
     var joinerApp = options.app;
     if (joinerApp !== this.app) {
-        return callback(InvalidJoinAppError({ expected: this.app, actual: joinerApp }));
+        return callback(errors.InvalidJoinAppError({ expected: this.app, actual: joinerApp }));
     }
 
     this.serverRate.mark();
@@ -805,12 +773,32 @@ RingPop.prototype.handleIncomingRequest =
 
 RingPop.prototype.proxyReq = function proxyReq(opts) {
     if (!opts) {
-        throw OptionsRequiredError({ method: 'proxyReq' });
+        throw errors.OptionsRequiredError({ method: 'proxyReq' });
     }
 
     this.validateProps(opts, PROXY_REQ_PROPS);
 
     this.requestProxy.proxyReq(opts);
+};
+
+RingPop.prototype.registerStatsHook = function registerStatsHook(hook) {
+    if (!hook) {
+        throw errors.ArgumentRequiredError({ argument: 'hook' });
+    }
+
+    if (!hook.name) {
+        throw errors.FieldRequiredError({ argument: 'hook', field: 'name' });
+    }
+
+    if (typeof hook.getStats !== 'function') {
+        throw errors.MethodRequiredError({ argument: 'hook', method: 'getStats' });
+    }
+
+    if (this.isStatsHookRegistered(hook.name)) {
+        throw errors.DuplicateHookError({ name: hook.name });
+    }
+
+    this.statsHooks[hook.name] = hook;
 };
 
 RingPop.prototype.handleOrProxy =
@@ -881,7 +869,7 @@ RingPop.prototype.validateProps = function validateProps(opts, props) {
         var prop = props[i];
 
         if (!opts[prop]) {
-            throw PropertyRequiredError({ property: prop });
+            throw errors.PropertyRequiredError({ property: prop });
         }
     }
 };
