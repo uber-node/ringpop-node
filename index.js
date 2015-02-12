@@ -853,7 +853,7 @@ RingPop.prototype.handleOrProxyAll =
         var keysByDest = _.groupBy(keys, this.lookup, this);
         var dests = Object.keys(keysByDest);
         var pending = dests.length;
-        var responses = {};
+        var responses = [];
 
         dests.forEach(function(dest) {
             var res = hammock.Response();
@@ -883,11 +883,11 @@ RingPop.prototype.handleOrProxyAll =
         });
 
         function onResponse(err, response, dest) {
-            responses[dest] = {
+            responses.push({
                 res: response,
                 dest: dest,
                 keys: keysByDest[dest]
-            };
+            });
             if ((--pending === 0 || err) && cb) {
                 cb(err, responses);
                 cb = null;

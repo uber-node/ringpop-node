@@ -77,10 +77,8 @@ test('handleOrProxyAll() proxies and calls local handler', function t(assert) {
     function onResponses(err, responses) {
         assert.ifError(err);
 
-        var hosts = Object.keys(responses);
-        assert.equal(hosts.length, 3);
-        hosts.forEach(function(host) {
-            var data = responses[host];
+        assert.equal(responses.length, 3);
+        responses.forEach(function(data) {
             assert.equal(data.res.statusCode, 200);
             tryIt(function parse() {
                 var body = JSON.parse(data.res.body);
