@@ -857,8 +857,8 @@ RingPop.prototype.handleOrProxyAll =
 
         dests.forEach(function(dest) {
             var res = hammock.Response();
-            res.on('response', function(err, data) {
-                onResponse(err, data, dest);
+            res.on('response', function(err, response) {
+                onResponse(err, response, dest);
             });
             if (whoami === dest) {
                 self.logger.trace('handleOrProxyAll was handled', {
@@ -882,12 +882,12 @@ RingPop.prototype.handleOrProxyAll =
             }
         });
 
-        function onResponse(err, data, dest) {
-            if (data) {
-                data.dest = dest;
-                data.keys = keysByDest[dest];
-            }
-            responses[dest] = data;
+        function onResponse(err, response, dest) {
+            responses[dest] = {
+                res: response,
+                dest: dest,
+                keys: keysByDest[dest]
+            };
             if ((--pending === 0 || err) && cb) {
                 cb(err, responses);
                 cb = null;

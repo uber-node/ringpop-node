@@ -64,7 +64,7 @@ test('handleOrProxyAll() proxies and calls local handler', function t(assert) {
         createHandler: createServerHandler
     }, function onReady() {
         var k = cluster.keys;
-        var keys = [k.one, k.two, k.two, k.three]
+        var keys = [k.one, k.two, k.two, k.three];
 
         cluster.requestAll({
             keys: keys,
@@ -81,10 +81,10 @@ test('handleOrProxyAll() proxies and calls local handler', function t(assert) {
         assert.equal(hosts.length, 3);
         hosts.forEach(function(host) {
             var data = responses[host];
-            assert.equal(data.statusCode, 200);
+            assert.equal(data.res.statusCode, 200);
             tryIt(function parse() {
-                data.body = JSON.parse(data.body);
-                assert.equal(data.body.payload.hello, true);
+                var body = JSON.parse(data.res.body);
+                assert.equal(body.payload.hello, true);
             }, assert.ifError);
         });
         assert.equal(handlerCallCounts.one, 1);
