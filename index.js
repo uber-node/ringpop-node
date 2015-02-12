@@ -850,7 +850,7 @@ RingPop.prototype.handleOrProxyAll =
         var localHandler = opts.localHandler;
 
         var whoami = this.whoami();
-        var keysByDest = _.groupBy(keys, this.lookup.bind(this));
+        var keysByDest = _.groupBy(keys, this.lookup, this);
         var dests = Object.keys(keysByDest);
         var pending = dests.length;
         var responses = {};
@@ -866,19 +866,19 @@ RingPop.prototype.handleOrProxyAll =
                     url: req && req.url,
                     dest: dest
                 });
-                process.nextTick(localHandler.bind(null, req, res));
+                localHandler(req, res);
             } else {
                 self.logger.trace('handleOrProxyAll was proxied', {
                     keys: keys,
                     url: req && req.url,
                     dest: dest
                 });
-                process.nextTick(self.proxyReq.bind(self, {
+                self.proxyReq({
                     keys: keys,
                     req: req,
                     res: res,
                     dest: dest
-                }));
+                });
             }
         });
 
