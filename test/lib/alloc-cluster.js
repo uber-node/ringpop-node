@@ -92,10 +92,10 @@ function allocCluster(options, onReady) {
         return handle;
     }
 
-    function requestAll(opts) {
+    function requestAll(opts, cb) {
         var host = opts.host;
         opts.req = allocRequest(opts);
-        return cluster[host].handleOrProxyAll(opts);
+        cluster[host].handleOrProxyAll(opts, cb);
     }
 }
 
