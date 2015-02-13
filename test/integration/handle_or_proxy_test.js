@@ -64,41 +64,34 @@ test('handleOrProxyAll() proxies and calls local handler', function t(assert) {
         createHandler: createServerHandler
     }, function onReady() {
         var k = cluster.keys;
-        var keys = [k.one, k.two, k.two, k.three]
+        var keys = [k.one, k.two, k.two, k.three];
 
-        var reses = cluster.requestAll({
+        cluster.requestAll({
             keys: keys,
             host: 'one',
             localHandler: createServerHandler('one'),
             json: { hello: true }
-        });
-
-        var hosts = Object.keys(reses);
-        assert.equal(hosts.length, 3);
-        var onLastResponse = _.after(hosts.length, _onLastResponse);
-        hosts.forEach(function(host) {
-            var res = reses[host];
-            res.on('response', onResponse);
-            res.on('response', onLastResponse);
-        });
-
-        function onResponse(err, data) {
-            assert.ifError(err);
-            assert.equal(data.statusCode, 200);
-            tryIt(function parse() {
-                data.body = JSON.parse(data.body);
-                assert.equal(data.body.payload.hello, true);
-            }, assert.ifError);
-        }
-        function _onLastResponse() {
-            assert.equal(handlerCallCounts.one, 1);
-            assert.equal(handlerCallCounts.two, 1);
-            assert.equal(handlerCallCounts.three, 1);
-
-            cluster.destroy();
-            assert.end();
-        }
+        }, onResponses);
     });
+
+    function onResponses(err, responses) {
+        assert.ifError(err);
+
+        assert.equal(responses.length, 3);
+        responses.forEach(function(data) {
+            assert.equal(data.res.statusCode, 200);
+            tryIt(function parse() {
+                var body = JSON.parse(data.res.body);
+                assert.equal(body.payload.hello, true);
+            }, assert.ifError);
+        });
+        assert.equal(handlerCallCounts.one, 1);
+        assert.equal(handlerCallCounts.two, 1);
+        assert.equal(handlerCallCounts.three, 1);
+
+        cluster.destroy();
+        assert.end();
+    }
 
     function createServerHandler(name) {
         return function serverHandle(req, res) {

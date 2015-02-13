@@ -831,37 +831,60 @@ RingPop.prototype.handleOrProxy =
     };
 
 RingPop.prototype.handleOrProxyAll =
-    function handleOrProxyAll(opts) {
+    function handleOrProxyAll(opts, cb) {
         var self = this;
         var keys = opts.keys;
         var req = opts.req;
         var localHandler = opts.localHandler;
-        var whoami = this.whoami();
 
-        var dests = mapUniq(keys, this.lookup.bind(this));
-        return dests.reduce(function(responses, dest) {
+        var whoami = this.whoami();
+        var keysByDest = _.groupBy(keys, this.lookup, this);
+        var dests = Object.keys(keysByDest);
+        var pending = dests.length;
+        var responses = [];
+
+        if (pending === 0 && cb) {
+            return cb(null, responses);
+        }
+
+        dests.forEach(function(dest) {
             var res = hammock.Response();
+            res.on('response', function(err, response) {
+                onResponse(err, response, dest);
+            });
             if (whoami === dest) {
                 self.logger.trace('handleOrProxyAll was handled', {
                     keys: keys,
-                    url: req && req.url
+                    url: req && req.url,
+                    dest: dest
                 });
-                process.nextTick(localHandler.bind(null, req, res));
+                localHandler(req, res);
             } else {
                 self.logger.trace('handleOrProxyAll was proxied', {
                     keys: keys,
-                    url: req && req.url
+                    url: req && req.url,
+                    dest: dest
                 });
-                process.nextTick(self.proxyReq.bind(self, {
+                self.proxyReq({
                     keys: keys,
                     req: req,
                     res: res,
                     dest: dest
-                }));
+                });
             }
-            responses[dest] = res;
-            return responses;
-        }, {});
+        });
+
+        function onResponse(err, response, dest) {
+            responses.push({
+                res: response,
+                dest: dest,
+                keys: keysByDest[dest]
+            });
+            if ((--pending === 0 || err) && cb) {
+                cb(err, responses);
+                cb = null;
+            }
+        }
     };
 
 RingPop.prototype.validateProps = function validateProps(opts, props) {
@@ -873,12 +896,5 @@ RingPop.prototype.validateProps = function validateProps(opts, props) {
         }
     }
 };
-
-function mapUniq(list, iteratee) {
-    return Object.keys(list.reduce(function(acc, val) {
-        acc[iteratee(val)] = null;
-        return acc;
-    }, {}));
-}
 
 module.exports = RingPop;
