@@ -855,6 +855,10 @@ RingPop.prototype.handleOrProxyAll =
         var pending = dests.length;
         var responses = [];
 
+        if (pending === 0 && cb) {
+            return cb(null, responses);
+        }
+
         dests.forEach(function(dest) {
             var res = hammock.Response();
             res.on('response', function(err, response) {
