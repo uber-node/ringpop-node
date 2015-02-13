@@ -89,10 +89,6 @@ function RingPop(options) {
     this.pingReqTimeout = 5000;
     this.pingTimeout = 1500;
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
-    this.minProtocolPeriod = 200;
-    this.lastProtocolPeriod = Date.now();
-    this.lastProtocolRate = 0;
-    this.protocolPeriods = 0;
     this.maxJoinDuration = options.maxJoinDuration || MAX_JOIN_DURATION;
 
     this.requestProxy = new RequestProxy(this);
@@ -104,13 +100,9 @@ function RingPop(options) {
     this.gossip = new Gossip(this);
     this.suspicion = new Suspicion(this);
 
-    this.timing = new metrics.Histogram();
-    this.timing.update(this.minProtocolPeriod);
     this.clientRate = new metrics.Meter();
     this.serverRate = new metrics.Meter();
     this.totalRate = new metrics.Meter();
-
-    this.protocolRateTimer = null;
 
     this.statHostPort = this.hostPort.replace(':', '_');
     this.statPrefix = 'ringpop.' + this.statHostPort;
@@ -127,7 +119,6 @@ RingPop.prototype.destroy = function destroy() {
     this.destroyed = true;
     this.gossip.stop();
     this.suspicion.stopAll();
-    clearInterval(this.protocolRateTimer);
 
     this.clientRate.m1Rate.stop();
     this.clientRate.m5Rate.stop();
@@ -274,7 +265,6 @@ RingPop.prototype.bootstrap = function bootstrap(bootstrapFile, callback) {
         });
 
         self.gossip.start();
-        self.startProtocolRateTimer();
         self.isReady = true;
         self.emit('ready');
 
@@ -340,11 +330,6 @@ RingPop.prototype.clearDebugFlags = function clearDebugFlags() {
     this.debugFlags = {};
 };
 
-RingPop.prototype.protocolRate = function () {
-    var observed = this.timing.percentiles([0.5])['0.5'] * 2;
-    return Math.max(observed, this.minProtocolPeriod);
-};
-
 RingPop.prototype.getStatsHooksStats = function getStatsHooksStats() {
     if (Object.keys(this.statsHooks).length === 0) {
         return null;
@@ -368,8 +353,8 @@ RingPop.prototype.getStats = function getStats() {
             pid: process.pid
         },
         protocol: {
-            timing: this.timing.printObj(),
-            protocolRate: this.protocolRate(),
+            timing: this.gossip.protocolTiming.printObj(),
+            protocolRate: this.gossip.computeProtocolRate(),
             clientRate: this.clientRate.printObj().m1,
             serverRate: this.serverRate.printObj().m1,
             totalRate: this.totalRate.printObj().m1
@@ -491,16 +476,6 @@ RingPop.prototype.whoami = function whoami() {
     return this.hostPort;
 };
 
-RingPop.prototype.computeProtocolDelay = function computeProtocolDelay() {
-    if (this.protocolPeriods) {
-        var target = this.lastProtocolPeriod + this.lastProtocolRate;
-        return Math.max(target - Date.now(), this.minProtocolPeriod);
-    } else {
-        // Delay for first tick will be staggered from 0 to `minProtocolPeriod` ms.
-        return Math.floor(Math.random() * (this.minProtocolPeriod + 1));
-    }
-};
-
 RingPop.prototype.issueMembershipChanges = function issueMembershipChanges(checksum, source) {
     return this.dissemination.getChanges(checksum, source);
 };
@@ -612,9 +587,6 @@ RingPop.prototype.pingMemberNow = function pingMemberNow(callback) {
         this.logger.warn('ping started before ring initialized');
         return callback();
     }
-
-    this.lastProtocolPeriod = Date.now();
-    this.protocolPeriods++;
 
     var member = this.memberIterator.next();
 
@@ -742,12 +714,6 @@ RingPop.prototype.debugLog = function debugLog(msg, flag) {
 
 RingPop.prototype.setLogger = function setLogger(logger) {
     this.logger = logger;
-};
-
-RingPop.prototype.startProtocolRateTimer = function startProtocolRateTimer() {
-    this.protocolRateTimer = setInterval(function () {
-        this.lastProtocolRate = this.protocolRate();
-    }.bind(this), 1000);
 };
 
 RingPop.prototype.stat = function stat(type, key, value) {

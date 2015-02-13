@@ -64,24 +64,26 @@ test('join is aborted when max join duration is exceeded', function t(assert) {
     assert.end();
 });
 
-test('starting and stopping gossip sets timer / unsets timer', function t(assert) {
+test('starting and stopping gossip sets timer / unsets timers', function t(assert) {
     var gossip = createGossip();
 
     gossip.start();
-    assert.ok(gossip.timer, 'timer was set');
+    assert.ok(gossip.protocolPeriodTimer, 'protocol period timer was set');
+    assert.ok(gossip.protocolRateTimer, 'protocol rate timer was set');
 
     gossip.stop();
-    assert.notok(gossip.timer, 'timer was cleared');
+    assert.notok(gossip.protocolPeriodTimer, 'protocol period timer was cleared');
+    assert.notok(gossip.protocolRateTimer, 'protocol rate timer was cleared');
 
     assert.end();
 });
 
 test('stopping gossip is a noop if gossip was never started', function t(assert) {
     var gossip = createGossip();
-    gossip.timer = 'nochange';
+    gossip.protocolPeriodTimer = 'nochange';
 
     gossip.stop();
-    assert.equals(gossip.timer, 'nochange', 'timer was not cleared');
+    assert.equals(gossip.protocolPeriodTimer, 'nochange', 'timer was not cleared');
     assert.equals(gossip.isStopped, true, 'gossip was not stopped');
 
     assert.end();
@@ -92,11 +94,11 @@ test('gossip can be restarted', function t(assert) {
     gossip.start();
 
     gossip.stop();
-    assert.equals(gossip.timer, null, 'timer was cleared');
+    assert.equals(gossip.protocolPeriodTimer, null, 'timer was cleared');
     assert.equals(gossip.isStopped, true, 'gossip was stopped');
 
     gossip.start();
-    assert.ok(gossip.timer, 'timer was set');
+    assert.ok(gossip.protocolPeriodTimer, 'timer was set');
     assert.equals(gossip.isStopped, false, 'gossip was started');
 
     gossip.stop(); // Cleanup
