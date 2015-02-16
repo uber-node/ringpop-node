@@ -801,7 +801,6 @@ RingPop.prototype.handleOrProxyAll =
         var self = this;
         var keys = opts.keys;
         var req = opts.req;
-        var localHandler = opts.localHandler;
 
         var whoami = this.whoami();
         var keysByDest = _.groupBy(keys, this.lookup, this);
@@ -814,9 +813,8 @@ RingPop.prototype.handleOrProxyAll =
         }
 
         dests.forEach(function(dest) {
-            var res = hammock.Response();
-            res.on('response', function(err, response) {
-                onResponse(err, response, dest);
+            var res = hammock.Response(function(err, resp) {
+                onResponse(err, resp, dest);
             });
             if (whoami === dest) {
                 self.logger.trace('handleOrProxyAll was handled', {
@@ -824,7 +822,7 @@ RingPop.prototype.handleOrProxyAll =
                     url: req && req.url,
                     dest: dest
                 });
-                localHandler(req, res);
+                self.emit('request', req, res);
             } else {
                 self.logger.trace('handleOrProxyAll was proxied', {
                     keys: keys,
@@ -840,9 +838,9 @@ RingPop.prototype.handleOrProxyAll =
             }
         });
 
-        function onResponse(err, response, dest) {
+        function onResponse(err, resp, dest) {
             responses.push({
-                res: response,
+                res: resp,
                 dest: dest,
                 keys: keysByDest[dest]
             });

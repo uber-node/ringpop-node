@@ -58,7 +58,7 @@ test('handleOrProxy() proxies for not me', function t(assert) {
     });
 });
 
-test('handleOrProxyAll() proxies and calls local handler', function t(assert) {
+test('handleOrProxyAll() proxies and handles locally', function t(assert) {
     var handlerCallCounts = {};
     var cluster = allocCluster({
         createHandler: createServerHandler
@@ -69,7 +69,6 @@ test('handleOrProxyAll() proxies and calls local handler', function t(assert) {
         cluster.requestAll({
             keys: keys,
             host: 'one',
-            localHandler: createServerHandler('one'),
             json: { hello: true }
         }, onResponses);
     });
