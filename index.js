@@ -31,8 +31,9 @@ var Dissemination = require('./lib/members').Dissemination;
 var errors = require('./lib/errors.js');
 var Gossip = require('./lib/swim.js').Gossip;
 var HashRing = require('./lib/ring');
-var Membership = require('./lib/members').Membership;
 var MemberIterator = require('./lib/members').MemberIterator;
+var Membership = require('./lib/members').Membership;
+var MembershipUpdateRollup = require('./lib/membership_update_rollup.js');
 var nulls = require('./lib/nulls');
 var PingReqSender = require('./lib/swim').PingReqSender;
 var PingSender = require('./lib/swim').PingSender;
@@ -42,6 +43,7 @@ var Suspicion = require('./lib/swim.js').Suspicion;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
+var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 20000;
 var PROXY_REQ_PROPS = ['keys', 'dest', 'req', 'res'];
 
 function RingPop(options) {
@@ -90,6 +92,8 @@ function RingPop(options) {
     this.pingTimeout = 1500;
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
     this.maxJoinDuration = options.maxJoinDuration || MAX_JOIN_DURATION;
+    this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
+        MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
 
     this.requestProxy = new RequestProxy(this);
     this.ring = new HashRing();
@@ -99,6 +103,10 @@ function RingPop(options) {
     this.memberIterator = new MemberIterator(this);
     this.gossip = new Gossip(this);
     this.suspicion = new Suspicion(this);
+    this.membershipUpdateRollup = new MembershipUpdateRollup({
+        ringpop: this,
+        flushInterval: this.membershipUpdateFlushInterval
+    });
 
     this.clientRate = new metrics.Meter();
     this.serverRate = new metrics.Meter();
@@ -120,6 +128,7 @@ RingPop.prototype.destroy = function destroy() {
     this.destroyed = true;
     this.gossip.stop();
     this.suspicion.stopAll();
+    this.membershipUpdateRollup.destroy();
 
     this.clientRate.m1Rate.stop();
     this.clientRate.m5Rate.stop();
@@ -481,96 +490,116 @@ RingPop.prototype.issueMembershipChanges = function issueMembershipChanges(check
     return this.dissemination.getChanges(checksum, source);
 };
 
+RingPop.prototype.onMemberAlive = function onMemberAlive(member) {
+    this.stat('increment', 'membership-update.alive');
+    this.logger.debug('member is alive', {
+        local: this.membership.localMember.address,
+        alive: member.address
+    });
+
+    this.dissemination.addChange({
+        address: member.address,
+        status: member.status,
+        incarnationNumber: member.incarnationNumber,
+        piggybackCount: 0
+    });
+
+    this.ring.addServer(member.address);
+    this.suspicion.stop(member);
+};
+
+RingPop.prototype.onMemberFaulty = function onMemberFaulty(member) {
+    this.stat('increment', 'membership-update.faulty');
+    this.logger.debug('member is faulty', {
+        local: this.membership.localMember.address,
+        faulty: member.address
+    });
+
+    this.dissemination.addChange({
+        address: member.address,
+        status: member.status,
+        incarnationNumber: member.incarnationNumber,
+        piggybackCount: 0
+    });
+
+    this.ring.removeServer(member.address);
+    this.suspicion.stop(member);
+};
+
+RingPop.prototype.onMemberJoined = function onMemberJoined(member) {
+    this.stat('increment', 'membership-update.new');
+    this.logger.debug('member has joined', {
+        local: this.membership.localMember.address,
+        joined: member.address
+    });
+
+    this.ring.addServer(member.address);
+
+    this.dissemination.addChange({
+        address: member.address,
+        status: member.status,
+        incarnationNumber: member.incarnationNumber,
+        piggybackCount: 0
+    });
+};
+
+RingPop.prototype.onMemberLeave = function onMemberLeave(member) {
+    this.stat('increment', 'membership-update.leave');
+    this.logger.debug('member has left', {
+        local: this.membership.localMember.address,
+        left: member.address
+    });
+
+    this.dissemination.addChange({
+        address: member.address,
+        status: member.status,
+        incarnationNumber: member.incarnationNumber,
+        piggybackCount: 0
+    });
+
+    this.ring.removeServer(member.address);
+    this.suspicion.stop(member);
+};
+
+RingPop.prototype.onMemberSuspect = function onMemberSuspect(member) {
+    this.stat('increment', 'membership-update.suspect');
+    this.logger.debug('member is suspect', {
+        local: this.membership.localMember.address,
+        suspect: member.address
+    });
+
+    this.suspicion.start(member);
+
+    this.dissemination.addChange({
+        address: member.address,
+        status: member.status,
+        incarnationNumber: member.incarnationNumber,
+        piggybackCount: 0
+    });
+};
+
 RingPop.prototype.onMembershipUpdated = function onMembershipUpdated(updates) {
     var self = this;
 
-    var updateHandlers = {
-        alive: function onAliveMember(member) {
-            /* jshint camelcase: false */
-            self.stat('increment', 'membership-update.alive');
-            self.logger.info('member is alive', {
-                local: self.membership.localMember.address,
-                alive: member.address
-            });
-            self.suspicion.stop(member);
-            self.ring.addServer(member.address);
-            self.dissemination.addChange({
-                address: member.address,
-                status: member.status,
-                incarnationNumber: member.incarnationNumber,
-                piggybackCount: 0
-            });
-        },
-        faulty: function onFaultyMember(member) {
-            /* jshint camelcase: false */
-            self.stat('increment', 'membership-update.faulty');
-            self.logger.warn('member is faulty', {
-                local: self.membership.localMember.address,
-                faulty: member.address
-            });
-            self.suspicion.stop(member);
-            self.ring.removeServer(member.address);
-            self.dissemination.addChange({
-                address: member.address,
-                status: member.status,
-                incarnationNumber: member.incarnationNumber,
-                piggybackCount: 0
-            });
-        },
-        leave: function onLeaveMember(member) {
-            /* jshint camelcase: false */
-            self.stat('increment', 'membership-update.leave');
-            self.logger.warn('member has left', {
-                local: self.membership.localMember.address,
-                leave: member.address
-            });
-            self.suspicion.stop(member);
-            self.ring.removeServer(member.address);
-            self.dissemination.addChange({
-                address: member.address,
-                status: member.status,
-                incarnationNumber: member.incarnationNumber,
-                piggybackCount: 0
-            });
-        },
-        new: function onNewMember(member) {
-            /* jshint camelcase: false */
-            self.stat('increment', 'membership-update.new');
-            self.ring.addServer(member.address);
-            self.dissemination.addChange({
-                address: member.address,
-                status: member.status,
-                incarnationNumber: member.incarnationNumber,
-                piggybackCount: 0
-            });
-        },
-        suspect: function onSuspectMember(member) {
-            self.stat('increment', 'membership-update.suspect');
-            self.logger.warn('member is suspect', {
-                local: self.membership.localMember.address,
-                suspect: member.address
-            });
-            self.suspicion.start(member);
-            self.dissemination.addChange({
-                address: member.address,
-                status: member.status,
-                incarnationNumber: member.incarnationNumber,
-                piggybackCount: 0
-            });
-        }
-    };
-
     updates.forEach(function(update) {
-        var handler = updateHandlers[update.type];
-
-        if (handler) {
-            handler(update);
+        if (update.type === 'alive') {
+            self.onMemberAlive(update);
+        } else if (update.type === 'faulty') {
+            self.onMemberFaulty(update);
+        } else if (update.type === 'leave') {
+            self.onMemberLeave(update);
+        } else if (update.type === 'new') {
+            self.onMemberJoined(update);
+        } else if (update.type === 'suspect') {
+            self.onMemberSuspect(update);
         }
     });
 
     if (updates.length > 0) {
         this.emit('changed');
     }
+
+    this.membershipUpdateRollup.trackUpdates(updates);
 
     this.stat('gauge', 'num-members', this.membership.members.length);
     this.stat('timing', 'updates', updates.length);
@@ -642,7 +671,7 @@ RingPop.prototype.readHostsFile = function readHostsFile(file) {
 };
 
 RingPop.prototype.rejoin = function rejoin(callback) {
-    this.membership.makeAlive();
+    this.membership.affirmAliveness();
     this.gossip.start();
     this.suspicion.reenable();
 
@@ -680,11 +709,19 @@ RingPop.prototype.sendPingReq = function sendPingReq(unreachableMember, callback
         anySuccess |= !err;
 
         if (++completed === otherMembers.length) {
-            self.membership.update([{
-                address: unreachableMember.address,
-                incarnationNumber: unreachableMember.incarnationNumber,
-                status: anySuccess ? 'alive' : 'suspect'
-            }]);
+            if (anySuccess) {
+                self.membership.makeAlive(unreachableMember.address);
+                self.logger.info('ringpop member knows member is alive', {
+                    local: self.whoami(),
+                    alive: unreachableMember.address
+                });
+            } else {
+                self.membership.makeSuspect(unreachableMember.address);
+                self.logger.info('ringpop member suspects member', {
+                    local: self.whoami(),
+                    suspect: unreachableMember.address
+                });
+            }
 
             callback();
         }

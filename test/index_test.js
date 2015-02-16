@@ -84,6 +84,7 @@ test('admin join cannot be performed before local member is added to membership'
     ringpop.adminJoin(null, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'invalid local member error');
+        ringpop.destroy();
         assert.end();
     });
 });
@@ -97,6 +98,7 @@ test('admin leave prevents redundant leave', function t(assert) {
     ringpop.adminLeave(function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-leave.redundant', 'cannot leave cluster twice');
+        ringpop.destroy();
         assert.end();
     });
 });
@@ -110,6 +112,7 @@ test('admin leave makes local member leave', function t(assert) {
         assert.notok(err, 'an error did not occur');
         assert.ok('leave', ringpop.membership.localMember.status, 'local member has correct status');
         assert.equals('ok', res2, 'admin leave was successful');
+        ringpop.destroy();
         assert.end();
     });
 });
@@ -123,6 +126,7 @@ test('admin leave stops gossip', function t(assert) {
     ringpop.adminLeave(function(err) {
         assert.notok(err, 'an error did not occur');
         assert.equals(true, ringpop.gossip.isStopped, 'gossip is stopped');
+        ringpop.destroy();
         assert.end();
     });
 });
@@ -130,17 +134,19 @@ test('admin leave stops gossip', function t(assert) {
 test('admin leave stops suspicion subprotocol', function t(assert) {
     assert.plan(2);
 
-    var remoteRingpop = createRemoteRingpop();
-    remoteRingpop.addLocalMember();
+    var ringpopRemote = createRemoteRingpop();
+    ringpopRemote.addLocalMember();
 
     var ringpop = createRingpop();
     ringpop.addLocalMember({ incarnationNumber: 1 });
-    ringpop.membership.addMember(remoteRingpop.membership.localMember);
-    ringpop.suspicion.start(remoteRingpop.hostPort);
+    ringpop.membership.addMember(ringpopRemote.membership.localMember);
+    ringpop.suspicion.start(ringpopRemote.hostPort);
 
     ringpop.adminLeave(function(err) {
         assert.notok(err, 'an error did not occur');
         assert.equals(true, ringpop.suspicion.isStoppedAll, 'suspicion subprotocol is stopped');
+        ringpop.destroy();
+        ringpopRemote.destroy();
         assert.end();
     });
 });
@@ -152,6 +158,7 @@ test('admin leave cannot be attempted before local member is added', function t(
     ringpop.adminLeave(function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'an invalid leave occurred');
+        ringpop.destroy();
         assert.end();
     });
 });
@@ -163,6 +170,7 @@ test('protocol join disallows joining itself', function t(assert) {
     ringpop.protocolJoin({ source: ringpop.hostPort }, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.source', 'a node cannot join itself');
+        ringpop.destroy();
         assert.end();
     });
 });
@@ -176,6 +184,7 @@ test('protocol join disallows joining different app clusters', function t(assert
     ringpop.protocolJoin(node2, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.app', 'a node cannot join a different app cluster');
+        ringpop.destroy();
         assert.end();
     });
 });
@@ -191,6 +200,7 @@ test('no opts does not break handleOrProxy', function t(assert) {
     var opts = null;
     var handleOrProxy = ringpop.handleOrProxy.bind(ringpop, key, req, res, opts);
     assert.doesNotThrow(handleOrProxy, null, 'handleOrProxy does not throw');
+    ringpop.destroy();
     assert.end();
 });
 
@@ -206,6 +216,7 @@ test('registers stats hook', function t(assert) {
     });
 
     assert.ok(ringpop.isStatsHookRegistered('myhook'), 'hook has been registered');
+    ringpop.destroy();
     assert.end();
 });
 
@@ -223,6 +234,7 @@ test('stats include stat hooks', function t(assert) {
     });
 
     assert.deepEqual(ringpop.getStats().hooks.myhook, stats, 'returns hook stats');
+    ringpop.destroy();
     assert.end();
 });
 
@@ -266,6 +278,7 @@ test('fails all hook registration preconditions', function t(assert) {
         });
     }), 'ringpop.duplicate-hook', 'registered hook twice');
 
+    ringpop.destroy();
     assert.end();
 });
 
@@ -277,9 +290,15 @@ test('stat host/port should properly format IPs and hostnames', function t(asser
         });
     }
 
-    assert.equal(createRingpop('myhostname').statHostPort,
+    var ringpopByHostname = createRingpop('myhostname');
+    assert.equal(ringpopByHostname.statHostPort,
         'myhostname_3000', 'properly formatted with hostname');
-    assert.equal(createRingpop('127.0.0.1').statHostPort,
+
+    var ringpopByIP= createRingpop('127.0.0.1');
+    assert.equal(ringpopByIP.statHostPort,
         '127_0_0_1_3000', 'properly formatted with hostname');
+
+    ringpopByHostname.destroy();
+    ringpopByIP.destroy();
     assert.end();
 });
