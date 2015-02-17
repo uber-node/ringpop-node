@@ -17,25 +17,33 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+var _ = require('underscore');
 var mock = require('./mock');
-var RingPop = require('../index.js');
+var Ringpop = require('../index.js');
 var test = require('tape');
 
-test('does not throw when calling lookup with 0 servers', function t(assert) {
-    var ringpop = new RingPop({
-        app: 'ringpop-test',
+function createRingpop(opts) {
+    return new Ringpop(_.extend({
+        app: 'test',
         hostPort: '127.0.0.1:3000'
+    }), opts);
+}
+
+function createRemoteRingpop(opts) {
+    return createRingpop({
+        hostPort: '127.0.0.1:3001'
     });
+}
+
+test('does not throw when calling lookup with 0 servers', function t(assert) {
+    var ringpop = createRingpop();
     ringpop.lookup('deadbeef');
     ringpop.destroy();
     assert.end();
 });
 
 test('does not throw when calling lookup with an integer', function t(assert) {
-    var ringpop = new RingPop({
-        app: 'ringpop-test',
-        hostPort: '127.0.0.1:3000'
-    });
+    var ringpop = createRingpop();
     ringpop.ring.addServer('127.0.0.1:3000');
     ringpop.lookup(12345);
     ringpop.destroy();
@@ -43,13 +51,9 @@ test('does not throw when calling lookup with an integer', function t(assert) {
 });
 
 test('key hashes to only server', function t(assert) {
-    var onlyServer = '127.0.0.1:3000';
-    var ringpop = new RingPop({
-        app: 'ringpop-test',
-        hostPort: onlyServer
-    });
-    ringpop.ring.addServer(onlyServer);
-    assert.equals(ringpop.lookup(12345), onlyServer, 'hashes to only server');
+    var ringpop = createRingpop();
+    ringpop.addLocalMember();
+    assert.equals(ringpop.lookup(12345), ringpop.hostPort, 'hashes to only server');
     ringpop.destroy();
     assert.end();
 });
@@ -57,7 +61,7 @@ test('key hashes to only server', function t(assert) {
 test('admin join rejoins if member has previously left', function t(assert) {
     assert.plan(3);
 
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    var ringpop = createRingpop();
     ringpop.addLocalMember({ incarnationNumber: 1 });
     ringpop.adminLeave(function(err, res1, res2) {
         assert.equals(res2, 'ok', 'node left cluster');
@@ -76,7 +80,7 @@ test('admin join rejoins if member has previously left', function t(assert) {
 test('admin join cannot be performed before local member is added to membership', function t(assert) {
     assert.plan(2);
 
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    var ringpop = createRingpop();
     ringpop.adminJoin(null, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'invalid local member error');
@@ -87,7 +91,7 @@ test('admin join cannot be performed before local member is added to membership'
 test('admin leave prevents redundant leave', function t(assert) {
     assert.plan(2);
 
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    var ringpop = createRingpop();
     ringpop.addLocalMember({ incarnationNumber: 1 });
     ringpop.membership.makeLeave();
     ringpop.adminLeave(function(err) {
@@ -100,7 +104,7 @@ test('admin leave prevents redundant leave', function t(assert) {
 test('admin leave makes local member leave', function t(assert) {
     assert.plan(3);
 
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    var ringpop = createRingpop();
     ringpop.addLocalMember({ incarnationNumber: 1 });
     ringpop.adminLeave(function(err, _, res2) {
         assert.notok(err, 'an error did not occur');
@@ -113,7 +117,7 @@ test('admin leave makes local member leave', function t(assert) {
 test('admin leave stops gossip', function t(assert) {
     assert.plan(2);
 
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    var ringpop = createRingpop();
     ringpop.addLocalMember({ incarnationNumber: 1 });
     ringpop.gossip.start();
     ringpop.adminLeave(function(err) {
@@ -126,12 +130,13 @@ test('admin leave stops gossip', function t(assert) {
 test('admin leave stops suspicion subprotocol', function t(assert) {
     assert.plan(2);
 
-    var local = '127.0.0.1:3000';
-    var remote = { address: '127.0.0.2:3000' };
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: local });
+    var remoteRingpop = createRemoteRingpop();
+    remoteRingpop.addLocalMember();
+
+    var ringpop = createRingpop();
     ringpop.addLocalMember({ incarnationNumber: 1 });
-    ringpop.membership.addMember(remote);
-    ringpop.suspicion.start(remote);
+    ringpop.membership.addMember(remoteRingpop.membership.localMember);
+    ringpop.suspicion.start(remoteRingpop.hostPort);
 
     ringpop.adminLeave(function(err) {
         assert.notok(err, 'an error did not occur');
@@ -143,8 +148,7 @@ test('admin leave stops suspicion subprotocol', function t(assert) {
 test('admin leave cannot be attempted before local member is added', function t(assert) {
     assert.plan(2);
 
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
-
+    var ringpop = createRingpop();
     ringpop.adminLeave(function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'an invalid leave occurred');
@@ -155,9 +159,8 @@ test('admin leave cannot be attempted before local member is added', function t(
 test('protocol join disallows joining itself', function t(assert) {
     assert.plan(2);
 
-    var itself = '127.0.0.1:3000';
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: itself });
-    ringpop.protocolJoin({ source: itself }, function(err) {
+    var ringpop = createRingpop();
+    ringpop.protocolJoin({ source: ringpop.hostPort }, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.source', 'a node cannot join itself');
         assert.end();
@@ -169,7 +172,7 @@ test('protocol join disallows joining different app clusters', function t(assert
 
     var node1 = { app: 'mars', hostPort: '127.0.0.1:3000' };
     var node2 = { app: 'jupiter', source: '127.0.0.1:3001' };
-    var ringpop = new RingPop(node1);
+    var ringpop = new Ringpop(node1);
     ringpop.protocolJoin(node2, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.app', 'a node cannot join a different app cluster');
@@ -178,7 +181,7 @@ test('protocol join disallows joining different app clusters', function t(assert
 });
 
 test('no opts does not break handleOrProxy', function t(assert) {
-    var ringpop = new RingPop({ app: 'ringpop', hostPort: '127.0.0.1:3000' });
+    var ringpop = createRingpop();
     ringpop.lookup = function() { return '127.0.0.1:3001'; };
     ringpop.requestProxy = mock.requestProxy;
 
@@ -192,11 +195,7 @@ test('no opts does not break handleOrProxy', function t(assert) {
 });
 
 test('registers stats hook', function t(assert) {
-    var ringpop = new RingPop({
-        app: 'ringpop',
-        hostPort: '127.0.0.1:3000'
-    });
-
+    var ringpop = createRingpop();
     ringpop.registerStatsHook({
         name: 'myhook',
         getStats: function getIt() {
@@ -211,10 +210,7 @@ test('registers stats hook', function t(assert) {
 });
 
 test('stats include stat hooks', function t(assert) {
-    var ringpop = new RingPop({
-        app: 'ringpop',
-        hostPort: '127.0.0.1:3000'
-    });
+    var ringpop = createRingpop();
 
     assert.notok(ringpop.getStats().hooks, 'no stats for no stat hooks');
 
@@ -231,10 +227,7 @@ test('stats include stat hooks', function t(assert) {
 });
 
 test('fails all hook registration preconditions', function t(assert) {
-    var ringpop = new RingPop({
-        app: 'ringpop',
-        hostPort: '127.0.0.1:3000'
-    });
+    var ringpop = createRingpop();
 
     function throwsType(fn) {
         try {
@@ -273,5 +266,20 @@ test('fails all hook registration preconditions', function t(assert) {
         });
     }), 'ringpop.duplicate-hook', 'registered hook twice');
 
+    assert.end();
+});
+
+test('stat host/port should properly format IPs and hostnames', function t(assert) {
+    function createRingpop(host) {
+        return new Ringpop({
+            app: 'test',
+            hostPort: host + ':3000'
+        });
+    }
+
+    assert.equal(createRingpop('myhostname').statHostPort,
+        'myhostname_3000', 'properly formatted with hostname');
+    assert.equal(createRingpop('127.0.0.1').statHostPort,
+        '127_0_0_1_3000', 'properly formatted with hostname');
     assert.end();
 });
