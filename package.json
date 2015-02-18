@@ -29,6 +29,7 @@
     "underscore": "^1.5.2"
   },
   "devDependencies": {
+    "after": "^0.8.1",
     "benchmark": "^1.0.0",
     "cli-color": "^0.3.2",
     "coveralls": "^2.11.2",

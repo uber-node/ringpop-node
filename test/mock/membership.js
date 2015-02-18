@@ -34,6 +34,7 @@ module.exports = {
         incarnationNumber: 123456789
     },
     getLocalMemberAddress: noop,
+    makeFaulty: noop,
     shuffle: noop,
     update: noop
 };

@@ -30,7 +30,8 @@ function createRingpop() {
         computeProtocolDelay: mock.noop,
         logger: mock.logger,
         membership: mock.membership,
-        stat: mock.noop
+        stat: mock.noop,
+        whoami: mock.noop
     };
 }
 
@@ -191,14 +192,14 @@ test('suspicion subprotocol cannot be reenabled without all timers first being s
 });
 
 test('marks member faulty after suspect period', function t(assert) {
-    assert.plan(2);
+    assert.plan(1);
 
     var suspicion = createSuspicion();
     var member = suspicion.ringpop.membership.remoteMember;
     suspicion.setTimeout = function(fn) { return fn(); };
-    suspicion.ringpop.membership.update = function(changes) {
-        assert.equals(changes[0].address, member.address, 'updates correct member');
-        assert.equals(changes[0].status, 'faulty', 'marks member faulty');
+    // TODO Brittle test, just use real membership object
+    suspicion.ringpop.membership.makeFaulty = function(address) {
+        assert.equals(address, member.address, 'updates correct member');
     };
 
     suspicion.start(member);
