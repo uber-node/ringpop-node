@@ -43,7 +43,7 @@ var Suspicion = require('./lib/swim.js').Suspicion;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
-var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 20000;
+var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
 var PROXY_REQ_PROPS = ['keys', 'dest', 'req', 'res'];
 
 function RingPop(options) {
