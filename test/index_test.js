@@ -302,3 +302,18 @@ test('stat host/port should properly format IPs and hostnames', function t(asser
     ringpopByIP.destroy();
     assert.end();
 });
+
+test('config interface', function t(assert) {
+    try {
+        new Ringpop({
+            app: 'test',
+            hostPort: '127.0.0.1:3000',
+            config: {}
+        });
+        assert.fail('not supposed to not throw');
+    } catch (e) {
+        assert.equal(e.type, 'ringpop.config', 'error is correct');
+        assert.equal(e.name, 'get', 'error name is correct');
+        assert.end();
+    }
+});

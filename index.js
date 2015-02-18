@@ -26,6 +26,7 @@ var hammock = require('uber-hammock');
 var metrics = require('metrics');
 
 var AdminJoiner = require('./lib/swim').AdminJoiner;
+var createConfigurables = require('./lib/configurables.js');
 var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
 var Dissemination = require('./lib/members').Dissemination;
 var errors = require('./lib/errors.js');
@@ -41,6 +42,11 @@ var safeParse = require('./lib/util').safeParse;
 var RequestProxy = require('./lib/request-proxy');
 var Suspicion = require('./lib/swim.js').Suspicion;
 
+var JOIN_SIZE = 3;
+var PING_TIMEOUT = 1500;
+var PING_REQ_SIZE = 3;
+var PING_REQ_TIMEOUT = 5000;
+var PROXY_REQ_TIMEOUT = 30000;
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
@@ -82,19 +88,25 @@ function RingPop(options) {
     this.setLogger(options.logger || nulls.logger);
     this.statsd = options.statsd || nulls.statsd;
     this.bootstrapFile = options.bootstrapFile;
+    this.config = options.config;
+
+    if (this.config && typeof this.config.get !== 'function') {
+        throw errors.ConfigError({ name: 'get' });
+    }
 
     this.isReady = false;
 
     this.debugFlags = {};
-    this.joinSize = 3;              // join fanout
-    this.pingReqSize = 3;           // ping-req fanout
-    this.pingReqTimeout = 5000;
-    this.pingTimeout = 1500;
-    this.proxyReqTimeout = options.proxyReqTimeout || 30000;
+    this.joinSize = JOIN_SIZE;
+    this.pingReqSize = PING_REQ_SIZE;
+    this.pingReqTimeout = PING_REQ_TIMEOUT;
+    this.pingTimeout = PING_TIMEOUT;
+    this.proxyReqTimeout = options.proxyReqTimeout || PROXY_REQ_TIMEOUT;
     this.maxJoinDuration = options.maxJoinDuration || MAX_JOIN_DURATION;
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
 
+    this.configurables = createConfigurables(this);
     this.requestProxy = new RequestProxy(this);
     this.ring = new HashRing();
     this.dissemination = new Dissemination(this);
@@ -184,7 +196,7 @@ RingPop.prototype.adminJoin = function adminJoin(target, callback) {
         ringpop: this,
         target: target,
         callback: callback,
-        maxJoinDuration: this.maxJoinDuration
+        maxJoinDuration: this.configurables.maxJoinDuration()
     });
     this.joiner.sendJoin();
 };
@@ -701,7 +713,8 @@ RingPop.prototype.sendPing = function sendPing(member, callback) {
 RingPop.prototype.sendPingReq = function sendPingReq(unreachableMember, callback) {
     this.stat('increment', 'ping-req.send');
 
-    var otherMembers = this.membership.getRandomPingableMembers(this.pingReqSize, [unreachableMember.address]);
+    var otherMembers = this.membership.getRandomPingableMembers(
+        this.configurables.pingReqSize(), [unreachableMember.address]);
     var self = this;
     var completed = 0;
     var anySuccess = false;
