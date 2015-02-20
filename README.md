@@ -59,31 +59,23 @@ ringpop.on('changed', function() {
 });
 ```
 
-# Forwarding a request
-Ringpop will typically be used by handing over request routing to it. As described earlier, the "process or forward" pattern is used to decide whether a request should be processed by the node that received the request or by another node. As an alternative, `handleOrForward` can be used to encapsulate that repetitive pattern. Here's an example of its use:
+# Request Proxying
+ringpop provides request routing as a convenience. When a request arrives at your services' public endpoints, you'll want to use ringpop to decide whether request processing should take place on the node that received the request or elsewhere. If elsewhere, ringpop will proxy your request to the correct destination.
 
-```javascript
-// Let's say this is an endpoint handler in your web application
-function endpoint(incoming, opts, cb) {
-    function handle() {
-        // process request
-    }
+Upon arrival of a proxied request at its destination, membership checksums of the sender and receiver will be compared. The request will be refused if checksums differ. Mismatches are to be expected when nodes are entering or exiting the cluster due to deploys, added/removed capacity or failures. The cluster will eventually converge on one membership checksum, therefore, refused requests are best handled by retrying them.
 
-    function forwarded(err, resp, body) {
-        cb(err, {
-            statusCode: resp && resp.statusCode
-        });
-    }
+ringpop's request proxy has retries built in and can be tuned using 2 parameters provided at the time ringpop is instantiated: `requestProxyMaxRetries` and `requestProxyRetrySchedule` or per-request with: `maxRetries` and `retrySchedule`. The first parameter is an integer representing the number of times a particular request is retried. The second parameter is an array of integer or floating point values representing the delay in between consecutive retries.
 
-    var requestToForward = {
-        method: 'POST',
-        path: '/supply/1',
-        headers: { 'Content-Type: application/json' },
-        body: JSON.stringify({ /* fill body here */ }),
-        timeout: 1000
-    };
+ringpop has codified the aforementioned routing pattern in the `handleOrProxy` function. It returns true when `key` hashes to the "current" node and false otherwise. `false` results in the request being proxied to the correct destination. Its usage looks like this:
 
-    ringpop.handleOrForward(incoming.params.uuid, handle, requestToForward, forwarded);
+```js
+var opts = {
+    maxRetries: 3,
+    retrySchedule: [0, 0.5, 2]
+};
+
+if (ringpop.handleOrProxy(key, req, res, opts)) {
+    // handle request
 }
 ```
 
@@ -121,6 +113,9 @@ These counts are emitted when:
 * `ping.send` - a ping is sent
 * `ping-req.recv` - a ping-req is received
 * `ping-req.send` - a ping is sent
+* `requestProxy.retry.attempted` - a proxied request retry is attempted
+* `requestProxy.retry.failed` - a proxied request is retried up to the maximum number of retries and fails
+* `requestProxy.retry.succeeded` - a proxied request is retried and succeeds
 
 ## Gauges
 These gauges represent:
@@ -158,11 +153,17 @@ All other properties should be considered private. Any mutation of properties no
 * `whoami()` - Returns the address of the running node
 
 ## Events
+These events are emitted when:
 
-* `ready` - Ringpop is ready
-* `changed` - Ring state has changed (DEPRECATED)
-* `membershipChanged` - Membership state has changed for one or more members, either their status or incarnation number. A membership change may result in a ring change.
-* `ringChanged` - Ring state has changed for one or more nodes: a node has been added to or removed from the cluster. All ring changes are also member changes, but not vice versa.
+* `ready` - ringpop has been bootstrapped
+* `changed` - ring or membership state is changed (DEPRECATED)
+* `membershipChanged` - membership state has changed (status or incarnation number). A membership change may result in a ring change.
+* `requestProxy.checksumsDiffer` - a proxied request arrives at its destination and source/destination checksums differ
+* `requestProxy.retryAttempted` - a scheduled retry expires and a retry is attempted
+* `requestProxt.retryScheduled` - a retry is scheduled, but not yet attempted
+* `requestProxy.retrySucceeded` - a request that is retried succeeds
+* `requestProxy.retryFailed` - a request is retried up to the maximum number of retries and fails
+* `ringChanged` - ring state has changed for one or more nodes either having joined or left the cluster. All ring changes are member changes, but not vice versa.
 
 ## Installation
 

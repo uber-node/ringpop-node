@@ -84,7 +84,8 @@ function allocCluster(options, onReady) {
         var host = opts.host;
 
         var handle = cluster[host].handleOrProxy(key, req, res, {
-            timeout: opts.timeout
+            timeout: opts.timeout,
+            retrySchedule: opts.retrySchedule
         });
         if (handle) {
             cluster[host].emit('request', req, res);

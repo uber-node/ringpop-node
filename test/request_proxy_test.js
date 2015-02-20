@@ -32,7 +32,9 @@ function createRingpop() {
 }
 
 function createRequestProxy() {
-    return new RequestProxy(createRingpop());
+    return new RequestProxy({
+        ringpop: createRingpop()
+    });
 }
 
 test('request proxy sends custom ringpop metadata in head', function t(assert) {
