@@ -21,7 +21,6 @@
 var mock = require('./mock');
 var test = require('tape');
 
-var AdminJoiner = require('../lib/swim.js').AdminJoiner;
 var Gossip = require('../lib/swim.js').Gossip;
 var Suspicion = require('../lib/swim.js').Suspicion;
 
@@ -42,28 +41,6 @@ function createGossip() {
 function createSuspicion() {
     return new Suspicion(createRingpop());
 }
-
-test('join is aborted when max join duration is exceeded', function t(assert) {
-    assert.plan(2);
-
-    var joiner = new AdminJoiner({
-        ringpop: {
-            bootstrapHosts: ['127.0.0.1:3000', '127.0.0.1:3001', '127.0.0.1:3002'],
-            channel: mock.channel,
-            logger: mock.logger,
-            membership: mock.membership
-        },
-        callback: function(err) {
-            assert.ok(err, 'an error occurred');
-            assert.equals(err.type, 'ringpop.join-duration-exceeded', 'join duration exceeded');
-        },
-        maxJoinDuration: 1
-    });
-    joiner.joinStart = new Date() - (86400 * 1000); // Started a day ago ;)
-    joiner.sendJoin();
-
-    assert.end();
-});
 
 test('starting and stopping gossip sets timer / unsets timers', function t(assert) {
     var gossip = createGossip();

@@ -67,7 +67,7 @@ test('admin join rejoins if member has previously left', function t(assert) {
         assert.equals(res2, 'ok', 'node left cluster');
 
         ringpop.membership.localMember.incarnationNumber = 2;
-        ringpop.adminJoin(null, function(err, res1, res2) {
+        ringpop.adminJoin(function(err, res1, res2) {
             assert.equals(res2, 'rejoined', 'node rejoined cluster');
             assert.equals(ringpop.membership.localMember.status, 'alive', 'local member is alive');
 
@@ -81,7 +81,7 @@ test('admin join cannot be performed before local member is added to membership'
     assert.plan(2);
 
     var ringpop = createRingpop();
-    ringpop.adminJoin(null, function(err) {
+    ringpop.adminJoin(function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'invalid local member error');
         ringpop.destroy();
