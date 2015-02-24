@@ -302,3 +302,71 @@ test('stat host/port should properly format IPs and hostnames', function t(asser
     ringpopByIP.destroy();
     assert.end();
 });
+
+test('emits membership changed event', function t(assert) {
+    assert.plan(1);
+
+    var node1Addr = '127.0.0.1:3001';
+
+    var ringpop = createRingpop();
+    ringpop.addLocalMember();
+    ringpop.membership.addMember({ address: node1Addr });
+
+    function assertChanged() {
+        ringpop.once('membershipChanged', function onMembershipChanged() {
+            assert.pass('membership changed');
+        });
+
+        ringpop.once('ringChanged', function onRingChanged() {
+            assert.fail('no ring changed');
+        });
+    }
+
+    assertChanged();
+    ringpop.membership.makeSuspect(node1Addr);
+
+    ringpop.destroy();
+    assert.end();
+});
+
+test('emits ring changed event', function t(assert) {
+    assert.plan(8);
+
+    var node1Addr = '127.0.0.1:3001';
+    var node2Addr = '127.0.0.1:3002';
+
+    var ringpop = createRingpop();
+    ringpop.addLocalMember();
+    ringpop.membership.addMember({ address: node1Addr });
+
+    function assertChanged(changer) {
+        ringpop.once('membershipChanged', function onMembershipChanged() {
+            assert.pass('membership changed');
+        });
+
+        ringpop.once('ringChanged', function onRingChanged() {
+            assert.pass('ring changed');
+        });
+
+        changer();
+    }
+
+    assertChanged(function assertIt() {
+        ringpop.membership.makeFaulty(node1Addr);
+    });
+
+    assertChanged(function assertIt() {
+        ringpop.membership.makeAlive(node1Addr, Date.now() + 123456 /* magic incarnation number bump */);
+    });
+
+    assertChanged(function assertIt() {
+        ringpop.membership.makeLeave(node1Addr);
+    });
+
+    assertChanged(function assertIt() {
+        ringpop.membership.makeJoin(node2Addr, Date.now());
+    });
+
+    ringpop.destroy();
+    assert.end();
+});
