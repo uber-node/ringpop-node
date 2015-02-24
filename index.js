@@ -95,7 +95,11 @@ function RingPop(options) {
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
 
-    this.requestProxy = new RequestProxy(this);
+    this.requestProxy = new RequestProxy({
+        ringpop: this,
+        maxRetries: options.requestProxyMaxRetries,
+        retrySchedule: options.requestProxyRetrySchedule
+    });
     this.ring = new HashRing();
     this.dissemination = new Dissemination(this);
     this.membership = new Membership(this);
@@ -129,6 +133,7 @@ RingPop.prototype.destroy = function destroy() {
     this.gossip.stop();
     this.suspicion.stopAll();
     this.membershipUpdateRollup.destroy();
+    this.requestProxy.destroy();
 
     this.clientRate.m1Rate.stop();
     this.clientRate.m5Rate.stop();

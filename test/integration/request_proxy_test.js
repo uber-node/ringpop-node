@@ -97,7 +97,8 @@ test('will timeout after default timeout', function t(assert) {
             return function handle() {
                 // do nothing to timeout
             };
-        }
+        },
+        requestProxyMaxRetries: 0
     }, function onReady() {
         cluster.request({
             host: 'one', key: cluster.keys.two,
@@ -221,7 +222,8 @@ test('custom timeouts', function t(assert) {
             return function handle() {
                 // do nothing to timeout
             };
-        }
+        },
+        requestProxyMaxRetries: 0
     }, function onReady() {
         cluster.request({
             host: 'one', key: cluster.keys.two,
@@ -294,7 +296,8 @@ test('handle tchannel failures', function t(assert) {
             return function handle() {
                 // do nothing to timeout
             };
-        }
+        },
+        requestProxyMaxRetries: 0
     }, function onReady() {
         cluster.request({
             host: 'one', key: cluster.keys.two
@@ -318,7 +321,11 @@ test('handle tchannel failures', function t(assert) {
 });
 
 test('handles checksum failures', function t(assert) {
-    var cluster = allocCluster(function onReady() {
+    var ringpopOpts = {
+        requestProxyMaxRetries: 0
+    };
+
+    var cluster = allocCluster(ringpopOpts, function onReady() {
         cluster.two.membership.addMember({
             address: 'localhost:9999',
             status: 'fake',

@@ -43,7 +43,9 @@ function allocRingpop(name, options) {
         app: 'test.ringpop.proxy_req_test',
         hostPort: hostPort,
         logger: DebuglogLogger('proxy_req_test: ' + name),
-        channel: tchannel
+        channel: tchannel,
+        requestProxyMaxRetries: options && options.requestProxyMaxRetries,
+        requestProxyRetrySchedule: options && options.requestProxyRetrySchedule
     });
 
     ringpop.setupChannel();
