@@ -160,7 +160,9 @@ All other properties should be considered private. Any mutation of properties no
 ## Events
 
 * `ready` - Ringpop is ready
-* `changed` - Ring state has changed
+* `changed` - Ring state has changed (DEPRECATED)
+* `membershipChanged` - Membership state has changed for one or more members, either their status or incarnation number. A membership change may result in a ring change.
+* `ringChanged` - Ring state has changed for one or more nodes: a node has been added to or removed from the cluster. All ring changes are also member changes, but not vice versa.
 
 ## Installation
 

@@ -400,10 +400,7 @@ RingPop.prototype.protocolJoin = function protocolJoin(options, callback) {
     this.serverRate.mark();
     this.totalRate.mark();
 
-    this.membership.addMember({
-        address: joinerAddress,
-        incarnationNumber: options.incarnationNumber
-    });
+    this.membership.makeJoin(joinerAddress, options.incarnationNumber);
 
     callback(null, {
         app: this.app,
@@ -580,23 +577,35 @@ RingPop.prototype.onMemberSuspect = function onMemberSuspect(member) {
 
 RingPop.prototype.onMembershipUpdated = function onMembershipUpdated(updates) {
     var self = this;
+    var membershipChanged = false;
+    var ringChanged = false;
 
     updates.forEach(function(update) {
         if (update.type === 'alive') {
             self.onMemberAlive(update);
+            ringChanged = membershipChanged = true;
         } else if (update.type === 'faulty') {
             self.onMemberFaulty(update);
+            ringChanged = membershipChanged = true;
         } else if (update.type === 'leave') {
             self.onMemberLeave(update);
+            ringChanged = membershipChanged = true;
         } else if (update.type === 'new') {
             self.onMemberJoined(update);
+            ringChanged = membershipChanged = true;
         } else if (update.type === 'suspect') {
             self.onMemberSuspect(update);
+            membershipChanged = true;
         }
     });
 
-    if (updates.length > 0) {
-        this.emit('changed');
+    if (!!membershipChanged) {
+        this.emit('membershipChanged');
+        this.emit('changed'); // Deprecated
+    }
+
+    if (!!ringChanged) {
+        this.emit('ringChanged');
     }
 
     this.membershipUpdateRollup.trackUpdates(updates);
