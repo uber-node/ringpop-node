@@ -22,5 +22,6 @@
 var noop = require('./noop.js');
 
 module.exports = {
+    quit: noop,
     send: noop
 };

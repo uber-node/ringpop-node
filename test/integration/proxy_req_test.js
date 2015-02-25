@@ -23,9 +23,16 @@ var after = require('after');
 var test = require('tape');
 
 var allocCluster = require('../lib/alloc-cluster.js');
-var strHead = require('../../lib/request-proxy-util.js').strHead;
+var strHead = require('../../lib/request-proxy/util.js').strHead;
 
 var retrySchedule = [0, 0.01, 0.02];
+
+function scheduleTicker(ringpop, onScheduled) {
+    return function tickIt() {
+        ringpop.timers.advance(10000);
+        onScheduled();
+    };
+}
 
 test('can proxyReq() to someone', function t(assert) {
     var cluster = allocCluster(function onReady() {
@@ -210,16 +217,16 @@ test('exceeds max retries, errors out', function t(assert) {
     });
 });
 
-test('removes timeout timers', function t(assert) {
+test('cleans up pending sends', function t(assert) {
     var numRequests = 3;
 
     var done = after(numRequests, function onDone() {
-        var beforeDestroy = cluster.one.requestProxy.retryTimeouts.length;
+        var beforeDestroy = cluster.one.requestProxy.sends.length;
         assert.equal(beforeDestroy, numRequests, 'timers are pending');
 
         cluster.destroy();
 
-        var afterDestroy = cluster.one.requestProxy.retryTimeouts.length;
+        var afterDestroy = cluster.one.requestProxy.sends.length;
         assert.equal(afterDestroy, 0, 'timers are cleared');
 
         assert.end();
@@ -251,7 +258,7 @@ test('removes timeout timers', function t(assert) {
     });
 });
 
-test('removes some timeouts, not others', function t(assert) {
+test('cleans up some pending sends', function t(assert) {
     var ringpopOpts = {
         // Really really long delays before retry is initiated
         requestProxyRetrySchedule: [100000, 200000, 300000]
@@ -279,8 +286,8 @@ test('removes some timeouts, not others', function t(assert) {
             json: { hello: true },
             retrySchedule: [0]
         }, function onRequest() {
-            var beforeDestroy = cluster.one.requestProxy.retryTimeouts.length;
-            assert.equal(beforeDestroy, 2, 'timers are pending');
+            var beforeDestroy = cluster.one.requestProxy.sends.length;
+            assert.equal(beforeDestroy, 2, 'sends are pending');
 
             cluster.destroy();
 
@@ -352,6 +359,142 @@ test('overrides /proxy/req endpoint and fails', function t(assert) {
             assert.ifErr(err, 'no error occurred');
             assert.equal(resp.statusCode, 500, 'status code 500');
             assert.equal(resp.body, error, 'err message in body');
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+});
+
+test('aborts retry because keys diverge', function t(assert) {
+    assert.plan(5);
+
+    var numRetries = 0;
+
+    var cluster = allocCluster({
+        useFakeTimers: true
+    }, function onReady() {
+        // Make node two refuse initial request
+        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+
+        cluster.one.on('requestProxy.retryAborted', function onRetryAborted() {
+            assert.pass('retry aborted');
+        });
+
+        cluster.one.on('requestProxy.retryAttempted', function onRetryAttempted() {
+            numRetries++;
+        });
+
+        var ticker = scheduleTicker(cluster.one, function onRetryScheduled() {
+            // Make sure keys diverge
+            cluster.one.lookup = lookupHandler();
+
+            function lookupHandler() {
+                var count = 0;
+
+                return function lookIt() {
+                    return ++count === 1 ? cluster.one.hostPort :
+                        cluster.three.hostPort;
+                };
+            }
+        });
+        cluster.one.on('requestProxy.retryScheduled', ticker);
+
+        cluster.requestAll({
+            keys: [cluster.keys.two, cluster.keys.two],
+            host: 'one',
+            maxRetries: 10,
+            retrySchedule: [1]
+        }, function onRequest(err, responses) {
+            assert.ifError(err, 'no error occurs');
+            assert.equal(responses.length, 1, 'one response');
+            assert.equal(responses[0].res.statusCode, 500, '500 status code');
+
+            assert.equal(numRetries, 0, 'aborted before retries');
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+});
+
+test('reroutes retry to local', function t(assert) {
+    assert.plan(3);
+
+    var cluster = allocCluster({
+        useFakeTimers: true
+    }, function onReady() {
+        // Make node two refuse initial request
+        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+
+        cluster.one.on('requestProxy.retryRerouted', function onRetryRerouted() {
+            assert.pass('retry rerouted');
+        });
+
+        var ticker = scheduleTicker(cluster.one, function onRetryScheduled() {
+            // Make sure retry happens locally
+            cluster.one.lookup = function lookup() {
+                return cluster.one.hostPort;
+            };
+        });
+        cluster.one.on('requestProxy.retryScheduled', ticker);
+
+        // Request is now handled locally instead of being proxied
+        cluster.one.on('request', function onRequest(req, res) {
+            res.end('rerouted');
+        });
+
+        cluster.request({
+            key: cluster.keys.two,
+            host: 'one',
+            json: { hello: true },
+            maxRetries: 10,
+            retrySchedule: [1]
+        }, function onRequest(err, res) {
+            assert.ifError(err, 'no error occurs');
+            assert.equal(res.body, 'rerouted', 'response from rerouted request is correct');
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+});
+
+test('reroutes retry to remote', function t(assert) {
+    assert.plan(3);
+
+    var cluster = allocCluster({
+        useFakeTimers: true
+    }, function onReady() {
+        // Make node two refuse initial request
+        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+
+        cluster.one.on('requestProxy.retryRerouted', function onRetryRerouted() {
+            assert.pass('retry rerouted');
+        });
+
+        var ticker = scheduleTicker(cluster.one, function onRetrySchedule() {
+            // Make sure retry happens remotely
+            cluster.one.lookup = function lookup() {
+                return cluster.three.hostPort;
+            };
+        });
+        cluster.one.on('requestProxy.retryScheduled', ticker);
+
+        // Request is now handled remotely, on node three
+        cluster.three.on('request', function onRequest(req, res) {
+            res.end('rerouted');
+        });
+
+        cluster.request({
+            key: cluster.keys.two,
+            host: 'one',
+            json: { hello: true },
+            maxRetries: 10,
+            retrySchedule: [1]
+        }, function onRequest(err, res) {
+            assert.ifError(err, 'no error occurs');
+            assert.equal(res.body, 'rerouted', 'response from rerouted request is correct');
 
             cluster.destroy();
             assert.end();

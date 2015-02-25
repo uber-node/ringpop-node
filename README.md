@@ -57,7 +57,10 @@ All other properties should be considered private. Any mutation of properties no
 * `changed` - ring or membership state is changed (DEPRECATED)
 * `membershipChanged` - membership state has changed (status or incarnation number). A membership change may result in a ring change.
 * `requestProxy.checksumsDiffer` - a proxied request arrives at its destination and source/destination checksums differ
+* `requestProxy.requestProxied` - a request is sent over the proxy channel
+* `requestProxy.retryAborted` - a retry is aborted before attempted
 * `requestProxy.retryAttempted` - a scheduled retry expires and a retry is attempted
+* `requestProxy.retryRerouted` - a retry is rerouted to another destination
 * `requestProxy.retryScheduled` - a retry is scheduled, but not yet attempted
 * `requestProxy.retrySucceeded` - a request that is retried succeeds
 * `requestProxy.retryFailed` - a request is retried up to the maximum number of retries and fails
@@ -124,8 +127,11 @@ ringpop emits stats using the `statsd` client provided to its constructor. All s
 * `ping.send` - a ping is sent
 * `ping-req.recv` - a ping-req is received
 * `ping-req.send` - a ping is sent
+* `requestProxy.retry.aborted` - a proxied request retry is aborted
 * `requestProxy.retry.attempted` - a proxied request retry is attempted
 * `requestProxy.retry.failed` - a proxied request is retried up to the maximum number of retries and fails
+* `requestProxy.retry.reroute.local` - a proxied request is rerouted to a local handler
+* `requestProxy.retry.reroute.remote` - a proxied request is rerouted to a remote node
 * `requestProxy.retry.succeeded` - a proxied request is retried and succeeds
 
 **Gauges**
