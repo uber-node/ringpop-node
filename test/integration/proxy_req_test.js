@@ -23,6 +23,7 @@ var after = require('after');
 var test = require('tape');
 
 var allocCluster = require('../lib/alloc-cluster.js');
+var serializeHead = require('../../lib/request-proxy-util.js').serializeHead;
 
 var retrySchedule = [0, 0.01, 0.02];
 
@@ -283,6 +284,76 @@ test('removes some timeouts, not others', function t(assert) {
 
             cluster.destroy();
 
+            assert.end();
+        });
+    });
+});
+
+test('overrides /proxy/req endpoint', function t(assert) {
+    assert.plan(3);
+
+    var endpoint = 'FIND ME A THING';
+    var things = [
+        'thing1',
+        'thing2',
+        'thing3'
+    ];
+
+    var cluster = allocCluster(function onReady() {
+        cluster.two.on('request', function onRequest() {
+            assert.fail('did not bypass request proxy handler');
+        });
+
+        cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
+            assert.equal(arg1.toString(), head, 'arg1 is raw head');
+            assert.equal(arg2.toString(), '{"hello":true}', 'arg2 is raw body');
+
+            cb(null, arg1, things);
+        });
+
+        var request = cluster.request({
+            key: cluster.keys.two,
+            host: 'one',
+            endpoint: endpoint,
+            json: { hello: true },
+            maxRetries: 0
+        }, function onRequest(err, resp) {
+            assert.deepEqual(resp.body, things, 'responds with body');
+
+            cluster.destroy();
+            assert.end();
+        });
+
+        var head = serializeHead(request, {
+            checksum: cluster.two.membership.checksum,
+            keys: [cluster.keys.two]
+        });
+    });
+});
+
+test('overrides /proxy/req endpoint and fails', function t(assert) {
+    assert.plan(3);
+
+    var endpoint = 'FIND ME A THING';
+    var error = 'things are bad';
+
+    var cluster = allocCluster(function onReady() {
+        cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
+            cb(new Error(error));
+        });
+
+        cluster.request({
+            key: cluster.keys.two,
+            host: 'one',
+            endpoint: endpoint,
+            json: { hello: true },
+            maxRetries: 0
+        }, function onRequest(err, resp) {
+            assert.ifErr(err, 'no error occurred');
+            assert.equal(resp.statusCode, 500, 'status code 500');
+            assert.equal(resp.body, error, 'err message in body');
+
+            cluster.destroy();
             assert.end();
         });
     });

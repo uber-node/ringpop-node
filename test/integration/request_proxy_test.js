@@ -266,7 +266,7 @@ test('handle body failures', function t(assert) {
     });
 });
 
-test('handle malformed tchannel messages', function t(assert) {
+test('non json head is ok', function t(assert) {
     var cluster = allocCluster(function onReady() {
         var two = cluster.two;
 
@@ -277,8 +277,7 @@ test('handle malformed tchannel messages', function t(assert) {
         }, function onResponse(err, resp) {
             assert.ifError(err);
 
-            assert.equal(resp.statusCode, 500);
-            assert.equal(resp.body, 'Ringpop parser error');
+            assert.equal(resp.statusCode, 200);
 
             cluster.destroy();
             assert.end();

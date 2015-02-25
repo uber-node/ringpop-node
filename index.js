@@ -881,12 +881,12 @@ RingPop.prototype.handleOrProxyAll =
                     url: req && req.url,
                     dest: dest
                 });
-                self.proxyReq({
+                self.proxyReq(_.defaults({
                     keys: keys,
                     req: req,
                     res: res,
                     dest: dest
-                });
+                }, opts));
             }
         });
 
