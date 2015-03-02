@@ -86,7 +86,7 @@ function main() {
     });
 
     createRingPopTChannel(ringpop, tchannel);
-    ringpop.bootstrap();
+    ringpop.bootstrap(program.hosts);
 }
 
 if (require.main === module) {
