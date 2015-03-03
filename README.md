@@ -41,12 +41,14 @@ ringpop provides a straight-forward and minimal API for application developers. 
 **Properties**
 * `isReady` - A boolean flag used to indicate whether ringpop is ready. This property should be considered read-only.
 * `joinSize` - The number of nodes that must be joined during bootstrap before ringpop is ready. This should be modified before calling bootstrap in order for the mutation to be of any use. Default is `3`.
+* `requestProxyMaxRetries` - Maximum number of retries attempted when ringpop proxies a request to an alternative destination
+* `requestProxyRetrySchedule` - An array of numbers used as a multiple of the amount of milliseconds to delay before the next retry
 
 All other properties should be considered private. Any mutation of properties not listed above will result in undefined behavior.
 
 **Functions**
-* `bootstrap()` - Seeds the hash ring, joins nodes in the seed list and starts the gossip protocol
-* `handleOrForward(key, handle, requestToForward, forwarded)` - Invokes the handle function if the provided key hashes to the same destination, otherwise forwards the request to that destination
+* `bootstrap(bootstrapFileOrHosts, callback)` - Seeds the hash ring, joins nodes in the seed list and starts the gossip protocol
+* `handleOrProxy(key, req, res, opts)` - Returns `true` if the key hashes to the same instance of ringpop, otherwise, returns `false` and proxies `req` to the node to which the keys hashes
 * `lookup(key)` - Returns the node to which the key hashes
 * `whoami()` - Returns the address of the running node
 
