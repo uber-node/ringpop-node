@@ -30,6 +30,10 @@ TChannel is the transport of choice for ringpop's gossip and proxying capabiliti
 # Developer's Guide
 As a developer, you'll want to know how to plug ringpop into your application. The sections below may make this easier for you:
 
+## Table of Contents
+* [API](#api)
+* [Code Walkthrough](#code-walkthrough)
+
 ## API
 ringpop provides a straight-forward and minimal API for application developers. The properties, functions and events part of its public interface are documented below. Anything not documented should be considered to result in undefined behavior.
 
