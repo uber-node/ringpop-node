@@ -160,7 +160,7 @@ These events are emitted when:
 * `membershipChanged` - membership state has changed (status or incarnation number). A membership change may result in a ring change.
 * `requestProxy.checksumsDiffer` - a proxied request arrives at its destination and source/destination checksums differ
 * `requestProxy.retryAttempted` - a scheduled retry expires and a retry is attempted
-* `requestProxt.retryScheduled` - a retry is scheduled, but not yet attempted
+* `requestProxy.retryScheduled` - a retry is scheduled, but not yet attempted
 * `requestProxy.retrySucceeded` - a request that is retried succeeds
 * `requestProxy.retryFailed` - a request is retried up to the maximum number of retries and fails
 * `ringChanged` - ring state has changed for one or more nodes either having joined or left the cluster. All ring changes are member changes, but not vice versa.
