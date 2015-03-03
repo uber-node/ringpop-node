@@ -144,7 +144,7 @@ ringpop emits stats using the `statsd` client provided to its constructor. All s
 # Community
 ringpop is highly extensible and may lead to a multitude of extensions and tooling built around it. The following is a list of libraries that extend ringpop:
 
-* sevnup - A vnode abstraction built atop key lookups to help you reliably resume operations on nodes other than the ones that started them.
+* [sevnup](https://github.com/uber/sevnup) - A vnode abstraction built atop key lookups to help you reliably resume operations on nodes other than the ones that started them.
 
 # Miscellaneous
 
