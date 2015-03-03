@@ -17,4 +17,35 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-require('glob').sync(__dirname + '/**/*{_test,-test}.js').forEach(require);
+'use strict';
+
+var Ringpop = require('../../index.js');
+var tape = require('tape');
+
+function testRingpop(opts, name, test) {
+    if (typeof opts === 'string' && typeof name === 'function') {
+        test = name;
+        name = opts;
+        opts = {};
+    }
+
+    tape(name, function onTest(assert) {
+        var ringpop = new Ringpop({
+            app: opts.app || 'test',
+            hostPort: opts.hostPort || '127.0.0.1:3000'
+        });
+
+        ringpop.addLocalMember();
+
+        test({
+            localMember: ringpop.membership.localMember,
+            membership: ringpop.membership,
+            ringpop: ringpop
+        }, assert);
+
+        assert.end();
+        ringpop.destroy();
+    });
+}
+
+module.exports = testRingpop;

@@ -17,4 +17,33 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-require('glob').sync(__dirname + '/**/*{_test,-test}.js').forEach(require);
+'use strict';
+
+// Test dependencies
+var Member = require('../lib/member.js');
+
+// Test helpers
+var testRingpop = require('./lib/test-ringpop.js');
+
+function assertIncarnationNumber(deps, assert, memberStatus) {
+    var membership = deps.membership;
+    var local = membership.localMember;
+    var prevInc = local.incarnationNumber;
+
+    membership.update([{
+        address: local.address,
+        status: memberStatus
+    }]);
+
+    assert.ok(prevInc, 'prev incarnation number is truthy');
+    assert.equal(local.incarnationNumber, prevInc,
+        'incarnation number is unchanged');
+}
+
+testRingpop('suspect update does not bump local incarnation number', function t(deps, assert) {
+    assertIncarnationNumber(deps, assert, Member.Status.Suspect);
+});
+
+testRingpop('faulty update does not bump local incarnation number', function t(deps, assert) {
+    assertIncarnationNumber(deps, assert, Member.Status.Faulty);
+});
