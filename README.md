@@ -1,21 +1,62 @@
-# Overview
-ringpop is an embeddable module (and optional server) that allows applications to operate within a distributed, consistent hash ring. Ringpop automatically detects failure of nodes within the ring and disseminates information about the state of the ring over a gossip protocol (see SWIM).
+# ringpop
+ringpop brings application-layer sharding to your services in a fault tolerant and scalable manner. It is an embeddable server that reliably partitions your data, detects node failures and easily integrates new nodes into your application cluster when they become available. For more information about the techniques applied within ringpop, see the Concepts section below.
 
-# Running ringpop
-To run ringpop as a standalone server, run `main.js`. Its usage is as follows:
+# Table of Contents
+* [Motivation](#motivation)
+* [Concepts](#concepts)
+* [Developer's Guide](#developers-guide)
+* [Operator's Guide](#operators-guide)
+* [Community](#community)
+* [Installation](#installation)
 
-```
-Usage: main [options]
+# Motivation
+As an organization's architecture grows in complexity engineers must find a way to make their services more resilient while keeping operational overhead low. ringpop is a step in that direction and an effort to generalize the sharding needs of various services by providing a simple hash ring abstraction. We've found that the use cases to which ringpop can be applied are numerous and that new ones are discovered often.
 
-  Options:
+# Concepts
+ringpop makes use of several techniques to provide applications with a seamless sharding story.
 
-    -h, --help             output usage information
-    -V, --version          output the version number
-    -l, --listen <listen>  Host and port on which server listens (also node's identity in cluster)
-    -h, --hosts <hosts>    Seed file of list of hosts to join
-```
+## Gossip
+ringpop implements the SWIM gossip protocol (with minor variations) to maintain a consistent view across nodes within your application cluster. Changes within the cluster are detected and disseminated over this protocol to all other nodes.
 
-# Developing with ringpop
+## Consistent Hashing
+ringpop leverages consistent hashing to minimize the number of keys that need to be rebalanced when your application cluster is resized. It uses farmhash as its hashing function because it is fast and provides good distribution.
+
+## Proxying
+ringpop offers proxying as a convenience. You may use ringpop to route your application's requests.
+
+## tchannel
+TChannel is the transport of choice for ringpop's gossip and proxying capabilities. For more information about tchannel, go here: https://github.com/uber/tchannel.
+
+# Developer's Guide
+As a developer, you'll want to know how to plug ringpop into your application. The sections below may make this easier for you:
+
+## API
+ringpop provides a straight-forward and minimal API for application developers. The properties, functions and events part of its public interface are documented below. Anything not documented should be considered to result in undefined behavior.
+
+**Properties**
+* `isReady` - A boolean flag used to indicate whether ringpop is ready. This property should be considered read-only.
+* `joinSize` - The number of nodes that must be joined during bootstrap before ringpop is ready. This should be modified before calling bootstrap in order for the mutation to be of any use. Default is `3`.
+
+All other properties should be considered private. Any mutation of properties not listed above will result in undefined behavior.
+
+**Functions**
+* `bootstrap()` - Seeds the hash ring, joins nodes in the seed list and starts the gossip protocol
+* `handleOrForward(key, handle, requestToForward, forwarded)` - Invokes the handle function if the provided key hashes to the same destination, otherwise forwards the request to that destination
+* `lookup(key)` - Returns the node to which the key hashes
+* `whoami()` - Returns the address of the running node
+
+**Events**
+* `ready` - ringpop has been bootstrapped
+* `changed` - ring or membership state is changed (DEPRECATED)
+* `membershipChanged` - membership state has changed (status or incarnation number). A membership change may result in a ring change.
+* `requestProxy.checksumsDiffer` - a proxied request arrives at its destination and source/destination checksums differ
+* `requestProxy.retryAttempted` - a scheduled retry expires and a retry is attempted
+* `requestProxy.retryScheduled` - a retry is scheduled, but not yet attempted
+* `requestProxy.retrySucceeded` - a request that is retried succeeds
+* `requestProxy.retryFailed` - a request is retried up to the maximum number of retries and fails
+* `ringChanged` - ring state has changed for one or more nodes either having joined or left the cluster. All ring changes are member changes, but not vice versa.
+
+## Code Walkthrough
 Instantiate ringpop by providing it the title and listening address of your application. It's important to note that the listening address of your ringpop instance is also used as a globally unique identifier for the instance within the ring. Therefore, make sure `hostPort` is unique.
 
 ```javascript
@@ -59,7 +100,50 @@ ringpop.on('changed', function() {
 });
 ```
 
-# Request Proxying
+# Operator's Guide
+As an operator, you'll want to know how to configure and monitor ringpop in production. Below are some of the ways to help you achieve unparalleled operational mastery:
+
+## Stats
+ringpop emits stats using the `statsd` client provided to its constructor. All stats listed below are relative to a `ringpop.<hostPort>` prefix.
+
+**Counts**
+* `full-sync` - the full membership state is disseminated during gossip
+* `join.recv` - a join request is received
+* `membership-update.alive` - a member becomes alive
+* `membership-update.faulty` - a member becomes faulty
+* `membership-update.new` - a new member is added
+* `membership-update.suspect` - a member becomes suspect
+* `ping.recv` - a ping is received
+* `ping.send` - a ping is sent
+* `ping-req.recv` - a ping-req is received
+* `ping-req.send` - a ping is sent
+* `requestProxy.retry.attempted` - a proxied request retry is attempted
+* `requestProxy.retry.failed` - a proxied request is retried up to the maximum number of retries and fails
+* `requestProxy.retry.succeeded` - a proxied request is retried and succeeds
+
+**Gauges**
+* `changes.apply` - number of changes applied when disseminated during gossip
+* `changes.disseminate` - number of changes to disseminate during gossip
+* `checksum` - the membership checksum (recomputed after membership change)
+* `max-piggyback` - max number of times a change is disseminated during gossip
+* `num-members` - number of members in membership (emitted when membership is updated)
+
+**Timers**
+* `compute-checksum` - time it takes to compute checksum
+* `ping` - response times of a ping
+* `ping-req` - response times of a ping-req
+* `ping-req-ping` - response times of a ping sent in response to a ping-req received
+* `protocol-delay` - the expected delay of the protocol period
+* `protocol-frequency` - the actual delay of the protocol period taking into account gossip response times
+
+# Community
+ringpop is highly extensible and may lead to a multitude of extensions and tooling built around it. The following is a list of libraries that extend ringpop:
+
+* sevnup - A vnode abstraction built atop key lookups to help you reliably resume operations on nodes other than the ones that started them.
+
+# Miscellaneous
+
+## More about request proxying
 ringpop provides request routing as a convenience. When a request arrives at your services' public endpoints, you'll want to use ringpop to decide whether request processing should take place on the node that received the request or elsewhere. If elsewhere, ringpop will proxy your request to the correct destination.
 
 Upon arrival of a proxied request at its destination, membership checksums of the sender and receiver will be compared. The request will be refused if checksums differ. Mismatches are to be expected when nodes are entering or exiting the cluster due to deploys, added/removed capacity or failures. The cluster will eventually converge on one membership checksum, therefore, refused requests are best handled by retrying them.
@@ -79,89 +163,7 @@ if (ringpop.handleOrProxy(key, req, res, opts)) {
 }
 ```
 
-# Generate hosts file
-Ringpop uses a hosts file to seed its ring. To generate a hosts file use the `generate-hosts` script:
-
-```
-./scripts/generate-hosts.js --hosts=myhost --base-port=30000 --num-ports=5 --output-file=/etc/ringpop/hosts/project.json
-```
-
-# Gossip
-TODO
-
-## SWIM
-
-### Extensions
-
-# Stats
-ringpop emits stats using the `statsd` client provided to its constructor. All stats listed below are relative to a `ringpop.<hostPort>` prefix.
-
-## Counts
-These counts are emitted when:
-
-* `full-sync` - the full membership state is disseminated during gossip
-* `join.recv` - a join request is received
-* `membership-update.alive` - a member becomes alive
-* `membership-update.faulty` - a member becomes faulty
-* `membership-update.new` - a new member is added
-* `membership-update.suspect` - a member becomes suspect
-* `ping.recv` - a ping is received
-* `ping.send` - a ping is sent
-* `ping-req.recv` - a ping-req is received
-* `ping-req.send` - a ping is sent
-* `requestProxy.retry.attempted` - a proxied request retry is attempted
-* `requestProxy.retry.failed` - a proxied request is retried up to the maximum number of retries and fails
-* `requestProxy.retry.succeeded` - a proxied request is retried and succeeds
-
-## Gauges
-These gauges represent:
-
-* `changes.apply` - number of changes applied when disseminated during gossip
-* `changes.disseminate` - number of changes to disseminate during gossip
-* `checksum` - the membership checksum (recomputed after membership change)
-* `max-piggyback` - max number of times a change is disseminated during gossip
-* `num-members` - number of members in membership (emitted when membership is updated)
-
-## Timers
-These timers measure:
-
-* `compute-checksum` - time it takes to compute checksum
-* `ping` - response times of a ping
-* `ping-req` - response times of a ping-req
-* `ping-req-ping` - response times of a ping sent in response to a ping-req received
-* `protocol-delay` - the expected delay of the protocol period
-* `protocol-frequency` - the actual delay of the protocol period taking into account gossip response times
-
-# API
-
-## Properties
-
-* `isReady` - A boolean flag used to indicate whether ringpop is ready. This property should be considered read-only.
-* `joinSize` - The number of nodes that must be joined during bootstrap before ringpop is ready. This should be modified before calling bootstrap in order for the mutation to be of any use. Default is `3`.
-
-All other properties should be considered private. Any mutation of properties not listed above will result in undefined behavior.
-
-## Functions
-
-* `bootstrap()` - Seeds the hash ring, joins nodes in the seed list and starts the gossip protocol
-* `handleOrForward(key, handle, requestToForward, forwarded)` - Invokes the handle function if the provided key hashes to the same destination, otherwise forwards the request to that destination
-* `lookup(key)` - Returns the node to which the key hashes
-* `whoami()` - Returns the address of the running node
-
-## Events
-These events are emitted when:
-
-* `ready` - ringpop has been bootstrapped
-* `changed` - ring or membership state is changed (DEPRECATED)
-* `membershipChanged` - membership state has changed (status or incarnation number). A membership change may result in a ring change.
-* `requestProxy.checksumsDiffer` - a proxied request arrives at its destination and source/destination checksums differ
-* `requestProxy.retryAttempted` - a scheduled retry expires and a retry is attempted
-* `requestProxy.retryScheduled` - a retry is scheduled, but not yet attempted
-* `requestProxy.retrySucceeded` - a request that is retried succeeds
-* `requestProxy.retryFailed` - a request is retried up to the maximum number of retries and fails
-* `ringChanged` - ring state has changed for one or more nodes either having joined or left the cluster. All ring changes are member changes, but not vice versa.
-
-## Installation
+# Installation
 
 `npm install ringpop`
 
