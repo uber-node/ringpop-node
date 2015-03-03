@@ -7,6 +7,7 @@ ringpop brings application-layer sharding to your services in a fault tolerant a
 * [Developer's Guide](#developers-guide)
 * [Operator's Guide](#operators-guide)
 * [Community](#community)
+* [References](#references)
 * [Installation](#installation)
 
 # Motivation
@@ -166,6 +167,16 @@ if (ringpop.handleOrProxy(key, req, res, opts)) {
     // handle request
 }
 ```
+
+# References
+There has been a variety of literature that have helped inform the implementation of and planned work for ringpop. We hope you find the below material helpful too:
+
+* [Dynamo: Amazon’s Highly Available Key-value Store](http://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)
+* [Efficient Reconciliation and Flow Control for Anti-Entropy Protocols](http://www.cs.cornell.edu/home/rvr/papers/flowgossip.pdf)
+* [Epidemic Broadcast Trees](http://www.gsd.inesc-id.pt/~jleitao/pdf/srds07-leitao.pdf)
+* [The ϕ Accrual Failure Detector](http://ddg.jaist.ac.jp/pub/HDY+04.pdf)
+* [Time, Clocks, and the Ordering of Events in a Distributed System](http://web.stanford.edu/class/cs240/readings/lamport.pdf)
+* [SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocl](http://web.stanford.edu/class/cs240/readings/lamport.pdf)
 
 # Installation
 
