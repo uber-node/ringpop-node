@@ -93,10 +93,6 @@ TODO
 
 ### Extensions
 
-# Dependencies
-* `logger`
-* `statsd`
-
 # Stats
 ringpop emits stats using the `statsd` client provided to its constructor. All stats listed below are relative to a `ringpop.<hostPort>` prefix.
 
