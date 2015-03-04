@@ -178,7 +178,8 @@ There has been a variety of literature that have helped inform the implementatio
 * [Epidemic Broadcast Trees](http://www.gsd.inesc-id.pt/~jleitao/pdf/srds07-leitao.pdf)
 * [The ϕ Accrual Failure Detector](http://ddg.jaist.ac.jp/pub/HDY+04.pdf)
 * [Time, Clocks, and the Ordering of Events in a Distributed System](http://web.stanford.edu/class/cs240/readings/lamport.pdf)
-* [SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocl](http://web.stanford.edu/class/cs240/readings/lamport.pdf)
+* [SWIM Presentation Slides by Armon Dadgar from Hashicorp](https://speakerd.s3.amazonaws.com/presentations/5d140b302fbf01327e4e42c106afd3ef/2014-SWIM.pdf)
+* [SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol](http://web.stanford.edu/class/cs240/readings/lamport.pdf)
 
 # Installation
 
