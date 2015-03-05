@@ -161,7 +161,8 @@ RingPop.prototype.setupChannel = function setupChannel() {
 RingPop.prototype.addLocalMember = function addLocalMember(info) {
     this.membership.addMember({
         address: this.hostPort,
-        incarnationNumber: info && info.incarnationNumber
+        incarnationNumber: info && info.incarnationNumber,
+        status: 'alive'
     });
 };
 
@@ -531,23 +532,6 @@ RingPop.prototype.onMemberFaulty = function onMemberFaulty(member) {
     this.suspicion.stop(member);
 };
 
-RingPop.prototype.onMemberJoined = function onMemberJoined(member) {
-    this.stat('increment', 'membership-update.new');
-    this.logger.debug('member has joined', {
-        local: this.membership.localMember.address,
-        joined: member.address
-    });
-
-    this.ring.addServer(member.address);
-
-    this.dissemination.addChange({
-        address: member.address,
-        status: member.status,
-        incarnationNumber: member.incarnationNumber,
-        piggybackCount: 0
-    });
-};
-
 RingPop.prototype.onMemberLeave = function onMemberLeave(member) {
     this.stat('increment', 'membership-update.leave');
     this.logger.debug('member has left', {
@@ -589,19 +573,16 @@ RingPop.prototype.onMembershipUpdated = function onMembershipUpdated(updates) {
     var ringChanged = false;
 
     updates.forEach(function(update) {
-        if (update.type === 'alive') {
+        if (update.status === 'alive') {
             self.onMemberAlive(update);
             ringChanged = membershipChanged = true;
-        } else if (update.type === 'faulty') {
+        } else if (update.status === 'faulty') {
             self.onMemberFaulty(update);
             ringChanged = membershipChanged = true;
-        } else if (update.type === 'leave') {
+        } else if (update.status === 'leave') {
             self.onMemberLeave(update);
             ringChanged = membershipChanged = true;
-        } else if (update.type === 'new') {
-            self.onMemberJoined(update);
-            ringChanged = membershipChanged = true;
-        } else if (update.type === 'suspect') {
+        } else if (update.status === 'suspect') {
             self.onMemberSuspect(update);
             membershipChanged = true;
         }
