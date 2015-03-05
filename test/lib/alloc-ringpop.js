@@ -22,7 +22,7 @@
 
 var TChannel = require('tchannel');
 
-var DebuglogLogger = require('../../lib/debug-log-logger.js');
+var DebuglogLogger = require('debug-logtron');
 var RingPop = require('../../index.js');
 
 module.exports = allocRingpop;
@@ -37,13 +37,13 @@ function allocRingpop(name, options) {
         host: host,
         port: port,
         timers: options && options.timers,
-        logger: DebuglogLogger('proxy_req_test:' + name, 'tchannel')
+        logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel')
     });
     var ringpop = RingPop({
         app: 'test.ringpop.proxy_req_test',
         hostPort: hostPort,
-        logger: DebuglogLogger('proxy_req_test: ' + name),
         channel: tchannel,
+        logger: DebuglogLogger(name || 'ringpop'),
         requestProxyMaxRetries: options && options.requestProxyMaxRetries,
         requestProxyRetrySchedule: options && options.requestProxyRetrySchedule
     });

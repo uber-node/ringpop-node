@@ -25,12 +25,12 @@ var fs = require('fs');
 var hammock = require('uber-hammock');
 var metrics = require('metrics');
 
-var AdminJoiner = require('./lib/swim').AdminJoiner;
 var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
 var Dissemination = require('./lib/members').Dissemination;
 var errors = require('./lib/errors.js');
 var Gossip = require('./lib/swim.js').Gossip;
 var HashRing = require('./lib/ring');
+var joinCluster = require('./lib/join_cluster.js').joinCluster;
 var MemberIterator = require('./lib/members').MemberIterator;
 var Membership = require('./lib/members').Membership;
 var MembershipUpdateRollup = require('./lib/membership_update_rollup.js');
@@ -86,7 +86,7 @@ function RingPop(options) {
     this.isReady = false;
 
     this.debugFlags = {};
-    this.joinSize = 3;              // join fanout
+    this.joinSize = options.joinSize;
     this.pingReqSize = 3;           // ping-req fanout
     this.pingReqTimeout = 5000;
     this.pingTimeout = 1500;
@@ -165,7 +165,7 @@ RingPop.prototype.addLocalMember = function addLocalMember(info) {
     });
 };
 
-RingPop.prototype.adminJoin = function adminJoin(target, callback) {
+RingPop.prototype.adminJoin = function adminJoin(callback) {
     if (!this.membership.localMember) {
         process.nextTick(function() {
             callback(errors.InvalidLocalMemberError());
@@ -185,13 +185,11 @@ RingPop.prototype.adminJoin = function adminJoin(target, callback) {
         this.joiner = null;
     }
 
-    this.joiner = new AdminJoiner({
+    this.joiner = joinCluster({
         ringpop: this,
-        target: target,
-        callback: callback,
-        maxJoinDuration: this.maxJoinDuration
-    });
-    this.joiner.sendJoin();
+        maxJoinDuration: this.maxJoinDuration,
+        joinSize: this.joinSize
+    }, callback);
 };
 
 RingPop.prototype.adminLeave = function adminLeave(callback) {
@@ -253,7 +251,7 @@ RingPop.prototype.bootstrap = function bootstrap(bootstrapFile, callback) {
 
     this.addLocalMember();
 
-    this.adminJoin(function(err) {
+    this.adminJoin(function(err, nodesJoined) {
         if (err) {
             self.logger.error('ringpop bootstrap failed', {
                 err: err.message,
@@ -283,7 +281,7 @@ RingPop.prototype.bootstrap = function bootstrap(bootstrapFile, callback) {
         self.isReady = true;
         self.emit('ready');
 
-        if (callback) callback();
+        if (callback) callback(null, nodesJoined);
     });
 };
 
@@ -391,6 +389,11 @@ RingPop.prototype.isStatsHookRegistered = function isStatsHookRegistered(name) {
 
 RingPop.prototype.protocolJoin = function protocolJoin(options, callback) {
     this.stat('increment', 'join.recv');
+
+    if (this.isDenyingJoins) {
+        callback(errors.DenyJoinError());
+        return;
+    }
 
     var joinerAddress = options.source;
     if (joinerAddress === this.whoami()) {
@@ -902,6 +905,16 @@ RingPop.prototype.handleOrProxyAll =
             }
         }
     };
+
+// This function is defined for testing purposes only.
+RingPop.prototype.allowJoins = function allowJoins() {
+    this.isDenyingJoins = false;
+};
+
+// This function is defined for testing purposes only.
+RingPop.prototype.denyJoins = function denyJoins() {
+    this.isDenyingJoins = true;
+};
 
 RingPop.prototype.validateProps = function validateProps(opts, props) {
     for (var i = 0; i < props.length; i++) {
