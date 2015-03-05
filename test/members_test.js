@@ -40,7 +40,7 @@ test('change with higher incarnation number results in leave override', function
 
     var update = Membership.evalOverride(member, change);
 
-    assert.equals(update.type, 'leave', 'results in leave');
+    assert.equals(update.status, 'leave', 'results in leave');
     assert.end();
 });
 
