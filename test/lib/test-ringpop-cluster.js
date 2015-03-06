@@ -58,7 +58,9 @@ function bootstrapClusterOf(opts, onBootstrap) {
     for (var i = 0; i < cluster.length; i++) {
         var ringpop = cluster[i];
 
-        ringpop.bootstrap(bootstrapHosts, Array.isArray(onBootstrap) ?
+        ringpop.bootstrap({
+            bootstrapFile: bootstrapHosts
+        }, Array.isArray(onBootstrap) ?
             onBootstrap[i] : bootstrapHandler(ringpop.hostPort));
     }
 
@@ -118,10 +120,11 @@ function testRingpopCluster(opts, name, test) {
 
     tape(name, function onTest(assert) {
         var cluster = bootstrapClusterOf(opts, function onBootstrap(results) {
-            test(results, cluster, assert);
+            assert.on('end', function onEnd() {
+                destroyCluster(cluster);
+            });
 
-            assert.end();
-            destroyCluster(cluster);
+            test(results, cluster, assert);
         });
     });
 }

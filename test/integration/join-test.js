@@ -40,6 +40,7 @@ testRingpopCluster({
     size: 1
 }, 'one node can join', function t(bootRes, cluster, assert) {
     assert.ifErr(bootRes[cluster[0].hostPort].err, 'no error occurred');
+    assert.end();
 });
 
 testRingpopCluster({
@@ -50,6 +51,8 @@ testRingpopCluster({
     cluster.forEach(function eachNode(node) {
         assert.ok(node.isReady, 'node is ready');
     });
+
+    assert.end();
 });
 
 testRingpopCluster('three nodes can join', function t(bootRes, cluster, assert) {
@@ -58,6 +61,8 @@ testRingpopCluster('three nodes can join', function t(bootRes, cluster, assert) 
     cluster.forEach(function eachNode(node) {
         assert.ok(node.isReady, 'node is ready');
     });
+
+    assert.end();
 });
 
 testRingpopCluster({
@@ -77,6 +82,8 @@ testRingpopCluster({
         assert.ok(nodesJoined.length >= 1, 'joined at least one other node');
         assert.ok(nodesJoined.indexOf(badNode) === -1, 'no one can join bad node');
     });
+
+    assert.end();
 });
 
 testRingpopCluster({
@@ -95,6 +102,8 @@ testRingpopCluster({
             'ringpop.join-duration-exceeded',
             'join duration exceeded error');
     });
+
+    assert.end();
 });
 
 testRingpopCluster({
@@ -105,6 +114,8 @@ testRingpopCluster({
     cluster.forEach(function eachNode(node) {
         assert.ok(node.isReady, 'node is bootstrapped');
     });
+
+    assert.end();
 });
 
 testRingpopCluster({
@@ -131,4 +142,5 @@ testRingpopCluster({
         'join aborted error');
 
     assert.ok(cluster[1].isReady, 'node two is ready');
+    assert.end();
 });

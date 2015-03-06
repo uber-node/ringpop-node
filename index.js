@@ -27,8 +27,8 @@ var hammock = require('uber-hammock');
 var metrics = require('metrics');
 
 var Gossip = require('./lib/swim/gossip');
-var PingReqSender = require('./lib/swim/ping-req-sender');
 var PingSender = require('./lib/swim/ping-sender');
+var sendPingReq = require('./lib/swim/ping-req-sender.js');
 var Suspicion = require('./lib/swim/suspicion');
 
 var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
@@ -248,7 +248,9 @@ RingPop.prototype.adminLeave = function adminLeave(callback) {
     });
 };
 
-RingPop.prototype.bootstrap = function bootstrap(bootstrapFile, callback) {
+RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
+    var bootstrapFile = opts.bootstrapFile || opts;
+
     if (typeof bootstrapFile === 'function') {
         callback = bootstrapFile;
         bootstrapFile = null;
@@ -469,35 +471,6 @@ RingPop.prototype.protocolPing = function protocolPing(options, callback) {
     });
 };
 
-RingPop.prototype.protocolPingReq = function protocolPingReq(options, callback) {
-    this.stat('increment', 'ping-req.recv');
-
-    var source = options.source;
-    var target = options.target;
-    var changes = options.changes;
-    var checksum = options.checksum;
-
-    this.serverRate.mark();
-    this.totalRate.mark();
-    this.membership.update(changes);
-
-    var self = this;
-    this.debugLog('ping-req send ping source=' + source + ' target=' + target, 'p');
-    var start = new Date();
-    this.sendPing(target, function (isOk, body) {
-        self.stat('timing', 'ping-req-ping', start);
-        self.debugLog('ping-req recv ping source=' + source + ' target=' + target + ' isOk=' + isOk, 'p');
-        if (isOk) {
-            self.membership.update(body.changes);
-        }
-        callback(null, {
-            changes: self.issueMembershipChanges(checksum, source),
-            pingStatus: isOk,
-            target: target
-        });
-    });
-};
-
 RingPop.prototype.lookup = function lookup(key) {
     this.stat('increment', 'lookup');
     var dest = this.ring.lookup(key + '');
@@ -668,9 +641,20 @@ RingPop.prototype.pingMemberNow = function pingMemberNow(callback) {
             return callback(new Error('destroyed whilst pinging'));
         }
 
-        start = new Date();
-        self.sendPingReq(member, function() {
-            self.stat('timing', 'ping-req', start);
+        var pingReqStartTime = new Date();
+        // TODO The pinged member's status could have changed to
+        // faulty by the time we received and processed the ping
+        // response. There are no ill effects to membership state
+        // by sending a ping-req to the faulty member (and processing
+        // the response), though it does delay the protocol period
+        // unnecessarily. We may want to bypass the ping-req here
+        // if the member's status is faulty.
+        sendPingReq({
+            ringpop: self,
+            unreachableMember: member,
+            pingReqSize: self.pingReqSize
+        }, function onPingReq() {
+            self.stat('timing', 'ping-req', pingReqStartTime);
             self.isPinging = false;
 
             callback.apply(null, Array.prototype.splice.call(arguments, 0));
@@ -723,49 +707,6 @@ RingPop.prototype.seedBootstrapHosts = function seedBootstrapHosts(file) {
 RingPop.prototype.sendPing = function sendPing(member, callback) {
     this.stat('increment', 'ping.send');
     return new PingSender(this, member, callback);
-};
-
-// TODO Exclude suspect memebers from ping-req as well?
-RingPop.prototype.sendPingReq = function sendPingReq(unreachableMember, callback) {
-    this.stat('increment', 'ping-req.send');
-
-    var otherMembers = this.membership.getRandomPingableMembers(this.pingReqSize, [unreachableMember.address]);
-    var self = this;
-    var completed = 0;
-    var anySuccess = false;
-    function onComplete(err) {
-        anySuccess |= !err;
-
-        if (++completed === otherMembers.length) {
-            if (anySuccess) {
-                self.membership.makeAlive(unreachableMember.address);
-                self.logger.info('ringpop member knows member is alive', {
-                    local: self.whoami(),
-                    alive: unreachableMember.address
-                });
-            } else {
-                self.membership.makeSuspect(unreachableMember.address);
-                self.logger.info('ringpop member suspects member', {
-                    local: self.whoami(),
-                    suspect: unreachableMember.address
-                });
-            }
-
-            callback();
-        }
-    }
-
-    this.stat('timing', 'ping-req.other-members', otherMembers.length);
-
-    if (otherMembers.length > 0) {
-        otherMembers.forEach(function (member) {
-            self.debugLog('ping-req send peer=' + member.address +
-                ' target=' + unreachableMember.address, 'p');
-            return new PingReqSender(self, member, unreachableMember, onComplete);
-        });
-    } else {
-        callback(new Error('No members to ping-req'));
-    }
 };
 
 RingPop.prototype.setDebugFlag = function setDebugFlag(flag) {
