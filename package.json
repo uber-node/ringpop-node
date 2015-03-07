@@ -2,8 +2,10 @@
   "name": "ringpop",
   "description": "A hash ring with a lot of pop",
   "contributors": [
+    "Bob Nugmanov <bob.nugmanov@gmail.com>",
     "Matt Ranney <mranney@uber.com>",
     "Jeff Wolski <wolski@uber.com>",
+    "Jake Verbaten <raynos2@gmail.com>",
     "Mark Yen <mark@uber.com>"
   ],
   "version": "9.6.2",
