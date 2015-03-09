@@ -39,7 +39,7 @@ var PingReqSender = require('./lib/swim').PingReqSender;
 var PingSender = require('./lib/swim').PingSender;
 var safeParse = require('./lib/util').safeParse;
 var RequestProxy = require('./lib/request-proxy');
-var serializeHead = require('./lib/request-proxy-util.js').serializeHead;
+var rawHead = require('./lib/request-proxy-util.js').rawHead;
 var Suspicion = require('./lib/swim.js').Suspicion;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
@@ -860,7 +860,7 @@ RingPop.prototype.handleOrProxyAll =
                     url: req && req.url,
                     dest: dest
                 });
-                var head = serializeHead(req, {
+                var head = rawHead(req, {
                     checksum: self.membership.checksum,
                     keys: destKeys
                 });

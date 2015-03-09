@@ -23,7 +23,7 @@ var after = require('after');
 var test = require('tape');
 
 var allocCluster = require('../lib/alloc-cluster.js');
-var serializeHead = require('../../lib/request-proxy-util.js').serializeHead;
+var strHead = require('../../lib/request-proxy-util.js').strHead;
 
 var retrySchedule = [0, 0.01, 0.02];
 
@@ -324,7 +324,7 @@ test('overrides /proxy/req endpoint', function t(assert) {
             assert.end();
         });
 
-        var head = serializeHead(request, {
+        var head = strHead(request, {
             checksum: cluster.two.membership.checksum,
             keys: [cluster.keys.two]
         });
