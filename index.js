@@ -39,6 +39,7 @@ var PingReqSender = require('./lib/swim').PingReqSender;
 var PingSender = require('./lib/swim').PingSender;
 var safeParse = require('./lib/util').safeParse;
 var RequestProxy = require('./lib/request-proxy');
+var serializeHead = require('./lib/request-proxy-util.js').serializeHead;
 var Suspicion = require('./lib/swim.js').Suspicion;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
@@ -849,24 +850,29 @@ RingPop.prototype.handleOrProxyAll =
         }
 
         dests.forEach(function(dest) {
+            var destKeys = keysByDest[dest];
             var res = hammock.Response(function(err, resp) {
                 onResponse(err, resp, dest);
             });
             if (whoami === dest) {
                 self.logger.trace('handleOrProxyAll was handled', {
-                    keys: keys,
+                    keys: destKeys,
                     url: req && req.url,
                     dest: dest
                 });
-                self.emit('request', req, res);
+                var head = serializeHead(req, {
+                    checksum: self.membership.checksum,
+                    keys: destKeys
+                });
+                self.emit('request', req, res, head);
             } else {
                 self.logger.trace('handleOrProxyAll was proxied', {
-                    keys: keys,
+                    keys: destKeys,
                     url: req && req.url,
                     dest: dest
                 });
                 self.proxyReq(_.defaults({
-                    keys: keys,
+                    keys: destKeys,
                     req: req,
                     res: res,
                     dest: dest
