@@ -26,22 +26,23 @@ var globalSetTimeout = require('timers').setTimeout;
 var hammock = require('uber-hammock');
 var metrics = require('metrics');
 
+var Gossip = require('./lib/swim/gossip');
+var PingReqSender = require('./lib/swim/ping-req-sender');
+var PingSender = require('./lib/swim/ping-sender');
+var Suspicion = require('./lib/swim/suspicion');
+
 var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
 var Dissemination = require('./lib/members').Dissemination;
 var errors = require('./lib/errors.js');
-var Gossip = require('./lib/swim.js').Gossip;
 var HashRing = require('./lib/ring');
 var joinCluster = require('./lib/join_cluster.js').joinCluster;
 var MemberIterator = require('./lib/members').MemberIterator;
 var Membership = require('./lib/members').Membership;
 var MembershipUpdateRollup = require('./lib/membership_update_rollup.js');
 var nulls = require('./lib/nulls');
-var PingReqSender = require('./lib/swim').PingReqSender;
-var PingSender = require('./lib/swim').PingSender;
 var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
 var safeParse = require('./lib/util').safeParse;
-var Suspicion = require('./lib/swim.js').Suspicion;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
@@ -108,8 +109,14 @@ function RingPop(options) {
     this.membership = new Membership(this);
     this.membership.on('updated', this.onMembershipUpdated.bind(this));
     this.memberIterator = new MemberIterator(this);
-    this.gossip = new Gossip(this);
-    this.suspicion = new Suspicion(this);
+    this.gossip = new Gossip({
+        ringpop: this,
+        minProtocolPeriod: options.minProtocolPeriod
+    });
+    this.suspicion = new Suspicion({
+        ringpop: this,
+        suspicionTimeout: options.suspicionTimeout
+    });
     this.membershipUpdateRollup = new MembershipUpdateRollup({
         ringpop: this,
         flushInterval: this.membershipUpdateFlushInterval
