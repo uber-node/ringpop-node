@@ -48,6 +48,8 @@ var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
 var safeParse = require('./lib/util').safeParse;
 var sendJoin = require('./lib/swim/join-sender.js').joinCluster;
+var adminLeaveHandler = require('./server/admin-leave-handler.js');
+var adminJoinHandler = require('./server/admin-join-handler.js');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
@@ -188,6 +190,18 @@ RingPop.prototype.destroy = function destroy() {
 
 RingPop.prototype.setupChannel = function setupChannel() {
     createServer(this, this.channel);
+};
+
+RingPop.prototype.adminJoin = function adminJoin(callback) {
+    adminJoinHandler({
+        ringpop: this
+    }, callback);
+};
+
+RingPop.prototype.adminLeave = function adminLeave(callback) {
+    adminLeaveHandler({
+        ringpop: this
+    }, callback);
 };
 
 /*
