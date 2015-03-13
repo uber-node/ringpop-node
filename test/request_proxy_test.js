@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 var allocRequest = require('./lib/alloc-request.js');
 var mocks = require('./mock');
-var RequestProxy = require('../lib/request-proxy.js');
+var RequestProxy = require('../lib/request-proxy/index.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
 
@@ -44,9 +44,12 @@ test('request proxy sends custom ringpop metadata in head', function t(assert) {
     var dest = 'disneyworld';
 
     var proxy = createRequestProxy();
-    proxy.ringpop.channel.send = function(options, arg1, arg2, arg3, callback) {
+    var ringpop = proxy.ringpop;
+    ringpop.channel.send = function(options, arg1, arg2) {
         var head = JSON.parse(arg2);
         assert.deepEquals(head.ringpopKeys, [key], 'sends key in head');
+
+        ringpop.destroy();
         assert.end();
     };
     proxy.proxyReq({
@@ -60,6 +63,7 @@ test('request proxy emits head', function t(assert) {
     assert.plan(3);
 
     var proxy = createRequestProxy();
+    var ringpop = proxy.ringpop;
     var headExpected = {
         ringpopChecksum: proxy.ringpop.membership.checksum,
         ringpopKeys: ['KEY0']
@@ -68,6 +72,8 @@ test('request proxy emits head', function t(assert) {
         assert.ok(req, 'req exists');
         assert.ok(res, 'res exists');
         assert.equals(head, headExpected, 'head is emitted');
+
+        ringpop.destroy();
         assert.end();
     });
     proxy.handleRequest(headExpected, null, mocks.noop);

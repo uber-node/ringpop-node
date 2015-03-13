@@ -21,6 +21,7 @@
 'use strict';
 
 var TChannel = require('tchannel');
+var TimeMock = require('time-mock');
 
 var DebuglogLogger = require('debug-logtron');
 var RingPop = require('../../index.js');
@@ -28,6 +29,8 @@ var RingPop = require('../../index.js');
 module.exports = allocRingpop;
 
 function allocRingpop(name, options) {
+    options = options || {};
+
     var host = '127.0.0.1';
     var port = semiRandPort();
 
@@ -39,16 +42,19 @@ function allocRingpop(name, options) {
         timers: options && options.timers,
         logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel')
     });
+    var timers = TimeMock(Date.now());
     var ringpop = RingPop({
         app: 'test.ringpop.proxy_req_test',
         hostPort: hostPort,
         channel: tchannel,
         logger: DebuglogLogger(name || 'ringpop'),
-        requestProxyMaxRetries: options && options.requestProxyMaxRetries,
-        requestProxyRetrySchedule: options && options.requestProxyRetrySchedule
+        requestProxyMaxRetries: options.requestProxyMaxRetries,
+        requestProxyRetrySchedule: options.requestProxyRetrySchedule,
+        setTimeout: options.useFakeTimers && timers.setTimeout
     });
 
     ringpop.setupChannel();
+    ringpop.timers = timers;
     return ringpop;
 }
 

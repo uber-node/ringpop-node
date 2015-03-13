@@ -22,6 +22,7 @@
 var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
+var globalSetTimeout = require('timers').setTimeout;
 var hammock = require('uber-hammock');
 var metrics = require('metrics');
 
@@ -37,9 +38,9 @@ var MembershipUpdateRollup = require('./lib/membership_update_rollup.js');
 var nulls = require('./lib/nulls');
 var PingReqSender = require('./lib/swim').PingReqSender;
 var PingSender = require('./lib/swim').PingSender;
+var rawHead = require('./lib/request-proxy/util.js').rawHead;
+var RequestProxy = require('./lib/request-proxy/index.js');
 var safeParse = require('./lib/util').safeParse;
-var RequestProxy = require('./lib/request-proxy');
-var rawHead = require('./lib/request-proxy-util.js').rawHead;
 var Suspicion = require('./lib/swim.js').Suspicion;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
@@ -83,6 +84,7 @@ function RingPop(options) {
     this.setLogger(options.logger || nulls.logger);
     this.statsd = options.statsd || nulls.statsd;
     this.bootstrapFile = options.bootstrapFile;
+    this.setTimeout = options.setTimeout || globalSetTimeout;
 
     this.isReady = false;
 
