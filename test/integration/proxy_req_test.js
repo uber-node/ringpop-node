@@ -67,11 +67,11 @@ test('one retry', function t(assert) {
     };
 
     var cluster = allocCluster(ringpopOpts, function onReady() {
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         cluster.two.once('requestProxy.checksumsDiffer', function onBadChecksum() {
             assert.pass('received request with invalid checksum');
-            cluster.two.membership.checksum = cluster.one.membership.checksum;
+            cluster.two.ring.checksum = cluster.one.ring.checksum;
         });
 
         cluster.two.once('request', function onGoodChecksum() {
@@ -105,14 +105,14 @@ test('two retries', function t(assert) {
     var numAttempts = 0;
 
     var cluster = allocCluster(ringpopOpts, function onReady() {
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         cluster.two.on('requestProxy.checksumsDiffer', function onBadChecksum() {
             numAttempts++;
 
             // If last retry
             if (numAttempts === cluster.two.requestProxy.maxRetries) {
-                cluster.two.membership.checksum = cluster.one.membership.checksum;
+                cluster.two.ring.checksum = cluster.one.ring.checksum;
             }
 
             assert.pass('received request with invalid checksum');
@@ -151,7 +151,7 @@ test('no retries, invalid checksum', function t(assert) {
     };
 
     var cluster = allocCluster(ringpopOpts, function onReady() {
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         cluster.two.on('requestProxy.checksumsDiffer', function onBadChecksum() {
             numAttempts++;
@@ -189,7 +189,7 @@ test('exceeds max retries, errors out', function t(assert) {
     };
 
     var cluster = allocCluster(ringpopOpts, function onReady() {
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         cluster.two.on('requestProxy.checksumsDiffer', function onBadChecksum() {
             numAttempts++;
@@ -238,7 +238,7 @@ test('cleans up pending sends', function t(assert) {
     };
 
     var cluster = allocCluster(ringpopOpts, function onReady() {
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         cluster.one.on('requestProxy.retryScheduled', function onRetry() {
             done();
@@ -265,11 +265,11 @@ test('cleans up some pending sends', function t(assert) {
     };
 
     var cluster = allocCluster(ringpopOpts, function onReady() {
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         // Only one retry will be attempted, others will still be waiting
         cluster.one.on('requestProxy.retryAttempted', function onRetry() {
-            cluster.two.membership.checksum = cluster.one.membership.checksum;
+            cluster.two.ring.checksum = cluster.one.ring.checksum;
         });
 
         for (var i = 0; i < 2; i++) {
@@ -332,7 +332,7 @@ test('overrides /proxy/req endpoint', function t(assert) {
         });
 
         var head = strHead(request, {
-            checksum: cluster.two.membership.checksum,
+            checksum: cluster.two.ring.checksum,
             keys: [cluster.keys.two]
         });
     });
@@ -375,7 +375,7 @@ test('aborts retry because keys diverge', function t(assert) {
         useFakeTimers: true
     }, function onReady() {
         // Make node two refuse initial request
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         cluster.one.on('requestProxy.retryAborted', function onRetryAborted() {
             assert.pass('retry aborted');
@@ -425,7 +425,7 @@ test('reroutes retry to local', function t(assert) {
         useFakeTimers: true
     }, function onReady() {
         // Make node two refuse initial request
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         cluster.one.on('requestProxy.retryRerouted', function onRetryRerouted() {
             assert.pass('retry rerouted');
@@ -467,7 +467,7 @@ test('reroutes retry to remote', function t(assert) {
         useFakeTimers: true
     }, function onReady() {
         // Make node two refuse initial request
-        cluster.two.membership.checksum = cluster.one.membership.checksum + 1;
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
 
         cluster.one.on('requestProxy.retryRerouted', function onRetryRerouted() {
             assert.pass('retry rerouted');

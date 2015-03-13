@@ -325,12 +325,7 @@ test('handles checksum failures', function t(assert) {
     };
 
     var cluster = allocCluster(ringpopOpts, function onReady() {
-        cluster.two.membership.addMember({
-            address: 'localhost:9999',
-            status: 'fake',
-            incarnationNumber: 10
-        });
-        cluster.two.membership.computeChecksum();
+        cluster.two.ring.addServer('localhost:9999');
 
         cluster.request({
             host: 'one', key: cluster.keys.two
