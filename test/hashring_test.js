@@ -91,3 +91,76 @@ test('HashRing.removeServer', function t(assert) {
 
     assert.end();
 });
+
+test('checksum is null upon instantiation', function t(assert) {
+    var ring = new HashRing();
+    assert.equals(ring.checksum, null, 'checksum is null');
+    assert.end();
+});
+
+test('checksum is not null when server added', function t(assert) {
+    var ring = new HashRing();
+    ring.addServer('127.0.0.1:3000');
+    assert.doesNotEqual(ring.checksum, null, 'checksum is not null');
+    assert.end();
+});
+
+test('checksum is still null when non-existent server removed', function t(assert) {
+    var ring = new HashRing();
+    ring.removeServer('127.0.0.1:3000');
+    assert.equals(ring.checksum, null, 'checksum is null');
+    assert.end();
+});
+
+test('checksum recomputed after server added, then removed', function t(assert) {
+    var ring = new HashRing();
+
+    ring.addServer('127.0.0.1:3000');
+    var firstChecksum = ring.checksum;
+
+    ring.removeServer('127.0.0.1:3000');
+    var secondChecksum = ring.checksum;
+
+    assert.doesNotEqual(firstChecksum, null, 'first checksum is not null');
+    assert.doesNotEqual(secondChecksum, null, 'second checksum is not null');
+    assert.doesNotEqual(firstChecksum, secondChecksum, 'checksums are different');
+    assert.end();
+});
+
+test('servers added out of order result in same checksum', function t(assert) {
+    var ring1 = new HashRing();
+    ring1.addServer('127.0.0.1:3000');
+    ring1.addServer('127.0.0.1:3001');
+
+    var ring2 = new HashRing();
+    ring2.addServer('127.0.0.1:3001');
+    ring2.addServer('127.0.0.1:3000');
+
+    assert.doesNotEqual(ring1.checksum, null, 'ring1 checksum is not null');
+    assert.doesNotEqual(ring2.checksum, null, 'ring2 checksum is not null');
+    assert.equals(ring1.checksum, ring2.checksum, 'checksums are same');
+    assert.end();
+});
+
+test('servers removed out of order result in same checksum', function t(assert) {
+    var ring1 = new HashRing();
+    addServers(ring1);
+    ring1.removeServer('127.0.0.1:3001');
+    ring1.removeServer('127.0.0.1:3002');
+
+    var ring2 = new HashRing();
+    addServers(ring2);
+    ring2.removeServer('127.0.0.1:3002');
+    ring2.removeServer('127.0.0.1:3001');
+
+    assert.doesNotEqual(ring1.checksum, null, 'ring1 checksum is not null');
+    assert.doesNotEqual(ring2.checksum, null, 'ring2 checksum is not null');
+    assert.equals(ring1.checksum, ring2.checksum, 'checksums are same');
+    assert.end();
+
+    function addServers(ring) {
+        for (var i = 0; i < 4; i++) {
+            ring.addServer('127.0.0.1:300' + i);
+        }
+    }
+});

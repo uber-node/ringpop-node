@@ -49,6 +49,21 @@ var MAX_JOIN_DURATION = 300000;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
 var PROXY_REQ_PROPS = ['keys', 'dest', 'req', 'res'];
 
+function onRingChecksumComputed(ringpop) {
+    ringpop.stat('increment', 'ring.checksum-computed');
+    ringpop.emit('ringChecksumComputed');
+}
+
+function onRingServerAdded(ringpop) {
+    ringpop.stat('increment', 'ring.server-added');
+    ringpop.emit('ringServerAdded');
+}
+
+function onRingServerRemoved(ringpop) {
+    ringpop.stat('increment', 'ring.server-removed');
+    ringpop.emit('ringServerRemoved');
+}
+
 function RingPop(options) {
     if (!(this instanceof RingPop)) {
         return new RingPop(options);
@@ -104,7 +119,12 @@ function RingPop(options) {
         maxRetries: options.requestProxyMaxRetries,
         retrySchedule: options.requestProxyRetrySchedule
     });
+
     this.ring = new HashRing();
+    this.ring.on('added', onRingServerAdded.bind(null, this));
+    this.ring.on('removed', onRingServerRemoved.bind(null, this));
+    this.ring.on('checksumComputed', onRingChecksumComputed.bind(null, this));
+
     this.dissemination = new Dissemination(this);
     this.membership = new Membership(this);
     this.membership.on('updated', this.onMembershipUpdated.bind(this));

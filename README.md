@@ -65,6 +65,9 @@ All other properties should be considered private. Any mutation of properties no
 * `requestProxy.retrySucceeded` - a request that is retried succeeds
 * `requestProxy.retryFailed` - a request is retried up to the maximum number of retries and fails
 * `ringChanged` - ring state has changed for one or more nodes either having joined or left the cluster. All ring changes are member changes, but not vice versa.
+* `ringChecksumComputed` - the hash ring's checksum was computed
+* `ringServerAdded` - a server was added to the ring
+* `ringServerRemoved` - a server was removed to the ring
 
 ## Code Walkthrough
 Instantiate ringpop by providing it the title and listening address of your application. It's important to note that the listening address of your ringpop instance is also used as a globally unique identifier for the instance within the ring. Therefore, make sure `hostPort` is unique.
