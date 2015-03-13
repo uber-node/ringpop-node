@@ -21,8 +21,8 @@
 var mock = require('./mock');
 var test = require('tape');
 
-var Gossip = require('../lib/swim.js').Gossip;
-var Suspicion = require('../lib/swim.js').Suspicion;
+var Gossip = require('../lib/swim/gossip');
+var Suspicion = require('../lib/swim/suspicion');
 
 function createRingpop() {
     return {
@@ -35,11 +35,15 @@ function createRingpop() {
 }
 
 function createGossip() {
-    return new Gossip(createRingpop());
+    return new Gossip({
+        ringpop: createRingpop()
+    });
 }
 
-function createSuspicion() {
-    return new Suspicion(createRingpop());
+function createSuspicion(opts) {
+    opts = opts || {};
+    opts.ringpop = createRingpop();
+    return new Suspicion(opts);
 }
 
 test('starting and stopping gossip sets timer / unsets timers', function t(assert) {
@@ -171,9 +175,11 @@ test('suspicion subprotocol cannot be reenabled without all timers first being s
 test('marks member faulty after suspect period', function t(assert) {
     assert.plan(1);
 
-    var suspicion = createSuspicion();
+    var suspicionTimeout = 1;
+    var suspicion = createSuspicion({
+        suspicionTimeout: suspicionTimeout
+    });
     var member = suspicion.ringpop.membership.remoteMember;
-    suspicion.setTimeout = function(fn) { return fn(); };
     // TODO Brittle test, just use real membership object
     suspicion.ringpop.membership.makeFaulty = function(address) {
         assert.equals(address, member.address, 'updates correct member');
@@ -181,6 +187,8 @@ test('marks member faulty after suspect period', function t(assert) {
 
     suspicion.start(member);
 
-    suspicion.stopAll();
-    assert.end();
+    setTimeout(function verify() {
+        suspicion.stopAll();
+        assert.end();
+    }, suspicionTimeout + 1);
 });
