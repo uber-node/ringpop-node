@@ -19,7 +19,22 @@
 // THE SOFTWARE.
 'use strict';
 
+var test = require('tape');
+
+var allocRingpop = require('../lib/alloc-ringpop.js');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
+
+test('bootstrap with self is ok', function t(assert) {
+    var ringpop = allocRingpop();
+
+    ringpop.bootstrap([ringpop.hostPort], onBootstrap);
+
+    function onBootstrap(err) {
+        assert.ifError(err);
+        ringpop.destroy();
+        assert.end();
+    }
+});
 
 testRingpopCluster({
     size: 1
