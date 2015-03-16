@@ -19,8 +19,6 @@
 // THE SOFTWARE.
 'use strict';
 
-require('./handle_or_proxy_test.js');
-require('./lookup_self_test.js');
-require('./proxy_req_test.js');
-require('./request_proxy_test.js');
-require('./admin_join_test.js');
+require('./join-test.js');
+require('./proxy-test.js');
+require('./ring-test.js');
