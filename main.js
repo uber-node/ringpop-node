@@ -52,7 +52,7 @@ function main() {
         channel: tchannel
     });
 
-    createRingPopTChannel(ringpop, tchannel);
+    ringpop.setupChannel();
     ringpop.bootstrap(program.hosts);
 }
 
