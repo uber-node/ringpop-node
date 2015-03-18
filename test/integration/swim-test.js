@@ -52,9 +52,17 @@ function mkNoGossip(cluster) {
 }
 
 function mkBadPingReqResponder(ringpop) {
-    ringpop.channel.register('/protocol/ping-req', function protocolPingReq(req, res) {
-        res.sendOk(null, JSON.stringify('badbody'));
-    });
+    var thriftChannel = ringpop.channelWrapper.tchannelAsThrift;
+
+    var rawChannel = ringpop.channel;
+    thriftChannel.register(rawChannel, 'Ringpop::pingReq', null, protocolPingReq);
+
+    function protocolPingReq(opts, req, head, body, callback) {
+        callback(null, {
+            ok: true,
+            body: 'badbody'
+        });
+    }
 }
 
 testRingpopCluster({
