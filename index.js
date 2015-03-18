@@ -179,14 +179,16 @@ RingPop.prototype.destroy = function destroy() {
         this.joiner.destroy();
     }
 
-    // HACK remove double destroy gaurd.
-    if (this.channel && !this.channel.topChannel && !this.channel.destroyed) {
-        this.channel.close();
+    if (this.channelWrapper) {
+        this.channelWrapper.destroy();
     }
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
-    createRingPopTChannel(this, this.channel);
+    this.channelWrapper = createRingPopTChannel({
+        ringpop: this,
+        channel: this.channel
+    });
 };
 
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {

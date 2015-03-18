@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 var program = require('commander');
 var TChannel = require('tchannel');
-var createRingPopTChannel = require('./lib/tchannel').createRingPopTChannel;
 var RingPop = require('./index');
 
 function main() {
@@ -52,7 +51,7 @@ function main() {
         channel: tchannel
     });
 
-    createRingPopTChannel(ringpop, tchannel);
+    ringpop.setupChannel();
     ringpop.bootstrap(program.hosts);
 }
 

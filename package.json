@@ -30,6 +30,7 @@
     "metrics": "^0.1.8",
     "readable-stream": "^1.0.33",
     "tchannel": "2.0.0-beta18",
+    "thriftify": "^1.0.0-alpha13",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
