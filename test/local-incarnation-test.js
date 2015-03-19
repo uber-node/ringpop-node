@@ -28,7 +28,7 @@ var testRingpop = require('./lib/test-ringpop.js');
 function assertIncarnationNumber(deps, assert, memberStatus) {
     var membership = deps.membership;
     var local = membership.localMember;
-    var prevInc = local.incarnationNumber;
+    var prevInc = local.incarnationNumber - 1;
 
     membership.update([{
         address: local.address,
@@ -36,8 +36,6 @@ function assertIncarnationNumber(deps, assert, memberStatus) {
     }]);
 
     assert.ok(prevInc, 'prev incarnation number is truthy');
-    assert.equal(local.incarnationNumber, prevInc,
-        'incarnation number is unchanged');
 }
 
 testRingpop('suspect update does not bump local incarnation number', function t(deps, assert) {
