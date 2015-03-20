@@ -19,7 +19,7 @@
     "add-licence": "uber-licence",
     "check-licence": "uber-licence --dry",
     "cover": "istanbul cover --print detail --report html test/index.js",
-    "jshint": "jshint --verbose *.js lib/*.js",
+    "jshint": "jshint --verbose *.js lib/**/*.js",
     "travis": "npm run cover -s && istanbul report lcov && ((cat coverage/lcov.info | coveralls) || exit 0)",
     "view-cover": "opn coverage/index.html"
   },
