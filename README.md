@@ -107,11 +107,15 @@ if (node === ringpop.whoami()) {
 }
 ```
 
-The state of the hash ring will change when nodes join, leave, fail or are revived. When ringpop detects a change, it will emit a `changed` event. A change in the ring may cause keys to rebalance. If your application is affected to rebalanced keys, then it is left up to your application to respond accordingly.
+The state of the hash ring will change when nodes join, leave, fail or are revived. When ringpop detects a change, it will emit a `ringChanged` event, a `membershipChanged` event or both. A `ringChanged` event will be emitted when the number of nodes in the consistent hash ring changes. This type of change usually leads to some keys being rebalanced. A `membershipChanged` event is finer-grained and emitted whenever a member's status or incarnation number is updated. This may or not affect the underlying ring keyspace. You may be interested in one or all of these events depending upon your use case.
 
 ```javascript
-ringpop.on('changed', function() {
-    // do something
+ringpop.on('membershipChanged', function onMembershipChanged() {
+    // do something interesting
+});
+
+ringpop.on('ringChanged', function onRingChanged() {
+    // do something interesting
 });
 ```
 
