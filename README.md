@@ -79,10 +79,12 @@ var ringpop = new RingPop({
 });
 ```
 
-Then bootstrap ringpop. ringpop will look for a hosts file (see 'Generate hosts file' section) in `/etc/uber/ringpop/hosts/<app>.json` or `./hosts.json` to seed the ring and attempt to join a number of the nodes listed therein.
+Then bootstrap ringpop. ringpop will use the bootstrap hosts array or file path you provide it as the seed list for joining an existing cluster:
 
 ```javascript
-ringpop.bootstrap();
+ringpop.bootstrap(bootstrapHostsOrFile, function onBootstrapped(err, nodesJoined) {
+    // bootstrap completed, failed or timed-out
+});
 ```
 
 When ringpop has joined enough nodes, it will be ready for use and emit a `ready` event. Applications should refuse requests until ringpop is ready.
