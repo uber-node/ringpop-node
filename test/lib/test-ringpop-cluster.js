@@ -54,9 +54,7 @@ function bootstrapClusterOf(opts, onBootstrap) {
     }
 
     function bootstrapHandler(hostPort) {
-        console.log('booted', hostPort);
         return function bootstrapIt(err, nodesJoined) {
-            console.log('fini', hostPort);
             results[hostPort] = {
                 err: err,
                 nodesJoined: nodesJoined
