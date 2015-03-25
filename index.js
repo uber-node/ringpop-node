@@ -296,7 +296,6 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         self.addLocalMember();
 
         self.adminJoin(function(err, nodesJoined) {
-            console.log('wtf no err');
             if (err) {
                 self.logger.error('ringpop bootstrap failed', {
                     err: err.message,
