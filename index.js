@@ -179,8 +179,9 @@ RingPop.prototype.destroy = function destroy() {
         this.joiner.destroy();
     }
 
-    if (this.channel) {
-        this.channel.quit();
+    // HACK remove double destroy gaurd.
+    if (this.channel && !this.channel.destroyed) {
+        this.channel.close();
     }
 };
 
@@ -265,57 +266,69 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         return;
     }
 
-    var start = new Date();
+    if (this.channel && this.channel.address() === null) {
+        this.channel.once('listening', doRealBootstrap);
+        var parts = this.hostPort.split(':');
 
-    this.seedBootstrapHosts(bootstrapFile);
-
-    if (!Array.isArray(this.bootstrapHosts) || this.bootstrapHosts.length === 0) {
-        var noBootstrapMsg = 'ringpop cannot be bootstrapped without bootstrap hosts.' +
-            ' make sure you specify a valid bootstrap hosts file to the ringpop' +
-            ' constructor or have a valid hosts.json file in the current working' +
-            ' directory.';
-        this.logger.warn(noBootstrapMsg);
-        if (callback) callback(new Error(noBootstrapMsg));
-        return;
+        this.channel.listen(Number(parts[1]), parts[0]);
+    } else {
+        doRealBootstrap();
     }
 
-    this.checkForMissingBootstrapHost();
-    this.checkForHostnameIpMismatch();
+    function doRealBootstrap() {
+        var start = new Date();
 
-    this.addLocalMember();
+        self.seedBootstrapHosts(bootstrapFile);
 
-    this.adminJoin(function(err, nodesJoined) {
-        if (err) {
-            self.logger.error('ringpop bootstrap failed', {
-                err: err.message,
-                address: self.hostPort
-            });
-            if (callback) callback(err);
+        if (!Array.isArray(self.bootstrapHosts) || self.bootstrapHosts.length === 0) {
+            var noBootstrapMsg = 'ringpop cannot be bootstrapped without bootstrap hosts.' +
+                ' make sure you specify a valid bootstrap hosts file to the ringpop' +
+                ' constructor or have a valid hosts.json file in the current working' +
+                ' directory.';
+            self.logger.warn(noBootstrapMsg);
+            if (callback) callback(new Error(noBootstrapMsg));
             return;
         }
 
-        if (self.destroyed) {
-            var destroyedMsg = 'ringpop was destroyed ' +
-                'during bootstrap';
-            self.logger.error(destroyedMsg, {
-                address: self.hostPort
-            });
-            if (callback) callback(new Error(destroyedMsg));
-            return;
-        }
+        self.checkForMissingBootstrapHost();
+        self.checkForHostnameIpMismatch();
 
-        self.logger.info('ringpop is ready', {
-            address: self.hostPort,
-            bootstrapTime: new Date() - start,
-            memberCount: self.membership.getMemberCount()
+        self.addLocalMember();
+
+        self.adminJoin(function(err, nodesJoined) {
+            console.log('wtf no err');
+            if (err) {
+                self.logger.error('ringpop bootstrap failed', {
+                    err: err.message,
+                    address: self.hostPort
+                });
+                if (callback) callback(err);
+                return;
+            }
+
+            if (self.destroyed) {
+                var destroyedMsg = 'ringpop was destroyed ' +
+                    'during bootstrap';
+                self.logger.error(destroyedMsg, {
+                    address: self.hostPort
+                });
+                if (callback) callback(new Error(destroyedMsg));
+                return;
+            }
+
+            self.logger.info('ringpop is ready', {
+                address: self.hostPort,
+                bootstrapTime: new Date() - start,
+                memberCount: self.membership.getMemberCount()
+            });
+
+            self.gossip.start();
+            self.isReady = true;
+            self.emit('ready');
+
+            if (callback) callback(null, nodesJoined);
         });
-
-        self.gossip.start();
-        self.isReady = true;
-        self.emit('ready');
-
-        if (callback) callback(null, nodesJoined);
-    });
+    }
 };
 
 RingPop.prototype.checkForMissingBootstrapHost = function checkForMissingBootstrapHost() {

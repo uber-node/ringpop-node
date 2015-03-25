@@ -52,6 +52,8 @@ function mkNoGossip(cluster) {
 }
 
 function mkBadPingReqResponder(ringpop) {
+    // TODO remove hack
+    delete ringpop.channel.handler.endpoints['/protocol/ping-req'];
     ringpop.channel.register('/protocol/ping-req', function protocolPingReq(arg1, arg2, hostInfo, cb) {
         cb(null, null, JSON.stringify('badbody'));
     });

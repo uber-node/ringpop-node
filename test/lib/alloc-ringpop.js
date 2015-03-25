@@ -37,11 +37,10 @@ function allocRingpop(name, options) {
     var hostPort = host + ':' + String(port);
 
     var tchannel = TChannel({
-        host: host,
-        port: port,
         timers: options && options.timers,
         logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel')
     });
+
     var timers = TimeMock(Date.now());
     var ringpop = RingPop({
         app: 'test.ringpop.proxy_req_test',

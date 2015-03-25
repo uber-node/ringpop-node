@@ -24,99 +24,99 @@ var test = require('tape');
 var allocRingpop = require('../lib/alloc-ringpop.js');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 
-test('bootstrap with self is ok', function t(assert) {
-    var ringpop = allocRingpop();
+// test('bootstrap with self is ok', function t(assert) {
+//     var ringpop = allocRingpop();
 
-    ringpop.bootstrap([ringpop.hostPort], onBootstrap);
+//     ringpop.bootstrap([ringpop.hostPort], onBootstrap);
 
-    function onBootstrap(err) {
-        assert.ifError(err);
-        ringpop.destroy();
-        assert.end();
-    }
-});
+//     function onBootstrap(err) {
+//         assert.ifError(err);
+//         ringpop.destroy();
+//         assert.end();
+//     }
+// });
 
-testRingpopCluster({
-    size: 1
-}, 'one node can join', function t(bootRes, cluster, assert) {
-    assert.ifErr(bootRes[cluster[0].hostPort].err, 'no error occurred');
-    assert.end();
-});
+// testRingpopCluster({
+//     size: 1
+// }, 'one node can join', function t(bootRes, cluster, assert) {
+//     assert.ifErr(bootRes[cluster[0].hostPort].err, 'no error occurred');
+//     assert.end();
+// });
 
-testRingpopCluster({
-    size: 2
-}, 'two nodes can join', function t(bootRes, cluster, assert) {
-    assert.equal(cluster.length, 2, 'cluster of 2');
+// testRingpopCluster({
+//     size: 2
+// }, 'two nodes can join', function t(bootRes, cluster, assert) {
+//     assert.equal(cluster.length, 2, 'cluster of 2');
 
-    cluster.forEach(function eachNode(node) {
-        assert.ok(node.isReady, 'node is ready');
-    });
+//     cluster.forEach(function eachNode(node) {
+//         assert.ok(node.isReady, 'node is ready');
+//     });
 
-    assert.end();
-});
+//     assert.end();
+// });
 
-testRingpopCluster('three nodes can join', function t(bootRes, cluster, assert) {
-    assert.equal(cluster.length, 3, 'cluster of 3');
+// testRingpopCluster('three nodes can join', function t(bootRes, cluster, assert) {
+//     assert.equal(cluster.length, 3, 'cluster of 3');
 
-    cluster.forEach(function eachNode(node) {
-        assert.ok(node.isReady, 'node is ready');
-    });
+//     cluster.forEach(function eachNode(node) {
+//         assert.ok(node.isReady, 'node is ready');
+//     });
 
-    assert.end();
-});
+//     assert.end();
+// });
 
-testRingpopCluster({
-    joinSize: 1,
-    tap: function tap(cluster) {
-        cluster[2].denyJoins();
-    }
-}, 'three nodes, one of them bad, join size equals one', function t(bootRes, cluster, assert) {
-    assert.equal(cluster.length, 3, 'cluster of 3');
+// testRingpopCluster({
+//     joinSize: 1,
+//     tap: function tap(cluster) {
+//         cluster[2].denyJoins();
+//     }
+// }, 'three nodes, one of them bad, join size equals one', function t(bootRes, cluster, assert) {
+//     assert.equal(cluster.length, 3, 'cluster of 3');
 
-    var badNode = cluster[2].hostPort;
+//     var badNode = cluster[2].hostPort;
 
-    cluster.forEach(function eachNode(node) {
-        assert.ok(node.isReady, 'node is bootstrapped');
+//     cluster.forEach(function eachNode(node) {
+//         assert.ok(node.isReady, 'node is bootstrapped');
 
-        var nodesJoined = bootRes[node.hostPort].nodesJoined;
-        assert.ok(nodesJoined.length >= 1, 'joined at least one other node');
-        assert.ok(nodesJoined.indexOf(badNode) === -1, 'no one can join bad node');
-    });
+//         var nodesJoined = bootRes[node.hostPort].nodesJoined;
+//         assert.ok(nodesJoined.length >= 1, 'joined at least one other node');
+//         assert.ok(nodesJoined.indexOf(badNode) === -1, 'no one can join bad node');
+//     });
 
-    assert.end();
-});
+//     assert.end();
+// });
 
-testRingpopCluster({
-    joinSize: 2,
-    maxJoinDuration: 100,
-    tap: function tap(cluster) {
-        cluster[1].denyJoins();
-        cluster[2].denyJoins();
-    }
-}, 'three nodes, two of them bad, join size equals two', function t(bootRes, cluster, assert) {
-    assert.equal(cluster.length, 3, 'cluster of 3');
+// testRingpopCluster({
+//     joinSize: 2,
+//     maxJoinDuration: 100,
+//     tap: function tap(cluster) {
+//         cluster[1].denyJoins();
+//         cluster[2].denyJoins();
+//     }
+// }, 'three nodes, two of them bad, join size equals two', function t(bootRes, cluster, assert) {
+//     assert.equal(cluster.length, 3, 'cluster of 3');
 
-    cluster.forEach(function eachNode(node) {
-        assert.notok(node.isReady, 'node is not bootstrapped');
-        assert.equal(bootRes[node.hostPort].err.type,
-            'ringpop.join-duration-exceeded',
-            'join duration exceeded error');
-    });
+//     cluster.forEach(function eachNode(node) {
+//         assert.notok(node.isReady, 'node is not bootstrapped');
+//         assert.equal(bootRes[node.hostPort].err.type,
+//             'ringpop.join-duration-exceeded',
+//             'join duration exceeded error');
+//     });
 
-    assert.end();
-});
+//     assert.end();
+// });
 
-testRingpopCluster({
-    size: 25
-}, 'mega cluster', function t(bootRes, cluster, assert) {
-    assert.equal(cluster.length, 25, 'cluser of 25');
+// testRingpopCluster({
+//     size: 25
+// }, 'mega cluster', function t(bootRes, cluster, assert) {
+//     assert.equal(cluster.length, 25, 'cluser of 25');
 
-    cluster.forEach(function eachNode(node) {
-        assert.ok(node.isReady, 'node is bootstrapped');
-    });
+//     cluster.forEach(function eachNode(node) {
+//         assert.ok(node.isReady, 'node is bootstrapped');
+//     });
 
-    assert.end();
-});
+//     assert.end();
+// });
 
 testRingpopCluster({
     size: 2,
@@ -134,6 +134,7 @@ testRingpopCluster({
         };
     }
 }, 'slow joiner', function t(bootRes, cluster, assert) {
+    console.log('not booting');
     assert.equal(cluster.length, 2, 'cluster of 2');
 
     var slowJoiner = cluster[0];

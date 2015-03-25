@@ -42,8 +42,21 @@ function bootstrapClusterOf(opts, onBootstrap) {
     var count = 0;
     var results = {};
 
+    function listenHandler(ringpop, i) {
+        return function () {
+            var cb = Array.isArray(onBootstrap) ?
+                onBootstrap[i] : bootstrapHandler(ringpop.hostPort);
+
+            ringpop.bootstrap({
+                bootstrapFile: bootstrapHosts
+            }, cb);
+        }
+    }
+
     function bootstrapHandler(hostPort) {
+        console.log('booted', hostPort);
         return function bootstrapIt(err, nodesJoined) {
+            console.log('fini', hostPort);
             results[hostPort] = {
                 err: err,
                 nodesJoined: nodesJoined
@@ -58,10 +71,11 @@ function bootstrapClusterOf(opts, onBootstrap) {
     for (var i = 0; i < cluster.length; i++) {
         var ringpop = cluster[i];
 
-        ringpop.bootstrap({
-            bootstrapFile: bootstrapHosts
-        }, Array.isArray(onBootstrap) ?
-            onBootstrap[i] : bootstrapHandler(ringpop.hostPort));
+        var parts = ringpop.hostPort.split(':');
+
+        ringpop.channel.once('listening',
+            listenHandler(ringpop, i));
+        ringpop.channel.listen(Number(parts[1]), parts[0]);
     }
 
     return cluster;

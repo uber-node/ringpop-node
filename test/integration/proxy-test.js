@@ -19,6 +19,10 @@
 // THE SOFTWARE.
 'use strict';
 
+require('leaked-handles').set({
+    debugErrors: true
+});
+
 var _ = require('underscore');
 var after = require('after');
 var jsonBody = require('body/json');
@@ -419,7 +423,7 @@ test('overrides /proxy/req endpoint', function t(assert) {
             assert.equal(arg1.toString(), head, 'arg1 is raw head');
             assert.equal(arg2.toString(), '{"hello":true}', 'arg2 is raw body');
 
-            cb(null, arg1, things);
+            cb(null, arg1, JSON.stringify(things));
         });
 
         var request = cluster.request({
@@ -852,6 +856,8 @@ test('non json head is ok', function t(assert) {
     var cluster = allocCluster(function onReady() {
         var two = cluster.two;
 
+        // HACK around this for now
+        delete two.channel.handler.endpoints['/proxy/req'];
         two.channel.register('/proxy/req', fakeProxyReq);
 
         cluster.request({
@@ -895,7 +901,8 @@ test('handle tchannel failures', function t(assert) {
         // Reach into the the first TChannel and forcibly
         // destroy its open TCP connection
         setTimeout(function onTimer() {
-            var name = cluster.two.channel.name;
+            var name = cluster.two.channel.hostPort;
+
             cluster.one.channel.getPeer(name).socket.destroy();
         }, 100);
     });
