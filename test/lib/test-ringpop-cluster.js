@@ -26,6 +26,8 @@ var tape = require('tape');
 
 // 1st party dependencies
 var Ringpop = require('../../index.js');
+var setupTChannel = require('../../lib/tchannel-alpha4.js')
+    .createRingPopTChannel;
 var TChannel = require('tchannel');
 
 function bootstrapClusterOf(opts, onBootstrap) {
@@ -97,7 +99,8 @@ function createClusterOf(opts) {
 function createTChannel(host, port) {
     return new TChannel({
         host: host,
-        port: port
+        port: port,
+        logger: DebuglogLogger('tchannel')
     });
 }
 
@@ -112,7 +115,11 @@ function createRingpop(opts) {
         logger: DebuglogLogger('ringpop')
     }, opts));
 
-    ringpop.setupChannel();
+    var handleRequest = setupTChannel(ringpop);
+    ringpop.channel.handler = {
+        handleRequest: handleRequest
+    };
+    // ringpop.setupChannel();
 
     return ringpop;
 }

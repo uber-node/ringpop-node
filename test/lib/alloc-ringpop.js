@@ -25,6 +25,8 @@ var TimeMock = require('time-mock');
 
 var DebuglogLogger = require('debug-logtron');
 var RingPop = require('../../index.js');
+var setupTChannel = require('../../lib/tchannel-alpha4.js')
+    .createRingPopTChannel;
 
 module.exports = allocRingpop;
 
@@ -52,7 +54,12 @@ function allocRingpop(name, options) {
         setTimeout: options.useFakeTimers && timers.setTimeout
     });
 
-    ringpop.setupChannel();
+    var handleRequest = setupTChannel(ringpop);
+    tchannel.handler = {
+        handleRequest: handleRequest
+    };
+
+    // ringpop.setupChannel();
     ringpop.timers = timers;
     return ringpop;
 }

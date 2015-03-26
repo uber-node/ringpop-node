@@ -96,8 +96,10 @@ testRingpopCluster({
 }, 'three nodes, two of them bad, join size equals two', function t(bootRes, cluster, assert) {
     assert.equal(cluster.length, 3, 'cluster of 3');
 
+
     cluster.forEach(function eachNode(node) {
         assert.notok(node.isReady, 'node is not bootstrapped');
+        // console.log('?', bootRes);
         assert.equal(bootRes[node.hostPort].err.type,
             'ringpop.join-duration-exceeded',
             'join duration exceeded error');
@@ -134,7 +136,6 @@ testRingpopCluster({
         };
     }
 }, 'slow joiner', function t(bootRes, cluster, assert) {
-    console.log('not booting');
     assert.equal(cluster.length, 2, 'cluster of 2');
 
     var slowJoiner = cluster[0];

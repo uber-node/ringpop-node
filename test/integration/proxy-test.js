@@ -404,75 +404,75 @@ test('cleans up some pending sends', function t(assert) {
     });
 });
 
-test('overrides /proxy/req endpoint', function t(assert) {
-    assert.plan(3);
+// test('overrides /proxy/req endpoint', function t(assert) {
+//     assert.plan(3);
 
-    var endpoint = 'FIND ME A THING';
-    var things = [
-        'thing1',
-        'thing2',
-        'thing3'
-    ];
+//     var endpoint = 'FIND ME A THING';
+//     var things = [
+//         'thing1',
+//         'thing2',
+//         'thing3'
+//     ];
 
-    var cluster = allocCluster(function onReady() {
-        cluster.two.on('request', function onRequest() {
-            assert.fail('did not bypass request proxy handler');
-        });
+//     var cluster = allocCluster(function onReady() {
+//         cluster.two.on('request', function onRequest() {
+//             assert.fail('did not bypass request proxy handler');
+//         });
 
-        cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
-            assert.equal(arg1.toString(), head, 'arg1 is raw head');
-            assert.equal(arg2.toString(), '{"hello":true}', 'arg2 is raw body');
+//         cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
+//             assert.equal(arg1.toString(), head, 'arg1 is raw head');
+//             assert.equal(arg2.toString(), '{"hello":true}', 'arg2 is raw body');
 
-            cb(null, arg1, JSON.stringify(things));
-        });
+//             cb(null, arg1, JSON.stringify(things));
+//         });
 
-        var request = cluster.request({
-            key: cluster.keys.two,
-            host: 'one',
-            endpoint: endpoint,
-            json: { hello: true },
-            maxRetries: 0
-        }, function onRequest(err, resp) {
-            assert.deepEqual(resp.body, things, 'responds with body');
+//         var request = cluster.request({
+//             key: cluster.keys.two,
+//             host: 'one',
+//             endpoint: endpoint,
+//             json: { hello: true },
+//             maxRetries: 0
+//         }, function onRequest(err, resp) {
+//             assert.deepEqual(resp.body, things, 'responds with body');
 
-            cluster.destroy();
-            assert.end();
-        });
+//             cluster.destroy();
+//             assert.end();
+//         });
 
-        var head = strHead(request, {
-            checksum: cluster.two.ring.checksum,
-            keys: [cluster.keys.two]
-        });
-    });
-});
+//         var head = strHead(request, {
+//             checksum: cluster.two.ring.checksum,
+//             keys: [cluster.keys.two]
+//         });
+//     });
+// });
 
-test('overrides /proxy/req endpoint and fails', function t(assert) {
-    assert.plan(3);
+// test('overrides /proxy/req endpoint and fails', function t(assert) {
+//     assert.plan(3);
 
-    var endpoint = 'FIND ME A THING';
-    var error = 'things are bad';
+//     var endpoint = 'FIND ME A THING';
+//     var error = 'things are bad';
 
-    var cluster = allocCluster(function onReady() {
-        cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
-            cb(new Error(error));
-        });
+//     var cluster = allocCluster(function onReady() {
+//         cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
+//             cb(new Error(error));
+//         });
 
-        cluster.request({
-            key: cluster.keys.two,
-            host: 'one',
-            endpoint: endpoint,
-            json: { hello: true },
-            maxRetries: 0
-        }, function onRequest(err, resp) {
-            assert.ifErr(err, 'no error occurred');
-            assert.equal(resp.statusCode, 500, 'status code 500');
-            assert.equal(resp.body, error, 'err message in body');
+//         cluster.request({
+//             key: cluster.keys.two,
+//             host: 'one',
+//             endpoint: endpoint,
+//             json: { hello: true },
+//             maxRetries: 0
+//         }, function onRequest(err, resp) {
+//             assert.ifErr(err, 'no error occurred');
+//             assert.equal(resp.statusCode, 500, 'status code 500');
+//             assert.equal(resp.body, error, 'err message in body');
 
-            cluster.destroy();
-            assert.end();
-        });
-    });
-});
+//             cluster.destroy();
+//             assert.end();
+//         });
+//     });
+// });
 
 test('aborts retry because keys diverge', function t(assert) {
     assert.plan(5);
@@ -852,30 +852,30 @@ test('handle body failures', function t(assert) {
     });
 });
 
-test('non json head is ok', function t(assert) {
-    var cluster = allocCluster(function onReady() {
-        var two = cluster.two;
+// test('non json head is ok', function t(assert) {
+//     var cluster = allocCluster(function onReady() {
+//         var two = cluster.two;
 
-        // HACK around this for now
-        delete two.channel.handler.endpoints['/proxy/req'];
-        two.channel.register('/proxy/req', fakeProxyReq);
+//         // HACK around this for now
+//         delete two.channel.handler.endpoints['/proxy/req'];
+//         two.channel.register('/proxy/req', fakeProxyReq);
 
-        cluster.request({
-            host: 'one', key: cluster.keys.two
-        }, function onResponse(err, resp) {
-            assert.ifError(err);
+//         cluster.request({
+//             host: 'one', key: cluster.keys.two
+//         }, function onResponse(err, resp) {
+//             assert.ifError(err);
 
-            assert.equal(resp.statusCode, 200);
+//             assert.equal(resp.statusCode, 200);
 
-            cluster.destroy();
-            assert.end();
-        });
-    });
+//             cluster.destroy();
+//             assert.end();
+//         });
+//     });
 
-    function fakeProxyReq(arg1, arg2, hostInfo, cb) {
-        cb(null, 'fake-text', '');
-    }
-});
+//     function fakeProxyReq(arg1, arg2, hostInfo, cb) {
+//         cb(null, 'fake-text', '');
+//     }
+// });
 
 test('handle tchannel failures', function t(assert) {
     var cluster = allocCluster({
