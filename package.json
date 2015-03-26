@@ -29,6 +29,7 @@
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "readable-stream": "^1.0.33",
+    "run-parallel": "^1.1.0",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
@@ -48,7 +49,7 @@
     "opn": "^1.0.1",
     "pre-commit": "^0.0.9",
     "tape": "^3.0.3",
-    "tchannel": "2.0.0-beta1",
+    "tchannel": "2.0.0-beta2",
     "time-mock": "^0.1.2",
     "tryit": "^1.0.1",
     "uber-licence": "^1.1.0"
