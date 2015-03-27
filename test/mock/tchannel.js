@@ -23,5 +23,14 @@ var noop = require('./noop.js');
 
 module.exports = {
     quit: noop,
-    send: noop
+    close: noop,
+    request: function(options) {
+        return {
+            send: function (url, head, body, cb) {
+                cb(null, {
+                    ok: true
+                });
+            }
+        };
+    }
 };

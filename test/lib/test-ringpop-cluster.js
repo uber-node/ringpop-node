@@ -26,6 +26,8 @@ var tape = require('tape');
 
 // 1st party dependencies
 var Ringpop = require('../../index.js');
+var setupTChannel = require('../../lib/tchannel-alpha4.js')
+    .createRingPopTChannel;
 var TChannel = require('tchannel');
 
 function bootstrapClusterOf(opts, onBootstrap) {
@@ -41,6 +43,17 @@ function bootstrapClusterOf(opts, onBootstrap) {
 
     var count = 0;
     var results = {};
+
+    function listenHandler(ringpop, i) {
+        return function () {
+            var cb = Array.isArray(onBootstrap) ?
+                onBootstrap[i] : bootstrapHandler(ringpop.hostPort);
+
+            ringpop.bootstrap({
+                bootstrapFile: bootstrapHosts
+            }, cb);
+        }
+    }
 
     function bootstrapHandler(hostPort) {
         return function bootstrapIt(err, nodesJoined) {
@@ -58,10 +71,11 @@ function bootstrapClusterOf(opts, onBootstrap) {
     for (var i = 0; i < cluster.length; i++) {
         var ringpop = cluster[i];
 
-        ringpop.bootstrap({
-            bootstrapFile: bootstrapHosts
-        }, Array.isArray(onBootstrap) ?
-            onBootstrap[i] : bootstrapHandler(ringpop.hostPort));
+        var parts = ringpop.hostPort.split(':');
+
+        ringpop.channel.once('listening',
+            listenHandler(ringpop, i));
+        ringpop.channel.listen(Number(parts[1]), parts[0]);
     }
 
     return cluster;
@@ -85,7 +99,8 @@ function createClusterOf(opts) {
 function createTChannel(host, port) {
     return new TChannel({
         host: host,
-        port: port
+        port: port,
+        logger: DebuglogLogger('tchannel')
     });
 }
 
@@ -100,7 +115,11 @@ function createRingpop(opts) {
         logger: DebuglogLogger('ringpop')
     }, opts));
 
-    ringpop.setupChannel();
+    var handleRequest = setupTChannel(ringpop);
+    ringpop.channel.handler = {
+        handleRequest: handleRequest
+    };
+    // ringpop.setupChannel();
 
     return ringpop;
 }
