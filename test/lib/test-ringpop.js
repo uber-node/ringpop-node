@@ -35,9 +35,11 @@ function testRingpop(opts, name, test) {
             hostPort: opts.hostPort || '127.0.0.1:3000'
         });
 
-        ringpop.addLocalMember();
+        ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
 
         test({
+            dissemination: ringpop.dissemination,
+            iterator: ringpop.memberIterator,
             localMember: ringpop.membership.localMember,
             membership: ringpop.membership,
             ringpop: ringpop

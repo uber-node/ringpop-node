@@ -128,7 +128,7 @@ testRingpopCluster({
                 callback(null, {
                     app: 'test',
                     coordinator: cluster[1].hostPort,
-                    membership: cluster[1].membership.getState()
+                    membership: cluster[1].dissemination.fullSync()
                 });
             }, 100);
         };
