@@ -106,7 +106,6 @@ function createTChannel(host, port) {
 
 function createRingpop(opts) {
     opts = opts || {};
-
     var ringpop = new Ringpop(_.extend({
         app: 'test',
         hostPort: opts.host + ':' + opts.port,
@@ -114,14 +113,7 @@ function createRingpop(opts) {
         channel: createTChannel(opts.host, opts.port),
         logger: DebuglogLogger('ringpop')
     }, opts));
-
-    var handleRequest = setupTChannel(ringpop);
-    ringpop.channel.handler = {
-        handleRequest: handleRequest
-    };
-    // ringpop.setupChannel();
-
-    return ringpop;
+    return setupTChannel(ringpop);
 }
 
 function destroyCluster(cluster) {

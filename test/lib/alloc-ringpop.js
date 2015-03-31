@@ -54,10 +54,7 @@ function allocRingpop(name, options) {
         setTimeout: options.useFakeTimers && timers.setTimeout
     });
 
-    var handleRequest = setupTChannel(ringpop);
-    tchannel.handler = {
-        handleRequest: handleRequest
-    };
+    setupTChannel(ringpop, tchannel);
 
     // ringpop.setupChannel();
     ringpop.timers = timers;
