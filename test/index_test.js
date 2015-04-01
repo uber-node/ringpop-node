@@ -52,7 +52,7 @@ test('does not throw when calling lookup with an integer', function t(assert) {
 
 test('key hashes to only server', function t(assert) {
     var ringpop = createRingpop();
-    ringpop.addLocalMember();
+    ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
     assert.equals(ringpop.lookup(12345), ringpop.hostPort, 'hashes to only server');
     ringpop.destroy();
     assert.end();
@@ -62,7 +62,7 @@ test('admin join rejoins if member has previously left', function t(assert) {
     assert.plan(3);
 
     var ringpop = createRingpop();
-    ringpop.addLocalMember({ incarnationNumber: 1 });
+    ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.adminLeave(function(err, res1, res2) {
         assert.equals(res2, 'ok', 'node left cluster');
 
@@ -93,8 +93,8 @@ test('admin leave prevents redundant leave', function t(assert) {
     assert.plan(2);
 
     var ringpop = createRingpop();
-    ringpop.addLocalMember({ incarnationNumber: 1 });
-    ringpop.membership.makeLeave();
+    ringpop.membership.makeAlive(ringpop.whoami(), 1);
+    ringpop.membership.makeLeave(ringpop.whoami(), 1);
     ringpop.adminLeave(function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-leave.redundant', 'cannot leave cluster twice');
@@ -107,7 +107,7 @@ test('admin leave makes local member leave', function t(assert) {
     assert.plan(3);
 
     var ringpop = createRingpop();
-    ringpop.addLocalMember({ incarnationNumber: 1 });
+    ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.adminLeave(function(err, _, res2) {
         assert.notok(err, 'an error did not occur');
         assert.ok('leave', ringpop.membership.localMember.status, 'local member has correct status');
@@ -121,7 +121,7 @@ test('admin leave stops gossip', function t(assert) {
     assert.plan(2);
 
     var ringpop = createRingpop();
-    ringpop.addLocalMember({ incarnationNumber: 1 });
+    ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.gossip.start();
     ringpop.adminLeave(function(err) {
         assert.notok(err, 'an error did not occur');
@@ -135,14 +135,11 @@ test('admin leave stops suspicion subprotocol', function t(assert) {
     assert.plan(2);
 
     var ringpopRemote = createRemoteRingpop();
-    ringpopRemote.addLocalMember();
+    ringpopRemote.membership.makeAlive(ringpopRemote.whoami(), Date.now());
 
     var ringpop = createRingpop();
-    ringpop.addLocalMember({ incarnationNumber: 1 });
-    ringpop.membership.addMember({
-        address: ringpopRemote.membership.localMember.address,
-        status: 'alive'
-    });
+    ringpop.membership.makeAlive(ringpop.whoami(), 1);
+    ringpop.membership.makeAlive(ringpopRemote.whoami(), Date.now());
     ringpop.suspicion.start(ringpopRemote.hostPort);
 
     ringpop.adminLeave(function(err) {
@@ -312,11 +309,16 @@ test('emits membership changed event', function t(assert) {
     var node1Addr = '127.0.0.1:3001';
 
     var ringpop = createRingpop();
-    ringpop.addLocalMember();
-    ringpop.membership.addMember({
-        address: node1Addr,
-        status: 'alive'
-    });
+    ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
+    ringpop.membership.makeAlive(node1Addr, Date.now());
+
+    assertChanged();
+
+    var node1Member = ringpop.membership.findMemberByAddress(node1Addr);
+    ringpop.membership.makeSuspect(node1Addr, node1Member.incarnationNumber);
+
+    ringpop.destroy();
+    assert.end();
 
     function assertChanged() {
         ringpop.once('membershipChanged', function onMembershipChanged() {
@@ -327,12 +329,6 @@ test('emits membership changed event', function t(assert) {
             assert.fail('no ring changed');
         });
     }
-
-    assertChanged();
-    ringpop.membership.makeSuspect(node1Addr);
-
-    ringpop.destroy();
-    assert.end();
 });
 
 test('emits ring changed event', function t(assert) {
@@ -340,13 +336,11 @@ test('emits ring changed event', function t(assert) {
 
     var node1Addr = '127.0.0.1:3001';
     var node2Addr = '127.0.0.1:3002';
+    var magicIncNo = Date.now() +  123456;
 
     var ringpop = createRingpop();
-    ringpop.addLocalMember();
-    ringpop.membership.addMember({
-        address: node1Addr,
-        status: 'alive'
-    });
+    ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
+    ringpop.membership.makeAlive(node1Addr, Date.now());
 
     function assertChanged(changer) {
         ringpop.once('membershipChanged', function onMembershipChanged() {
@@ -365,15 +359,15 @@ test('emits ring changed event', function t(assert) {
     });
 
     assertChanged(function assertIt() {
-        ringpop.membership.makeAlive(node1Addr, Date.now() + 123456 /* magic incarnation number bump */);
+        ringpop.membership.makeAlive(node1Addr, magicIncNo);
     });
 
     assertChanged(function assertIt() {
-        ringpop.membership.makeLeave(node1Addr);
+        ringpop.membership.makeLeave(node1Addr, magicIncNo);
     });
 
     assertChanged(function assertIt() {
-        ringpop.membership.makeJoin(node2Addr, Date.now());
+        ringpop.membership.makeAlive(node2Addr, Date.now());
     });
 
     ringpop.destroy();
@@ -382,14 +376,10 @@ test('emits ring changed event', function t(assert) {
 
 test('first time member, not alive', function t(assert) {
     var ringpop = createRingpop();
-    ringpop.addLocalMember();
+    ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
 
     var faultyAddr = '127.0.0.1:3001';
-    ringpop.membership.update([{
-        address: faultyAddr,
-        status: 'faulty',
-        incarnationNumber: Date.now()
-    }]);
+    ringpop.membership.makeFaulty(faultyAddr, Date.now());
 
     assert.notok(ringpop.ring.hasServer(faultyAddr),
         'new faulty server should not be in ring');

@@ -20,7 +20,7 @@
 'use strict';
 
 var after = require('after');
-var MembershipUpdateRollup = require('../lib/membership_update_rollup.js');
+var MembershipUpdateRollup = require('../lib/membership-update-rollup.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
 
