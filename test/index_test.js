@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 var _ = require('underscore');
 var mock = require('./mock');
+var recvAdminLeave = require('../lib/admin-leave-recvr.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
 
@@ -29,7 +30,7 @@ function createRingpop(opts) {
     }), opts);
 }
 
-function createRemoteRingpop(opts) {
+function createRemoteRingpop() {
     return createRingpop({
         hostPort: '127.0.0.1:3001'
     });
@@ -63,7 +64,9 @@ test('admin join rejoins if member has previously left', function t(assert) {
 
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
-    ringpop.adminLeave(function(err, res1, res2) {
+    recvAdminLeave({
+        ringpop: ringpop
+    }, function(err, res1, res2) {
         assert.equals(res2, 'ok', 'node left cluster');
 
         ringpop.membership.localMember.incarnationNumber = 2;
@@ -95,7 +98,9 @@ test('admin leave prevents redundant leave', function t(assert) {
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.membership.makeLeave(ringpop.whoami(), 1);
-    ringpop.adminLeave(function(err) {
+    recvAdminLeave({
+        ringpop: ringpop
+    }, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-leave.redundant', 'cannot leave cluster twice');
         ringpop.destroy();
@@ -108,7 +113,9 @@ test('admin leave makes local member leave', function t(assert) {
 
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
-    ringpop.adminLeave(function(err, _, res2) {
+    recvAdminLeave({
+        ringpop: ringpop
+    }, function(err, _, res2) {
         assert.notok(err, 'an error did not occur');
         assert.ok('leave', ringpop.membership.localMember.status, 'local member has correct status');
         assert.equals('ok', res2, 'admin leave was successful');
@@ -123,7 +130,9 @@ test('admin leave stops gossip', function t(assert) {
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.gossip.start();
-    ringpop.adminLeave(function(err) {
+    recvAdminLeave({
+        ringpop: ringpop
+    }, function(err) {
         assert.notok(err, 'an error did not occur');
         assert.equals(true, ringpop.gossip.isStopped, 'gossip is stopped');
         ringpop.destroy();
@@ -142,7 +151,9 @@ test('admin leave stops suspicion subprotocol', function t(assert) {
     ringpop.membership.makeAlive(ringpopRemote.whoami(), Date.now());
     ringpop.suspicion.start(ringpopRemote.hostPort);
 
-    ringpop.adminLeave(function(err) {
+    recvAdminLeave({
+        ringpop: ringpop
+    }, function(err) {
         assert.notok(err, 'an error did not occur');
         assert.equals(true, ringpop.suspicion.isStoppedAll, 'suspicion subprotocol is stopped');
         ringpop.destroy();
@@ -155,7 +166,9 @@ test('admin leave cannot be attempted before local member is added', function t(
     assert.plan(2);
 
     var ringpop = createRingpop();
-    ringpop.adminLeave(function(err) {
+    recvAdminLeave({
+        ringpop: ringpop
+    }, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'an invalid leave occurred');
         ringpop.destroy();

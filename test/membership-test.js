@@ -22,7 +22,6 @@
 
 // Test dependencies
 var Member = require('../lib/member.js');
-var MembershipUpdateRules = require('../lib/membership-update-rules.js');
 
 // Test helpers
 var testRingpop = require('./lib/test-ringpop.js');
@@ -62,7 +61,6 @@ testRingpop('checksum is changed when membership is updated', function t(deps, a
 
 testRingpop('change with higher incarnation number results in leave override', function t(deps, assert) {
     var ringpop = deps.ringpop;
-    var dissemination = deps.dissemination;
     var membership = deps.membership;
 
     var member = membership.findMemberByAddress(ringpop.whoami());
@@ -79,7 +77,6 @@ testRingpop('change with higher incarnation number results in leave override', f
 
 testRingpop('change with same incarnation number does not result in leave override', function t(deps, assert) {
     var ringpop = deps.ringpop;
-    var dissemination = deps.dissemination;
     var membership = deps.membership;
 
     var member = membership.findMemberByAddress(ringpop.whoami());
@@ -96,7 +93,6 @@ testRingpop('change with same incarnation number does not result in leave overri
 
 testRingpop('change with lower incarnation number does not result in leave override', function t(deps, assert) {
     var ringpop = deps.ringpop;
-    var dissemination = deps.dissemination;
     var membership = deps.membership;
 
     var member = membership.findMemberByAddress(ringpop.whoami());
@@ -112,8 +108,6 @@ testRingpop('change with lower incarnation number does not result in leave overr
 });
 
 testRingpop('member is able to go from alive to faulty without going through suspect', function t(deps, assert) {
-    var ringpop = deps.ringpop;
-    var dissemination = deps.dissemination;
     var membership = deps.membership;
 
     var newMemberAddr = '127.0.0.1:3001';
@@ -137,4 +131,20 @@ testRingpop('member is able to go from alive to faulty without going through sus
     }]);
 
     assert.equals(newMember.status, Member.Status.faulty, 'override with same inc no.');
+});
+
+testRingpop('leave does not cause neverending updates', function t(deps, assert) {
+    var membership = deps.membership;
+
+    var addr = '127.0.0.1:3001';
+    var incNo = Date.now();
+
+    var updates = membership.makeAlive(addr, incNo);
+    assert.equals(updates.length, 1, 'alive update applied');
+
+    updates = membership.makeLeave(addr, incNo);
+    assert.equals(updates.length, 1, 'leave update applied');
+
+    updates = membership.makeLeave(addr, incNo);
+    assert.equals(updates.length, 0, 'no leave update applied');
 });
