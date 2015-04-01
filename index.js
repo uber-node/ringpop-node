@@ -215,33 +215,6 @@ RingPop.prototype.adminJoin = function adminJoin(callback) {
     }, callback);
 };
 
-RingPop.prototype.adminLeave = function adminLeave(callback) {
-    if (!this.membership.localMember) {
-        process.nextTick(function() {
-            callback(errors.InvalidLocalMemberError());
-        });
-        return;
-    }
-
-    if (this.membership.localMember.status === 'leave') {
-        process.nextTick(function() {
-            callback(errors.RedundantLeaveError());
-        });
-        return;
-    }
-
-    // TODO Explicitly infect other members (like admin join)?
-    this.membership.makeLeave(this.whoami(),
-        this.membership.localMember.incarnationNumber);
-
-    this.gossip.stop();
-    this.suspicion.stopAll();
-
-    process.nextTick(function() {
-        callback(null, null, 'ok');
-    });
-};
-
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     var bootstrapFile = opts.bootstrapFile || opts;
 
