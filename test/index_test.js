@@ -20,6 +20,7 @@
 var _ = require('underscore');
 var mock = require('./mock');
 var recvAdminLeave = require('../lib/admin-leave-recvr.js');
+var recvJoin = require('../lib/swim/join-recvr.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
 
@@ -180,7 +181,10 @@ test('protocol join disallows joining itself', function t(assert) {
     assert.plan(2);
 
     var ringpop = createRingpop();
-    ringpop.protocolJoin({ source: ringpop.hostPort }, function(err) {
+    recvJoin({
+        ringpop: ringpop,
+        source: ringpop.hostPort
+    }, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.source', 'a node cannot join itself');
         ringpop.destroy();
@@ -191,10 +195,16 @@ test('protocol join disallows joining itself', function t(assert) {
 test('protocol join disallows joining different app clusters', function t(assert) {
     assert.plan(2);
 
-    var node1 = { app: 'mars', hostPort: '127.0.0.1:3000' };
-    var node2 = { app: 'jupiter', source: '127.0.0.1:3001' };
-    var ringpop = new Ringpop(node1);
-    ringpop.protocolJoin(node2, function(err) {
+    var ringpop = new Ringpop({
+        app: 'mars',
+        hostPort: '127.0.0.1:3000'
+    });
+
+    recvJoin({
+        ringpop: ringpop,
+        app: 'jupiter',
+        source: '127.0.0.1:3001'
+    }, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.app', 'a node cannot join a different app cluster');
         ringpop.destroy();

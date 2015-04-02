@@ -388,36 +388,6 @@ RingPop.prototype.isStatsHookRegistered = function isStatsHookRegistered(name) {
     return !!this.statsHooks[name];
 };
 
-RingPop.prototype.protocolJoin = function protocolJoin(options, callback) {
-    this.stat('increment', 'join.recv');
-
-    if (this.isDenyingJoins) {
-        callback(errors.DenyJoinError());
-        return;
-    }
-
-    var joinerAddress = options.source;
-    if (joinerAddress === this.whoami()) {
-        return callback(errors.InvalidJoinSourceError({ actual: joinerAddress }));
-    }
-
-    var joinerApp = options.app;
-    if (joinerApp !== this.app) {
-        return callback(errors.InvalidJoinAppError({ expected: this.app, actual: joinerApp }));
-    }
-
-    this.serverRate.mark();
-    this.totalRate.mark();
-
-    this.membership.makeAlive(joinerAddress, options.incarnationNumber);
-
-    callback(null, {
-        app: this.app,
-        coordinator: this.whoami(),
-        membership: this.dissemination.fullSync()
-    });
-};
-
 RingPop.prototype.protocolLeave = function protocolLeave(node, callback) {
     callback();
 };
