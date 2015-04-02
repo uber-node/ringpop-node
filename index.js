@@ -27,7 +27,7 @@ var hammock = require('uber-hammock');
 var metrics = require('metrics');
 
 var Gossip = require('./lib/swim/gossip');
-var PingSender = require('./lib/swim/ping-sender');
+var sendPing = require('./lib/swim/ping-sender.js');
 var sendPingReq = require('./lib/swim/ping-req-sender.js');
 var Suspicion = require('./lib/swim/suspicion');
 
@@ -569,7 +569,10 @@ RingPop.prototype.pingMemberNow = function pingMemberNow(callback) {
     var self = this;
     this.isPinging = true;
     var start = new Date();
-    this.sendPing(member, function(isOk, body) {
+    sendPing({
+        ringpop: self,
+        target: member
+    }, function(isOk, body) {
         self.stat('timing', 'ping', start);
         if (isOk) {
             self.isPinging = false;
@@ -643,11 +646,6 @@ RingPop.prototype.seedBootstrapHosts = function seedBootstrapHosts(file) {
             this.readHostsFile(this.bootstrapFile) ||
             this.readHostsFile('./hosts.json');
     }
-};
-
-RingPop.prototype.sendPing = function sendPing(member, callback) {
-    this.stat('increment', 'ping.send');
-    return new PingSender(this, member, callback);
 };
 
 RingPop.prototype.setDebugFlag = function setDebugFlag(flag) {
