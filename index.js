@@ -35,7 +35,6 @@ var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
 var Dissemination = require('./lib/dissemination.js');
 var errors = require('./lib/errors.js');
 var HashRing = require('./lib/ring');
-var joinCluster = require('./lib/join_cluster.js').joinCluster;
 var Membership = require('./lib/membership.js');
 var MembershipIterator = require('./lib/membership-iterator.js');
 var MembershipUpdateRollup = require('./lib/membership-update-rollup.js');
@@ -43,6 +42,7 @@ var nulls = require('./lib/nulls');
 var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
 var safeParse = require('./lib/util').safeParse;
+var sendJoin = require('./lib/swim/join-sender.js').joinCluster;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
@@ -208,7 +208,7 @@ RingPop.prototype.adminJoin = function adminJoin(callback) {
         this.joiner = null;
     }
 
-    this.joiner = joinCluster({
+    this.joiner = sendJoin({
         ringpop: this,
         maxJoinDuration: this.maxJoinDuration,
         joinSize: this.joinSize
