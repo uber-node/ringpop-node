@@ -179,8 +179,9 @@ RingPop.prototype.destroy = function destroy() {
         this.joiner.destroy();
     }
 
-    if (this.channel) {
-        this.channel.quit();
+    // HACK remove double destroy gaurd.
+    if (this.channel && !this.channel.topChannel && !this.channel.destroyed) {
+        this.channel.close();
     }
 };
 
