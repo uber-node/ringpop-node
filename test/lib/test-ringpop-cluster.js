@@ -85,22 +85,18 @@ function createClusterOf(opts) {
     return cluster;
 }
 
-function createTChannel(host, port) {
-    return new TChannel({
-        host: host,
-        port: port,
-        logger: DebuglogLogger('tchannel')
-    });
-}
-
 function createRingpop(opts) {
     opts = opts || {};
+
+    var channel = new TChannel({
+        logger: DebuglogLogger('tchannel')
+    });
 
     var ringpop = new Ringpop(_.extend({
         app: 'test',
         hostPort: opts.host + ':' + opts.port,
         maxJoinDuration: opts.maxJoinDuration,
-        channel: createTChannel(opts.host, opts.port),
+        channel: channel,
         logger: DebuglogLogger('ringpop')
     }, opts));
 
