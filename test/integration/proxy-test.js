@@ -895,7 +895,9 @@ test('handle tchannel failures', function t(assert) {
         // destroy its open TCP connection
         setTimeout(function onTimer() {
             var name = cluster.two.channel.hostPort;
-            cluster.one.channel.getPeer(name).socket.destroy();
+            var peer = cluster.one.channel.peers.get(name);
+            var conn = peer.connections[1]; // the "out" one
+            conn.socket.destroy();
         }, 100);
     });
 });
