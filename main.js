@@ -33,7 +33,8 @@ function main() {
     var listen = program.listen;
 
     var tchannel = new TChannel({
-        logger: createLogger('tchannel')
+        logger: createLogger('tchannel'),
+        serviceName: 'ringpop'
     });
 
     var ringpop = new RingPop({

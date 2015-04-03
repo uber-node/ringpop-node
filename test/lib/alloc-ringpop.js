@@ -38,7 +38,8 @@ function allocRingpop(name, options) {
 
     var tchannel = TChannel({
         timers: options && options.timers,
-        logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel')
+        logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel'),
+        serviceName: 'ringpop'
     });
 
     var timers = TimeMock(Date.now());

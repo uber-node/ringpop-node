@@ -89,7 +89,8 @@ function createRingpop(opts) {
     opts = opts || {};
 
     var channel = new TChannel({
-        logger: DebuglogLogger('tchannel')
+        logger: DebuglogLogger('tchannel'),
+        serviceName: 'ringpop'
     });
 
     var ringpop = new Ringpop(_.extend({
