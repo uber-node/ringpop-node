@@ -121,17 +121,17 @@ testRingpopCluster({
 testRingpopCluster({
     size: 2,
     tap: function tap(cluster) {
-        cluster[1].protocolJoin = function protocolJoin(options, callback) {
+        cluster[1].channel.register('/protocol/join', function protocolJoin(arg1, arg2, hostInfo, callback) {
             setTimeout(function onTimeout() {
                 cluster[0].destroy();
 
-                callback(null, {
+                callback(null, JSON.stringify({
                     app: 'test',
                     coordinator: cluster[1].hostPort,
                     membership: cluster[1].dissemination.fullSync()
-                });
+                }));
             }, 100);
-        };
+        });
     }
 }, 'slow joiner', function t(bootRes, cluster, assert) {
     assert.equal(cluster.length, 2, 'cluster of 2');
