@@ -55,14 +55,17 @@ function bootstrapClusterOf(opts, onBootstrap) {
         };
     }
 
-    for (var i = 0; i < cluster.length; i++) {
-        var ringpop = cluster[i];
-
-        ringpop.bootstrap({
-            bootstrapFile: bootstrapHosts
-        }, Array.isArray(onBootstrap) ?
-            onBootstrap[i] : bootstrapHandler(ringpop.hostPort));
-    }
+    cluster.forEach(function each(ringpop, i) {
+        var parts = ringpop.hostPort.split(':');
+        ringpop.channel.once('listening', function listened() {
+            var cb = Array.isArray(onBootstrap) ?
+                onBootstrap[i] : bootstrapHandler(ringpop.hostPort);
+            ringpop.bootstrap({
+                bootstrapFile: bootstrapHosts
+            }, cb);
+        });
+        ringpop.channel.listen(Number(parts[1]), parts[0]);
+    });
 
     return cluster;
 }
@@ -85,7 +88,8 @@ function createClusterOf(opts) {
 function createTChannel(host, port) {
     return new TChannel({
         host: host,
-        port: port
+        port: port,
+        logger: DebuglogLogger('tchannel')
     });
 }
 
