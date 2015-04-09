@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 'use strict';
 
-var _ = require('underscore');
 var after = require('after');
 var jsonBody = require('body/json');
 var test = require('tape');
@@ -690,8 +689,7 @@ test('will timeout after default timeout', function t(assert) {
             assert.equal(resp.statusCode, 500);
             // timeout non deterministically times the cb out
             // or closes the TCP socket.
-            assert.ok(resp.body === 'timed out' ||
-                resp.body === 'socket closed');
+            assert.ok(/^timed out|^socket closed/.test(resp.body));
 
             cluster.destroy();
             assert.end();
@@ -885,7 +883,7 @@ test('handle tchannel failures', function t(assert) {
             assert.ifError(err);
 
             assert.equal(resp.statusCode, 500);
-            assert.equal(resp.body, 'socket closed');
+            assert.ok(/^socket closed/.test(resp.body));
 
             cluster.destroy();
             assert.end();
