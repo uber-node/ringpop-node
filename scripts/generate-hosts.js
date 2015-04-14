@@ -20,7 +20,6 @@
 // THE SOFTWARE.
 var fs = require('fs');
 var parseArg = require('../lib/util').parseArg;
-var safeParse = require('../lib/util').safeParse;
 
 function main(hosts, basePort, numPorts, outputFile) {
     var usageDie = function(msg) {
@@ -35,13 +34,13 @@ function main(hosts, basePort, numPorts, outputFile) {
         process.exit(1);
     };
 
-    var hosts = hosts || parseArg('--hosts');
+    hosts = hosts || parseArg('--hosts');
     if (!hosts) usageDie('invalid hosts');
-    var basePort = basePort || parseInt(parseArg('--base-port'), 10);
+    basePort = basePort || parseInt(parseArg('--base-port'), 10);
     if (!basePort) usageDie('invalid base port');
-    var numPorts = numPorts || parseInt(parseArg('--num-ports'), 10);
+    numPorts = numPorts || parseInt(parseArg('--num-ports'), 10);
     if (!numPorts) usageDie('invalid num ports');
-    var outputFile = outputFile || parseArg('--output-file') || './hosts.json';
+    outputFile = outputFile || parseArg('--output-file') || './hosts.json';
     if (!outputFile.match(/\.json$/)) usageDie('output file must have .json extension');
 
     var nodes = [];
