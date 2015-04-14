@@ -23,6 +23,11 @@
 var TChannel = require('tchannel');
 var TimeMock = require('time-mock');
 
+var globalTimers = {
+    setTimeout: require('timers').setTimeout,
+    clearTimeout: require('timers').clearTimeout,
+    now: Date.now
+};
 var DebuglogLogger = require('debug-logtron');
 var RingPop = require('../../index.js');
 
@@ -37,7 +42,7 @@ function allocRingpop(name, options) {
     var hostPort = host + ':' + String(port);
 
     var tchannel = TChannel({
-        timers: options && options.timers,
+        timers: (options && options.timers) || globalTimers,
         logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel'),
         serviceName: 'ringpop'
     });

@@ -121,11 +121,11 @@ testRingpopCluster({
 testRingpopCluster({
     size: 2,
     tap: function tap(cluster) {
-        cluster[1].channel.register('/protocol/join', function protocolJoin(arg1, arg2, hostInfo, callback) {
+        cluster[1].channel.register('/protocol/join', function protocolJoin(req, res, head, body) {
             setTimeout(function onTimeout() {
                 cluster[0].destroy();
 
-                callback(null, JSON.stringify({
+                res.sendOk(null, JSON.stringify({
                     app: 'test',
                     coordinator: cluster[1].hostPort,
                     membership: cluster[1].dissemination.fullSync()

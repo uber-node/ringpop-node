@@ -414,10 +414,10 @@ test('overrides /proxy/req endpoint', function t(assert) {
             assert.fail('did not bypass request proxy handler');
         });
 
-        cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
-            assert.equal(arg1.toString(), head, 'arg1 is raw head');
-            assert.equal(arg2.toString(), '{"hello":true}', 'arg2 is raw body');
-            cb(null, null, JSON.stringify(things));
+        cluster.two.channel.register(endpoint, function handler(req, res, arg2, arg3) {
+            assert.equal(arg2.toString(), head, 'arg1 is raw head');
+            assert.equal(arg3.toString(), '{"hello":true}', 'arg2 is raw body');
+            res.sendOk(null, JSON.stringify(things));
         });
 
         var request = cluster.request({
@@ -447,8 +447,8 @@ test('overrides /proxy/req endpoint and fails', function t(assert) {
     var error = 'things are bad';
 
     var cluster = allocCluster(function onReady() {
-        cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
-            cb(new Error(error));
+        cluster.two.channel.register(endpoint, function handler(req, res) {
+            res.sendNotOk(null, error);
         });
 
         cluster.request({
@@ -812,7 +812,7 @@ test('custom timeouts', function t(assert) {
             assert.ifError(err);
 
             assert.equal(resp.statusCode, 500);
-            assert.equal(resp.body, 'timed out');
+            assert.ok(resp.body.indexOf('timed out') >= 0);
 
             cluster.destroy();
             assert.end();
@@ -863,8 +863,8 @@ test('non json head is ok', function t(assert) {
         });
     });
 
-    function fakeProxyReq(arg1, arg2, hostInfo, cb) {
-        cb(null, 'fake-text', '');
+    function fakeProxyReq(req, res) {
+        res.sendOk('fake-text', '');
     }
 });
 
