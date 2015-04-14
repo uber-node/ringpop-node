@@ -217,7 +217,7 @@ RingPop.prototype.adminJoin = function adminJoin(callback) {
 };
 
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
-    var bootstrapFile = opts.bootstrapFile || opts;
+    var bootstrapFile = opts && opts.bootstrapFile || opts || {};
 
     if (typeof bootstrapFile === 'function') {
         callback = bootstrapFile;

@@ -32,6 +32,11 @@ function main() {
 
     var listen = program.listen;
 
+    if (!listen) {
+        console.error('Error: listen arg is required');
+        process.exit(1);
+    }
+
     var tchannel = new TChannel({
         logger: createLogger('tchannel'),
         serviceName: 'ringpop'
