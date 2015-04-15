@@ -410,8 +410,13 @@ RingPop.prototype.protocolPing = function protocolPing(options, callback) {
 };
 
 RingPop.prototype.lookup = function lookup(key) {
-    this.stat('increment', 'lookup');
+    var startTime = Date.now();
+
     var dest = this.ring.lookup(key + '');
+
+    this.emit('lookup', {
+        timing: Date.now() - startTime
+    });
 
     if (!dest) {
         this.logger.debug('could not find destination for a key', {

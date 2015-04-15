@@ -55,6 +55,7 @@ All other properties should be considered private. Any mutation of properties no
 **Events**
 * `ready` - ringpop has been bootstrapped
 * `changed` - ring or membership state is changed (DEPRECATED)
+* `lookup` - A key has been looked up. A single argument is provided to the listener which takes the shape: `{ timing: Number }`
 * `membershipChanged` - membership state has changed (status or incarnation number). A membership change may result in a ring change.
 * `requestProxy.checksumsDiffer` - a proxied request arrives at its destination and source/destination checksums differ
 * `requestProxy.requestProxied` - a request is sent over the proxy channel
