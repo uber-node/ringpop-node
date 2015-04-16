@@ -39,10 +39,12 @@ function testRingpop(opts, name, test) {
 
         test({
             dissemination: ringpop.dissemination,
+            gossip: ringpop.gossip,
             iterator: ringpop.memberIterator,
             localMember: ringpop.membership.localMember,
             membership: ringpop.membership,
-            ringpop: ringpop
+            ringpop: ringpop,
+            suspicion: ringpop.suspicion
         }, assert);
 
         assert.end();
