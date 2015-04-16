@@ -436,7 +436,7 @@ RingPop.prototype.whoami = function whoami() {
 RingPop.prototype.onMemberAlive = function onMemberAlive(change) {
     this.stat('increment', 'membership-update.alive');
     this.logger.debug('member is alive', {
-        local: this.membership.localMember.address,
+        local: this.whoami(),
         alive: change.address
     });
 
@@ -448,7 +448,7 @@ RingPop.prototype.onMemberAlive = function onMemberAlive(change) {
 RingPop.prototype.onMemberFaulty = function onMemberFaulty(change) {
     this.stat('increment', 'membership-update.faulty');
     this.logger.debug('member is faulty', {
-        local: this.membership.localMember.address,
+        local: this.whoami(),
         faulty: change.address,
     });
 
@@ -460,7 +460,7 @@ RingPop.prototype.onMemberFaulty = function onMemberFaulty(change) {
 RingPop.prototype.onMemberLeave = function onMemberLeave(change) {
     this.stat('increment', 'membership-update.leave');
     this.logger.debug('member has left', {
-        local: this.membership.localMember.address,
+        local: this.whoami(),
         left: change.address
     });
 
@@ -472,7 +472,7 @@ RingPop.prototype.onMemberLeave = function onMemberLeave(change) {
 RingPop.prototype.onMemberSuspect = function onMemberSuspect(change) {
     this.stat('increment', 'membership-update.suspect');
     this.logger.debug('member is suspect', {
-        local: this.membership.localMember.address,
+        local: this.whoami(),
         suspect: change.address
     });
 

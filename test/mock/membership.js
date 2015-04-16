@@ -33,7 +33,6 @@ module.exports = {
         address: '127.0.0.1:3002',
         incarnationNumber: 123456789
     },
-    getLocalMemberAddress: noop,
     makeFaulty: noop,
     shuffle: noop,
     update: noop
