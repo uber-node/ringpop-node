@@ -188,33 +188,6 @@ RingPop.prototype.setupChannel = function setupChannel() {
     createRingPopTChannel(this, this.channel);
 };
 
-RingPop.prototype.adminJoin = function adminJoin(callback) {
-    if (!this.membership.localMember) {
-        process.nextTick(function() {
-            callback(errors.InvalidLocalMemberError());
-        });
-        return;
-    }
-
-    if (this.membership.localMember.status === 'leave') {
-        this.rejoin(function() {
-            callback(null, null, 'rejoined');
-        });
-        return;
-    }
-
-    if (this.joiner) {
-        this.joiner.destroy();
-        this.joiner = null;
-    }
-
-    this.joiner = sendJoin({
-        ringpop: this,
-        maxJoinDuration: this.maxJoinDuration,
-        joinSize: this.joinSize
-    }, callback);
-};
-
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     var bootstrapFile = opts.bootstrapFile || opts;
 
@@ -252,7 +225,11 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     // Add local member to membership.
     this.membership.makeAlive(this.whoami(), Date.now());
 
-    this.adminJoin(function(err, nodesJoined) {
+    sendJoin({
+        ringpop: this,
+        maxJoinDuration: this.maxJoinDuration,
+        joinSize: this.joinSize
+    }, function onJoin(err, nodesJoined) {
         if (err) {
             self.logger.error('ringpop bootstrap failed', {
                 err: err.message,
@@ -386,27 +363,6 @@ RingPop.prototype.handleTick = function handleTick(cb) {
 
 RingPop.prototype.isStatsHookRegistered = function isStatsHookRegistered(name) {
     return !!this.statsHooks[name];
-};
-
-RingPop.prototype.protocolLeave = function protocolLeave(node, callback) {
-    callback();
-};
-
-RingPop.prototype.protocolPing = function protocolPing(options, callback) {
-    this.stat('increment', 'ping.recv');
-
-    var source = options.source;
-    var changes = options.changes;
-    var checksum = options.checksum;
-
-    this.serverRate.mark();
-    this.totalRate.mark();
-
-    this.membership.update(changes);
-
-    callback(null, {
-        changes: this.dissemination.issueChanges(checksum, source)
-    });
 };
 
 RingPop.prototype.lookup = function lookup(key) {
@@ -595,19 +551,6 @@ RingPop.prototype.readHostsFile = function readHostsFile(file) {
     }
 };
 
-RingPop.prototype.rejoin = function rejoin(callback) {
-    // Assert local member is alive.
-    this.membership.makeAlive(this.whoami(), Date.now());
-    this.gossip.start();
-    this.suspicion.reenable();
-
-    // TODO Rejoin may eventually necessitate fan-out thus
-    // the need for the asynchronous-style callback.
-    process.nextTick(function() {
-        callback();
-    });
-};
-
 RingPop.prototype.seedBootstrapHosts = function seedBootstrapHosts(file) {
     if (Array.isArray(file)) {
         this.bootstrapHosts = file;
@@ -647,11 +590,6 @@ RingPop.prototype.stat = function stat(type, key, value) {
         this.statsd.timing(fqKey, value);
     }
 };
-
-RingPop.prototype.handleIncomingRequest =
-    function handleIncomingRequest(header, body, cb) {
-        this.requestProxy.handleRequest(header, body, cb);
-    };
 
 RingPop.prototype.proxyReq = function proxyReq(opts) {
     if (!opts) {
