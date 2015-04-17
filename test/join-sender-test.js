@@ -197,10 +197,11 @@ test('select group of mixed nodes', function t(assert) {
 });
 
 test('join after destroyed', function t(assert) {
+    var ringpop = createRingpop();
     var joiner = createJoiner({
-        ringpop: createRingpop()
+        ringpop: ringpop
     });
-    joiner.destroy();
+    ringpop.destroy();
     joiner.join(function onJoin(err) {
         assert.equal(err.type, 'ringpop.join-aborted', 'join aborted error');
         assert.end();

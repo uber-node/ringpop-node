@@ -18,36 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-var mock = require('./mock');
+var Member = require('../lib/member.js');
+var Ringpop = require('../index.js');
 var test = require('tape');
+var testRingpop = require('./lib/test-ringpop.js');
 
-var Gossip = require('../lib/swim/gossip');
-var Suspicion = require('../lib/swim/suspicion');
-
-function createRingpop() {
-    return {
-        computeProtocolDelay: mock.noop,
-        logger: mock.logger,
-        membership: mock.membership,
-        stat: mock.noop,
-        whoami: mock.noop
-    };
-}
-
-function createGossip() {
-    return new Gossip({
-        ringpop: createRingpop()
-    });
-}
-
-function createSuspicion(opts) {
-    opts = opts || {};
-    opts.ringpop = createRingpop();
-    return new Suspicion(opts);
-}
-
-test('starting and stopping gossip sets timer / unsets timers', function t(assert) {
-    var gossip = createGossip();
+testRingpop('starting and stopping gossip sets timer / unsets timers', function t(deps, assert) {
+    var gossip = deps.gossip;
 
     gossip.start();
     assert.ok(gossip.protocolPeriodTimer, 'protocol period timer was set');
@@ -56,23 +33,21 @@ test('starting and stopping gossip sets timer / unsets timers', function t(asser
     gossip.stop();
     assert.notok(gossip.protocolPeriodTimer, 'protocol period timer was cleared');
     assert.notok(gossip.protocolRateTimer, 'protocol rate timer was cleared');
-
-    assert.end();
 });
 
-test('stopping gossip is a noop if gossip was never started', function t(assert) {
-    var gossip = createGossip();
-    gossip.protocolPeriodTimer = 'nochange';
+testRingpop('stopping gossip is a noop if gossip was never started', function t(deps, assert) {
+    var gossip = deps.gossip;
 
+    gossip.protocolPeriodTimer = 'nochange';
     gossip.stop();
+
     assert.equals(gossip.protocolPeriodTimer, 'nochange', 'timer was not cleared');
     assert.equals(gossip.isStopped, true, 'gossip was not stopped');
-
-    assert.end();
 });
 
-test('gossip can be restarted', function t(assert) {
-    var gossip = createGossip();
+testRingpop('gossip can be restarted', function t(deps, assert) {
+    var gossip = deps.gossip;
+
     gossip.start();
 
     gossip.stop();
@@ -82,40 +57,43 @@ test('gossip can be restarted', function t(assert) {
     gossip.start();
     assert.ok(gossip.protocolPeriodTimer, 'timer was set');
     assert.equals(gossip.isStopped, false, 'gossip was started');
-
-    gossip.stop(); // Cleanup
-    assert.end();
 });
 
-test('suspect period for member is started', function t(assert) {
-    var member = { address: '127.0.0.1:3000' };
-    var suspicion = createSuspicion();
+testRingpop('suspect period for member is started', function t(deps, assert) {
+    var membership = deps.membership;
+    var suspicion = deps.suspicion;
 
+    var address = '127.0.0.1:3001';
+    membership.makeAlive(address, Date.now());
+
+    var member = membership.findMemberByAddress(address);
     suspicion.start(member);
-    assert.ok(suspicion.timers[member.address], 'timer is set for member suspect period');
 
-    suspicion.stopAll(); // Cleanup
-    assert.end();
+    assert.ok(suspicion.timers[member.address],
+        'timer is set for member suspect period');
 });
 
-test('suspect period cannot be started for local member', function t(assert) {
-    var localMember = { address: '127.0.0.1:3000' };
-    var suspicion = createSuspicion();
-    suspicion.ringpop.membership.localMember = localMember;
-    suspicion.ringpop.membership.getLocalMemberAddress = function() { return localMember.address; };
+testRingpop('suspect period cannot be started for local member', function t(deps, assert) {
+    var membership = deps.membership;
+    var suspicion = deps.suspicion;
 
-    suspicion.start(localMember);
-    assert.notok(suspicion.timers[localMember.address], 'timer is not set for local member suspect period');
+    var member = membership.findMemberByAddress(deps.ringpop.whoami());
+    suspicion.start(member);
 
-    suspicion.stopAll();
-    assert.end();
+    assert.notok(suspicion.timers[member.address],
+        'timer is not set for local member suspect period');
 });
 
-test('suspect period for member is stopped before another is started', function t(assert) {
+testRingpop('suspect period for member is stopped before another is started', function t(deps, assert) {
     assert.plan(2);
 
-    var suspicion = createSuspicion();
-    var remoteMember = suspicion.ringpop.membership.remoteMember;
+    var membership = deps.membership;
+    var address = '127.0.0.1:3001';
+    membership.makeAlive(address, Date.now());
+
+    var suspicion = deps.suspicion;
+
+    var remoteMember = membership.findMemberByAddress(address);
     suspicion.timers[remoteMember.address] = true;
     suspicion.stop = function(member) {
         assert.equals(member.address, remoteMember.address, 'stopping correct member period');
@@ -123,16 +101,18 @@ test('suspect period for member is stopped before another is started', function 
     };
 
     suspicion.start(remoteMember);
-
-    suspicion.stopAll();
-    assert.end();
 });
 
-test('suspect period can\'t be started until reenabled', function t(assert) {
-    var suspicion = createSuspicion();
-    var remoteMember = suspicion.ringpop.membership.remoteMember;
+testRingpop('suspect period can\'t be started until reenabled', function t(deps, assert) {
+    var membership = deps.membership;
+    var suspicion = deps.suspicion;
+
+    var address = '127.0.0.1:3001';
+    membership.makeAlive(address, Date.now());
+
     suspicion.stopAll();
 
+    var remoteMember = membership.findMemberByAddress(address);
     suspicion.start(remoteMember);
     assert.notok(suspicion.timers[remoteMember.address], 'timer for member was not set');
 
@@ -141,18 +121,23 @@ test('suspect period can\'t be started until reenabled', function t(assert) {
 
     suspicion.start(remoteMember);
     assert.ok(suspicion.timers[remoteMember.address], 'timer for member was set');
-
-    suspicion.stopAll();
-    assert.end();
 });
 
-test('suspect period stop all clears all timers', function t(assert) {
-    var suspicion = createSuspicion();
-    var remoteMember = suspicion.ringpop.membership.remoteMember;
-    var remoteMember2 = suspicion.ringpop.membership.remoteMember2;
+testRingpop('suspect period stop all clears all timers', function t(deps, assert) {
+    var addr1 = '127.0.0.1:3001';
+    var addr2 = '127.0.0.1:3002';
 
+    var membership = deps.membership;
+    membership.makeAlive(addr1, Date.now());
+    membership.makeAlive(addr2, Date.now());
+
+    var remoteMember = membership.findMemberByAddress(addr1);
+    var remoteMember2 = membership.findMemberByAddress(addr2);
+
+    var suspicion = deps.suspicion;
     suspicion.start(remoteMember);
     suspicion.start(remoteMember2);
+
     assert.ok(suspicion.timers[remoteMember.address], 'suspect timer started for first member');
     assert.ok(suspicion.timers[remoteMember2.address], 'suspect timer started for next member');
 
@@ -160,35 +145,38 @@ test('suspect period stop all clears all timers', function t(assert) {
     assert.notok(suspicion.timers[remoteMember.address], 'suspect timer clear for first member');
     assert.notok(suspicion.timers[remoteMember2.address], 'suspect timer clear for next member');
     assert.ok(suspicion.isStoppedAll, 'stopped all timers');
-
-    assert.end();
 });
 
-test('suspicion subprotocol cannot be reenabled without all timers first being stopped', function t(assert) {
-    var suspicion = createSuspicion();
+testRingpop('suspicion subprotocol cannot be reenabled without all timers first being stopped', function t(deps, assert) {
+    var suspicion = deps.suspicion;
+
     suspicion.isStoppedAll = 'fakestopall';
     suspicion.reenable();
     assert.equals(suspicion.isStoppedAll, 'fakestopall', 'suspicion not reenabled');
-    assert.end();
 });
 
 test('marks member faulty after suspect period', function t(assert) {
     assert.plan(1);
 
-    var suspicionTimeout = 1;
-    var suspicion = createSuspicion({
-        suspicionTimeout: suspicionTimeout
+    var ringpop = new Ringpop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000'
     });
-    var member = suspicion.ringpop.membership.remoteMember;
-    // TODO Brittle test, just use real membership object
-    suspicion.ringpop.membership.makeFaulty = function(address) {
-        assert.equals(address, member.address, 'updates correct member');
-    };
+    var membership = ringpop.membership;
+    var suspicion = ringpop.suspicion;
 
+    var address = '127.0.0.1:3001';
+    membership.makeAlive(address, Date.now());
+
+    var member = membership.findMemberByAddress(address);
+
+    suspicion.period = 1;
     suspicion.start(member);
 
-    setTimeout(function verify() {
-        suspicion.stopAll();
+    setTimeout(function onTimeout() {
+        assert.equals(member.status, Member.Status.faulty, 'member is faulty');
+
+        ringpop.destroy();
         assert.end();
-    }, suspicionTimeout + 1);
+    }, suspicion.period + 1);
 });
