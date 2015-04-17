@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 var _ = require('underscore');
 var mock = require('./mock');
+var recvAdminJoin = require('../lib/admin-join-recvr.js');
 var recvAdminLeave = require('../lib/admin-leave-recvr.js');
 var recvJoin = require('../lib/swim/join-recvr.js');
 var Ringpop = require('../index.js');
@@ -64,14 +65,19 @@ test('admin join rejoins if member has previously left', function t(assert) {
     assert.plan(3);
 
     var ringpop = createRingpop();
+
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
+
     recvAdminLeave({
         ringpop: ringpop
     }, function(err, res1, res2) {
         assert.equals(res2, 'ok', 'node left cluster');
 
         ringpop.membership.localMember.incarnationNumber = 2;
-        ringpop.adminJoin(function(err, res1, res2) {
+
+        recvAdminJoin({
+            ringpop: ringpop
+        }, function onAdminJoin(err, res1, res2) {
             assert.equals(res2, 'rejoined', 'node rejoined cluster');
             assert.equals(ringpop.membership.localMember.status, 'alive', 'local member is alive');
 
@@ -85,7 +91,10 @@ test('admin join cannot be performed before local member is added to membership'
     assert.plan(2);
 
     var ringpop = createRingpop();
-    ringpop.adminJoin(function(err) {
+
+    recvAdminJoin({
+        ringpop: ringpop
+    }, function onAdminJoin(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'invalid local member error');
         ringpop.destroy();
