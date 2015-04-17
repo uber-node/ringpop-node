@@ -93,14 +93,14 @@ function tickAll() {
         };
         var body;
         var start = Date.now();
-        ringPool.request(options).send('/admin/tick', null, null, function(err, res1, res2) {
+        ringPool.request(options).send('/admin/tick', null, null, function onSend(err, res, arg2, arg3) {
             if (err) {
                 console.log(color.red('err: ' + err.message + ' [' + host + ']'));
                 body = JSON.stringify({checksum: 'error'});
             }
             var durMs = Date.now() - start;
             completed.push(durMs);
-            var csum = safeParse(res2.toString()).checksum;
+            var csum = safeParse(arg3.toString()).checksum;
             if (csums[csum] === undefined) {
                 csums[csum] = [];
             }
@@ -127,7 +127,7 @@ function statsAll() {
         };
         var body;
         var start = Date.now();
-        ringPool.request(options).send('/admin/stats', null, null, function(err, res1, res2) {
+        ringPool.request(options).send('/admin/stats', null, null, function onSend(err, res, arg2, arg3) {
             var durMs = Date.now() - start;
             completed.push(durMs);
             if (err) {
@@ -135,7 +135,7 @@ function statsAll() {
                 body = JSON.stringify({checksum: 'error', membership: 'error'});
             }
 
-            var membership = JSON.stringify(safeParse(res2).membership.members);
+            var membership = JSON.stringify(safeParse(arg3).membership.members);
 
             var csum = farmhash(membership);
             if (csums[csum] === undefined) {
@@ -180,14 +180,14 @@ function protocolStatsAll() {
             timeout: 4000
         };
         var start = Date.now();
-        ringPool.request(options).send('/admin/stats', null, null, function(err, res1, res2) {
+        ringPool.request(options).send('/admin/stats', null, null, function onSend(err, res, arg2, arg3) {
             var durMs = Date.now() - start;
             completed.push(durMs);
             var port = host.replace(localIP + ':', '');
             if (err) {
                 console.log(color.red('err: ' + err.message + ' [' + port + ']'));
             } else {
-                var bodyObj = safeParse(res2.toString());
+                var bodyObj = safeParse(arg3.toString());
                 stats[port] = formatStats(bodyObj.protocol);
             }
             if (completed.length === list.length) {
