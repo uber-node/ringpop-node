@@ -233,68 +233,58 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         return;
     }
 
-    if (this.channel && this.channel.address() === null) {
-        this.channel.once('listening', doRealBootstrap);
-        var parts = this.hostPort.split(':');
-        this.channel.listen(Number(parts[1]), parts[0]);
-    } else {
-        doRealBootstrap();
+    var start = new Date();
+
+    self.seedBootstrapHosts(bootstrapFile);
+
+    if (!Array.isArray(self.bootstrapHosts) || self.bootstrapHosts.length === 0) {
+        var noBootstrapMsg = 'ringpop cannot be bootstrapped without bootstrap hosts.' +
+            ' make sure you specify a valid bootstrap hosts file to the ringpop' +
+            ' constructor or have a valid hosts.json file in the current working' +
+            ' directory.';
+        self.logger.warn(noBootstrapMsg);
+        if (callback) callback(new Error(noBootstrapMsg));
+        return;
     }
 
-    function doRealBootstrap() {
-        var start = new Date();
+    self.checkForMissingBootstrapHost();
+    self.checkForHostnameIpMismatch();
 
-        self.seedBootstrapHosts(bootstrapFile);
+    // Add local member to membership.
+    self.membership.makeAlive(self.whoami(), Date.now());
 
-        if (!Array.isArray(self.bootstrapHosts) || self.bootstrapHosts.length === 0) {
-            var noBootstrapMsg = 'ringpop cannot be bootstrapped without bootstrap hosts.' +
-                ' make sure you specify a valid bootstrap hosts file to the ringpop' +
-                ' constructor or have a valid hosts.json file in the current working' +
-                ' directory.';
-            self.logger.warn(noBootstrapMsg);
-            if (callback) callback(new Error(noBootstrapMsg));
+    self.adminJoin(function(err, nodesJoined) {
+        if (err) {
+            self.logger.error('ringpop bootstrap failed', {
+                err: err.message,
+                address: self.hostPort
+            });
+            if (callback) callback(err);
             return;
         }
 
-        self.checkForMissingBootstrapHost();
-        self.checkForHostnameIpMismatch();
-
-        // Add local member to membership.
-        self.membership.makeAlive(self.whoami(), Date.now());
-
-        self.adminJoin(function(err, nodesJoined) {
-            if (err) {
-                self.logger.error('ringpop bootstrap failed', {
-                    err: err.message,
-                    address: self.hostPort
-                });
-                if (callback) callback(err);
-                return;
-            }
-
-            if (self.destroyed) {
-                var destroyedMsg = 'ringpop was destroyed ' +
-                    'during bootstrap';
-                self.logger.error(destroyedMsg, {
-                    address: self.hostPort
-                });
-                if (callback) callback(new Error(destroyedMsg));
-                return;
-            }
-
-            self.logger.info('ringpop is ready', {
-                address: self.hostPort,
-                bootstrapTime: new Date() - start,
-                memberCount: self.membership.getMemberCount()
+        if (self.destroyed) {
+            var destroyedMsg = 'ringpop was destroyed ' +
+                'during bootstrap';
+            self.logger.error(destroyedMsg, {
+                address: self.hostPort
             });
+            if (callback) callback(new Error(destroyedMsg));
+            return;
+        }
 
-            self.gossip.start();
-            self.isReady = true;
-            self.emit('ready');
-
-            if (callback) callback(null, nodesJoined);
+        self.logger.info('ringpop is ready', {
+            address: self.hostPort,
+            bootstrapTime: new Date() - start,
+            memberCount: self.membership.getMemberCount()
         });
-    }
+
+        self.gossip.start();
+        self.isReady = true;
+        self.emit('ready');
+
+        if (callback) callback(null, nodesJoined);
+    });
 };
 
 RingPop.prototype.checkForMissingBootstrapHost = function checkForMissingBootstrapHost() {

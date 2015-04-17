@@ -42,6 +42,9 @@ function main() {
         serviceName: 'ringpop'
     });
 
+    var listenParts = listen.split(':');
+    tchannel.listen(Number(listenParts[1]), listenParts[0]);
+
     var ringpop = new RingPop({
         app: 'ringpop',
         hostPort: listen,

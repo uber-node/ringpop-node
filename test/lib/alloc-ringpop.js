@@ -39,8 +39,6 @@ function allocRingpop(name, options) {
     var host = '127.0.0.1';
     var port = semiRandPort();
 
-    var hostPort = host + ':' + String(port);
-
     var tchannel = TChannel({
         timers: (options && options.timers) || globalTimers,
         logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel'),
@@ -50,7 +48,7 @@ function allocRingpop(name, options) {
     var timers = TimeMock(Date.now());
     var ringpop = RingPop({
         app: 'test.ringpop.proxy_req_test',
-        hostPort: hostPort,
+        hostPort: host + ':' + String(port),
         channel: tchannel,
         logger: DebuglogLogger(name || 'ringpop'),
         requestProxyMaxRetries: options.requestProxyMaxRetries,
