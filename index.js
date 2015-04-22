@@ -208,23 +208,23 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
 
     var start = new Date();
 
-    self.seedBootstrapHosts(bootstrapFile);
+    this.seedBootstrapHosts(bootstrapFile);
 
-    if (!Array.isArray(self.bootstrapHosts) || self.bootstrapHosts.length === 0) {
+    if (!Array.isArray(this.bootstrapHosts) || this.bootstrapHosts.length === 0) {
         var noBootstrapMsg = 'ringpop cannot be bootstrapped without bootstrap hosts.' +
             ' make sure you specify a valid bootstrap hosts file to the ringpop' +
             ' constructor or have a valid hosts.json file in the current working' +
             ' directory.';
-        self.logger.warn(noBootstrapMsg);
+        this.logger.warn(noBootstrapMsg);
         if (callback) callback(new Error(noBootstrapMsg));
         return;
     }
 
-    self.checkForMissingBootstrapHost();
-    self.checkForHostnameIpMismatch();
+    this.checkForMissingBootstrapHost();
+    this.checkForHostnameIpMismatch();
 
     // Add local member to membership.
-    self.membership.makeAlive(self.whoami(), Date.now());
+    this.membership.makeAlive(this.whoami(), Date.now());
 
     sendJoin({
         ringpop: this,
