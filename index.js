@@ -31,7 +31,7 @@ var sendPing = require('./lib/swim/ping-sender.js');
 var sendPingReq = require('./lib/swim/ping-req-sender.js');
 var Suspicion = require('./lib/swim/suspicion');
 
-var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
+var createTChannelWrapper = require('./lib/tchannel.js');
 var Dissemination = require('./lib/dissemination.js');
 var errors = require('./lib/errors.js');
 var HashRing = require('./lib/ring');
@@ -179,17 +179,18 @@ RingPop.prototype.destroy = function destroy() {
         this.joiner.destroy();
     }
 
-    if (this.channel) {
-        this.channel.quit();
-    }
+    this.channelWrapper.destroy();
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
-    createRingPopTChannel(this, this.channel);
+    this.channelWrapper = createTChannelWrapper({
+        ringpop: this,
+        channel: this.channel
+    });
 };
 
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
-    var bootstrapFile = opts.bootstrapFile || opts;
+    var bootstrapFile = opts && opts.bootstrapFile || opts || {};
 
     if (typeof bootstrapFile === 'function') {
         callback = bootstrapFile;
@@ -363,6 +364,23 @@ RingPop.prototype.handleTick = function handleTick(cb) {
 
 RingPop.prototype.isStatsHookRegistered = function isStatsHookRegistered(name) {
     return !!this.statsHooks[name];
+};
+
+RingPop.prototype.protocolPing = function protocolPing(options, callback) {
+    this.stat('increment', 'ping.recv');
+
+    var source = options.source;
+    var changes = options.changes;
+    var checksum = options.checksum;
+
+    this.serverRate.mark();
+    this.totalRate.mark();
+
+    this.membership.update(changes);
+
+    callback(null, {
+        changes: this.dissemination.issueChanges(checksum, source)
+    });
 };
 
 RingPop.prototype.lookup = function lookup(key) {
