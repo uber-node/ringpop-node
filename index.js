@@ -507,7 +507,7 @@ RingPop.prototype.pingMemberNow = function pingMemberNow(callback) {
         self.stat('timing', 'ping', start);
         if (isOk) {
             self.isPinging = false;
-            self.membership.update(body.changes);
+            self.dissemination.apply(body.piggyback);
             return callback();
         }
 
