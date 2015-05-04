@@ -40,7 +40,7 @@
     "commander": "^2.6.0",
     "coveralls": "^2.11.2",
     "debug-logtron": "^2.1.0",
-    "format-stack": "^1.2.0",
+    "format-stack": "4.0.0",
     "glob": "^4.3.1",
     "istanbul": "^0.3.5",
     "itape": "^1.5.0",
