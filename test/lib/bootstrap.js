@@ -34,7 +34,8 @@ function bootstrap(ringpops, done) {
         var host = hostPortParts[0];
         var port = Number(hostPortParts[1]);
 
-        r.channel.once('listening', function onListening() {
+        r.channel.on('listening', function onListening() {
+            r.channel.removeListener('listening', onListening);
             r.once('ready', onReady);
             r.bootstrap(hosts.slice());
         });
