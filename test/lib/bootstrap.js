@@ -30,8 +30,17 @@ function bootstrap(ringpops, done) {
     }).sort();
 
     ringpops.forEach(function boot(r) {
-        r.once('ready', onReady);
-        r.bootstrap(hosts.slice());
+        var hostPortParts = r.hostPort.split(':');
+        var host = hostPortParts[0];
+        var port = Number(hostPortParts[1]);
+
+        r.channel.on('listening', function onListening() {
+            r.channel.removeListener('listening', onListening);
+            r.once('ready', onReady);
+            r.bootstrap(hosts.slice());
+        });
+
+        r.channel.listen(port, host);
     });
 
     function onReady() {

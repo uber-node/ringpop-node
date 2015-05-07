@@ -179,17 +179,20 @@ RingPop.prototype.destroy = function destroy() {
         this.joiner.destroy();
     }
 
-    if (this.channel) {
-        this.channel.quit();
+    if (this.channelWrapper) {
+        this.channelWrapper.destroy();
     }
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
-    createRingPopTChannel(this, this.channel);
+    this.channelWrapper = createRingPopTChannel({
+        ringpop: this,
+        channel: this.channel
+    });
 };
 
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
-    var bootstrapFile = opts.bootstrapFile || opts;
+    var bootstrapFile = opts && opts.bootstrapFile || opts || {};
 
     if (typeof bootstrapFile === 'function') {
         callback = bootstrapFile;
