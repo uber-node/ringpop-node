@@ -490,13 +490,6 @@ function main() {
 
     ringPool = new TChannel({host: "127.0.0.1", port: 2999});
 
-    ringPool.on('health', function (msg) {
-        logMsg('cluster', 'health event: ' + msg);
-    });
-    ringPool.on('timeout', function (req) {
-        logMsg('cluster', 'timeout event: ' + req.options.endpoint + ':' + req.options.path);
-    });
-
     var stdin = process.stdin;
     stdin.setRawMode(true);
     stdin.resume();
