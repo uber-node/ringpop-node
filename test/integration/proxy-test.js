@@ -883,7 +883,7 @@ test('handle tchannel failures', function t(assert) {
             assert.ifError(err);
 
             assert.equal(resp.statusCode, 500);
-            assert.ok(/^socket closed/.test(resp.body));
+            assert.ok(/^tchannel: socket closed/.test(resp.body));
 
             cluster.destroy();
             assert.end();
