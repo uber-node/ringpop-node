@@ -19,6 +19,9 @@
 // THE SOFTWARE.
 
 module.exports = {
+    waitForIdentified: function (opts, cb) {
+        cb(null);
+    },
     request: function(/* options */) {
         return {
             send: function(url, head, body, cb) {
