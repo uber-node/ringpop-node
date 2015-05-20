@@ -689,7 +689,7 @@ test('will timeout after default timeout', function t(assert) {
             assert.equal(resp.statusCode, 500);
             // timeout non deterministically times the cb out
             // or closes the TCP socket.
-            assert.ok(/^timed out|^socket closed/.test(resp.body));
+            assert.ok(/^request timed out|^socket closed/.test(resp.body));
 
             cluster.destroy();
             assert.end();
