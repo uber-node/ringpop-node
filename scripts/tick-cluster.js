@@ -69,7 +69,7 @@ function joinAll() {
         };
         var postStr = JSON.stringify({});
         var start = Date.now();
-        ringPool.request(options).send('/admin/join', null, postStr, function(err) {
+        send(options, '/admin/join', null, postStr, function onSend(err) {
             if (err) {
                 logMsg('host', color.red('err sending join to host: ' + err.message));
             }
@@ -93,7 +93,7 @@ function tickAll() {
         };
         var body;
         var start = Date.now();
-        ringPool.request(options).send('/admin/tick', null, null, function onSend(err, res, arg2, arg3) {
+        send(options, '/admin/tick', null, null, function onSend(err, res, arg2, arg3) {
             if (err) {
                 console.log(color.red('err: ' + err.message + ' [' + host + ']'));
                 body = JSON.stringify({checksum: 'error'});
@@ -127,7 +127,7 @@ function statsAll() {
         };
         var body;
         var start = Date.now();
-        ringPool.request(options).send('/admin/stats', null, null, function onSend(err, res, arg2, arg3) {
+        send(options, '/admin/stats', null, null, function onSend(err, res, arg2, arg3) {
             var durMs = Date.now() - start;
             completed.push(durMs);
             if (err) {
@@ -180,7 +180,7 @@ function protocolStatsAll() {
             timeout: 4000
         };
         var start = Date.now();
-        ringPool.request(options).send('/admin/stats', null, null, function onSend(err, res, arg2, arg3) {
+        send(options, '/admin/stats', null, null, function onSend(err, res, arg2, arg3) {
             var durMs = Date.now() - start;
             completed.push(durMs);
             var port = host.replace(localIP + ':', '');
@@ -209,7 +209,7 @@ function startGossip() {
             timeout: 4000
         };
         var start = Date.now();
-        ringPool.request(options).send('/admin/gossip', null, null, function() {
+        send(options, '/admin/gossip', null, null, function() {
             var durMs = Date.now() - start;
             completed.push(durMs);
             if (completed.length === list.length) {
@@ -233,7 +233,7 @@ function debugSet(flag) {
             debugFlag: flag
         });
 
-        ringPool.request(options).send('/admin/debugSet', null, body, function(err) {
+        send(options, '/admin/debugSet', null, body, function(err) {
             if (err) {
                 logMsg('cluster', color.red('error setting debug flag: ') + err.message);
             }
@@ -255,7 +255,7 @@ function debugClear() {
             timeout: 4000
         };
         var start = Date.now();
-        ringPool.request(options).send('/admin/debugClear', null, null, function() {
+        send(options, '/admin/debugClear', null, null, function() {
             var durMs = Date.now() - start;
             completed.push(durMs);
             if (completed.length === list.length) {
@@ -269,6 +269,21 @@ var state = 'top';
 var func = null;
 var numArgRe = /^[1-9]$/;
 var debugRe = /^[ph]$/;
+
+/* jshint maxparams: 5 */
+function send(options, arg1, head, body, callback) {
+    ringPool.waitForIdentified({
+        host: options.host
+    }, function onIdentified(err) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        ringPool.request(options).send(arg1, head, body, callback);
+    });
+}
+
 function onData(char) {
     if (state === 'top') {
         switch (char) {
