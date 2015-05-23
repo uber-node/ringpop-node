@@ -29,7 +29,7 @@
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "readable-stream": "^1.0.33",
-    "tchannel": "2.0.0-beta23",
+    "tchannel": "2.0.0-beta24",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
