@@ -9,7 +9,7 @@
     "Jake Verbaten <raynos2@gmail.com>",
     "Mark Yen <mark@uber.com>"
   ],
-  "version": "9.8.6",
+  "version": "10.0.0-beta1",
   "repository": "git://github.com/uber/ringpop.git",
   "bin": {
     "ringpop": "./main.js"
@@ -19,7 +19,7 @@
     "add-licence": "uber-licence",
     "check-licence": "uber-licence --dry",
     "cover": "istanbul cover --print detail --report html test/index.js",
-    "jshint": "jshint --verbose *.js lib/*.js lib/request-proxy/*.js lib/swim/*.js",
+    "jshint": "jshint --verbose *.js lib/*.js lib/request-proxy/*.js lib/swim/*.js scripts/*.js",
     "travis": "npm run cover -s && istanbul report lcov && ((cat coverage/lcov.info | coveralls) || exit 0)",
     "view-cover": "opn coverage/index.html"
   },
@@ -29,6 +29,7 @@
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "readable-stream": "^1.0.33",
+    "tchannel": "2.0.0-beta27",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
@@ -39,7 +40,7 @@
     "commander": "^2.6.0",
     "coveralls": "^2.11.2",
     "debug-logtron": "^2.1.0",
-    "format-stack": "^1.2.0",
+    "format-stack": "4.0.0",
     "glob": "^4.3.1",
     "istanbul": "^0.3.5",
     "itape": "^1.5.0",
@@ -48,7 +49,6 @@
     "opn": "^1.0.1",
     "pre-commit": "^0.0.9",
     "tape": "^3.0.3",
-    "tchannel": "^1.2.5",
     "time-mock": "^0.1.2",
     "tryit": "^1.0.1",
     "uber-licence": "^1.1.0"
