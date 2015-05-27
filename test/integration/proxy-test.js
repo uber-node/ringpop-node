@@ -33,8 +33,8 @@ var retrySchedule = [0, 0.01, 0.02];
 
 function scheduleTicker(ringpop, onScheduled) {
     return function tickIt() {
-        ringpop.timers.advance(10000);
         onScheduled();
+        ringpop.timers.advance(10000);
     };
 }
 
@@ -515,6 +515,47 @@ test('aborts retry because keys diverge', function t(assert) {
             assert.equal(responses[0].res.statusCode, 500, '500 status code');
 
             assert.equal(numRetries, 0, 'aborted before retries');
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+});
+
+test('retries multiple keys w/ same dest', function t(assert) {
+    assert.plan(4);
+
+    var numRetries = 0;
+
+    var cluster = allocCluster({
+        useFakeTimers: true
+    }, function onReady() {
+        // Make node two refuse initial request
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
+
+        cluster.one.on('requestProxy.retryAborted', function onRetryAborted() {
+            assert.fail('retry aborted');
+        });
+
+        cluster.one.on('requestProxy.retryAttempted', function onRetryAttempted() {
+            numRetries++;
+        });
+
+        cluster.one.on('requestProxy.retryScheduled', function onRetryScheduled() {
+            cluster.one.timers.advance(10000);
+        });
+
+        cluster.requestAll({
+            keys: [cluster.keys.two, cluster.keys.two, cluster.keys.two],
+            host: 'one',
+            maxRetries: 5,
+            retrySchedule: [1]
+        }, function onRequest(err, responses) {
+            assert.ifError(err, 'no error occurs');
+            assert.equal(responses.length, 1, 'one response');
+            assert.equal(responses[0].res.statusCode, 500, '500 status code');
+
+            assert.equal(numRetries, 5, 'retried much');
 
             cluster.destroy();
             assert.end();
