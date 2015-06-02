@@ -188,6 +188,12 @@ RingPop.prototype.setupChannel = function setupChannel() {
     createRingPopTChannel(this, this.channel);
 };
 
+/*
+ * opts are:
+ *   - bootstrapFile: File or array used to seed join process
+ *   - joinParallelismFactor: Number of nodes in which join request
+ *   will be sent
+ */
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     var bootstrapFile = opts.bootstrapFile || opts;
 
@@ -228,7 +234,8 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     sendJoin({
         ringpop: this,
         maxJoinDuration: this.maxJoinDuration,
-        joinSize: this.joinSize
+        joinSize: this.joinSize,
+        parallelismFactor: opts.joinParallelismFactor
     }, function onJoin(err, nodesJoined) {
         if (err) {
             self.logger.error('ringpop bootstrap failed', {
