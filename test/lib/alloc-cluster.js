@@ -44,9 +44,9 @@ function allocCluster(options, onReady) {
     var two = allocRingpop('two', options);
     var three = allocRingpop('three', options);
 
-    one.on('request', createHandler('one'));
-    two.on('request', createHandler('two'));
-    three.on('request', createHandler('three'));
+    one.on('request', createHandler('one', options));
+    two.on('request', createHandler('two', options));
+    three.on('request', createHandler('three', options));
 
     bootstrap([one, two, three], onReady);
 
@@ -87,7 +87,8 @@ function allocCluster(options, onReady) {
             timeout: opts.timeout,
             retrySchedule: opts.retrySchedule,
             endpoint: opts.endpoint,
-            maxRetries: opts.maxRetries
+            maxRetries: opts.maxRetries,
+            bodyLimit: opts.bodyLimit
         });
         if (handle) {
             cluster[host].emit('request', req, res);
@@ -102,10 +103,12 @@ function allocCluster(options, onReady) {
     }
 }
 
-function createServerHandler(name) {
+function createServerHandler(name, opts) {
     return function serverHandle(req, res) {
         if (req.headers['content-type'] === 'application/json') {
-            jsonBody(req, onBody);
+            jsonBody(req, null, {
+                limit: opts.bodyLimit
+            }, onBody);
         } else {
             onBody(null, undefined);
         }
