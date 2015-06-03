@@ -964,3 +964,53 @@ test('handles checksum failures', function t(assert) {
         });
     });
 });
+
+test('does not crash when forwarding request on closed socket', function t(assert) {
+    var ringpopOpts = {
+        requestProxyMaxRetries: 0
+    };
+
+    var cluster = allocCluster(ringpopOpts, function onReady() {
+        destroyAllSockets();
+
+        cluster.request({
+            host: 'one', key: cluster.keys.two
+        }, function onResponse(err, resp) {
+            assert.ifError(err);
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+
+    function destroyAllSockets() {
+        var allPeers = cluster.one.channel.peers;
+
+        Object.keys(allPeers).forEach(function each(key) {
+            allPeers[key][0].socket.destroy();
+        });
+    }
+});
+
+test('send on destroyed channel not allowed', function t(assert) {
+    var ringpopOpts = {
+        requestProxyMaxRetries: 0
+    };
+
+    var cluster = allocCluster(ringpopOpts, function onReady() {
+        cluster.one.channel.quit();
+
+        cluster.request({
+            host: 'one', key: cluster.keys.two
+        }, function onResponse(err, resp) {
+            assert.ifError(err);
+
+            assert.equal(resp.statusCode, 500);
+            assert.ok(resp.body.indexOf(
+                'Channel was destroyed before forwarding attempt') >= 0);
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+});
