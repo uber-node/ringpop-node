@@ -894,7 +894,7 @@ test('handle tchannel failures', function t(assert) {
         setTimeout(function onTimer() {
             var name = cluster.two.channel.hostPort;
             var peer = cluster.one.channel.peers.get(name);
-            var conn = peer.connections[1]; // the "out" one
+            var conn = peer.connections[0]; // the "out" one
             conn.socket.destroy();
         }, 100);
     });
