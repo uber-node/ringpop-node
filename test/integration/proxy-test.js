@@ -417,6 +417,7 @@ test('overrides /proxy/req endpoint', function t(assert) {
         cluster.two.channel.register(endpoint, function handler(req, res, arg2, arg3) {
             assert.equal(arg2.toString(), head, 'arg1 is raw head');
             assert.equal(arg3.toString(), '{"hello":true}', 'arg2 is raw body');
+            res.headers.as = 'raw';
             res.sendOk(null, JSON.stringify(things));
         });
 
@@ -448,6 +449,7 @@ test('overrides /proxy/req endpoint and fails', function t(assert) {
 
     var cluster = allocCluster(function onReady() {
         cluster.two.channel.register(endpoint, function handler(req, res) {
+            res.headers.as = 'raw';
             res.sendNotOk(null, error);
         });
 
@@ -864,6 +866,7 @@ test('non json head is ok', function t(assert) {
     });
 
     function fakeProxyReq(req, res) {
+        res.headers.as = 'raw';
         res.sendOk('fake-text', '');
     }
 });

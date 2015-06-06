@@ -125,6 +125,7 @@ testRingpopCluster({
             setTimeout(function onTimeout() {
                 cluster[0].destroy();
 
+                res.headers.as = 'raw';
                 res.sendOk(null, JSON.stringify({
                     app: 'test',
                     coordinator: cluster[1].hostPort,

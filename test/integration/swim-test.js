@@ -53,6 +53,7 @@ function mkNoGossip(cluster) {
 
 function mkBadPingReqResponder(ringpop) {
     ringpop.channel.register('/protocol/ping-req', function protocolPingReq(req, res) {
+        res.headers.as = 'raw';
         res.sendOk(null, JSON.stringify('badbody'));
     });
 }
