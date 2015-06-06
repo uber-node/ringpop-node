@@ -183,6 +183,11 @@ RingPop.prototype.destroy = function destroy() {
     if (this.channel && !this.channel.topChannel && !this.channel.destroyed) {
         this.channel.close();
     }
+    if (this.channel && this.channel.topChannel &&
+        !this.channel.topChannel.destroyed
+    ) {
+        this.channel.topChannel.close();
+    }
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {

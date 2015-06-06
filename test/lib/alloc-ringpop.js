@@ -41,15 +41,16 @@ function allocRingpop(name, options) {
 
     var tchannel = TChannel({
         timers: (options && options.timers) || globalTimers,
-        logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel'),
-        serviceName: 'ringpop'
+        logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel')
     });
 
     var timers = TimeMock(Date.now());
     var ringpop = RingPop({
         app: 'test.ringpop.proxy_req_test',
         hostPort: host + ':' + String(port),
-        channel: tchannel,
+        channel: tchannel.makeSubChannel({
+            serviceName: 'ringpop'
+        }),
         logger: DebuglogLogger(name || 'ringpop'),
         requestProxyMaxRetries: options.requestProxyMaxRetries,
         requestProxyRetrySchedule: options.requestProxyRetrySchedule,

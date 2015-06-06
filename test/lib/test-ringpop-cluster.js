@@ -91,18 +91,20 @@ function createRingpop(opts) {
     opts = opts || {};
 
     var channel = new TChannel({
-        logger: DebuglogLogger('tchannel'),
-        serviceName: 'ringpop'
+        logger: DebuglogLogger('tchannel')
     });
 
     var ringpop = new Ringpop(_.extend({
         app: 'test',
         hostPort: opts.host + ':' + opts.port,
         maxJoinDuration: opts.maxJoinDuration,
-        channel: channel,
+        channel: channel.makeSubChannel({
+            serviceName: 'ringpop'
+        }),
         logger: DebuglogLogger('ringpop')
     }, opts));
 
+    ringpop.__channel = channel;
     ringpop.setupChannel();
 
     return ringpop;
@@ -111,6 +113,9 @@ function createRingpop(opts) {
 function destroyCluster(cluster) {
     cluster.forEach(function eachRingpop(ringpop) {
         ringpop.destroy();
+        if (!ringpop.__channel.destroyed) {
+            ringpop.__channel.close();
+        }
     });
 }
 
