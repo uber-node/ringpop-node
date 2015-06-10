@@ -255,7 +255,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
             return;
         }
 
-        self.logger.info('ringpop is ready', {
+        self.logger.debug('ringpop is ready', {
             address: self.hostPort,
             bootstrapTime: new Date() - start,
             memberCount: self.membership.getMemberCount()
