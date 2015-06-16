@@ -153,6 +153,7 @@ ringpop emits stats using the `statsd` client provided to its constructor. All s
 
 **Timers**
 * `compute-checksum` - time it takes to compute checksum
+* `join` - time it takes for node to join cluster
 * `ping` - response times of a ping
 * `ping-req` - response times of a ping-req
 * `ping-req-ping` - response times of a ping sent in response to a ping-req received
