@@ -81,6 +81,7 @@ testRingpopCluster({
 
 testRingpopCluster({
     size: 5,
+    joinSize: 4,
     tap: function tap(cluster) {
         mkNoGossip(cluster);
     }
@@ -105,6 +106,7 @@ testRingpopCluster({
 
 testRingpopCluster({
     size: 5,
+    joinSize: 4,
     tap: function tap(cluster) {
         mkNoGossip(cluster);
     }
@@ -153,6 +155,7 @@ testRingpopCluster({
 
 testRingpopCluster({
     size: 5,
+    joinSize: 4,
     tap: function tap(cluster) {
         mkBadPingReqResponder(cluster[3]);
         mkNoGossip(cluster);
@@ -179,6 +182,7 @@ testRingpopCluster({
 
 testRingpopCluster({
     size: 5,
+    joinSize: 4,
     tap: function tap(cluster) {
         mkNoGossip(cluster);
     }

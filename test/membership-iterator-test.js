@@ -17,11 +17,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-var MembershipIterator = require('../lib/membership-iterator.js');
 var testRingpop = require('./lib/test-ringpop.js');
 
 testRingpop('iterates over two members correctly', function t(deps, assert) {
-    var ringpop = deps.ringpop;
     var membership = deps.membership;
     var iterator = deps.iterator;
 
@@ -36,7 +34,6 @@ testRingpop('iterates over two members correctly', function t(deps, assert) {
 });
 
 testRingpop('iterates over three members correctly', function t(deps, assert) {
-    var ringpop = deps.ringpop;
     var membership = deps.membership;
     var iterator = deps.iterator;
 
@@ -53,7 +50,6 @@ testRingpop('iterates over three members correctly', function t(deps, assert) {
 });
 
 testRingpop('skips over faulty member and 1 local member', function t(deps, assert) {
-    var ringpop = deps.ringpop;
     var membership = deps.membership;
     var iterator = deps.iterator;
 

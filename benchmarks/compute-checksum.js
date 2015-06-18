@@ -17,40 +17,47 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-'use strict';
+var largeMembership = require('./large-membership.json');
+var Ringpop = require('../index.js');
+var Suite = require('benchmark').Suite;
 
-var Ringpop = require('../../index.js');
-var tape = require('tape');
+function init(size) {
+    var ringpop = new Ringpop({
+        app: 'ringpop-bench',
+        hostPort: '127.0.0.1:3000'
+    });
 
-function testRingpop(opts, name, test) {
-    if (typeof opts === 'string' && typeof name === 'function') {
-        test = name;
-        name = opts;
-        opts = {};
-    }
+    ringpop.membership.update(largeMembership.slice(0, size));
 
-    tape(name, function onTest(assert) {
-        var ringpop = new Ringpop({
-            app: opts.app || 'test',
-            hostPort: opts.hostPort || '127.0.0.1:3000'
-        });
+    return ringpop;
+}
 
-        ringpop.isReady = true;
-        ringpop.membership.makeAlive(ringpop.whoami(), Date.now(), null, true);
+function reportPerformance(event) {
+    console.log(event.target.toString());
+}
 
-        test({
-            dissemination: ringpop.dissemination,
-            gossip: ringpop.gossip,
-            iterator: ringpop.memberIterator,
-            localMember: ringpop.membership.localMember,
-            membership: ringpop.membership,
-            ringpop: ringpop,
-            suspicion: ringpop.suspicion
-        }, assert);
+function runBenchmark(title, benchmark) {
+    var suite = new Suite();
+    suite.add(title, benchmark);
+    suite.on('cycle', reportPerformance);
+    suite.run();
+}
 
-        assert.end();
-        ringpop.destroy();
+function run100MemberBenchmark() {
+    var ringpop = init(100);
+
+    runBenchmark('compute checksum for 100 members', function benchmark() {
+        ringpop.membership.computeChecksum();
     });
 }
 
-module.exports = testRingpop;
+function run1kMemberBenchmark() {
+    var ringpop = init(1000);
+
+    runBenchmark('compute checksum for 1000 members', function benchmark() {
+        ringpop.membership.computeChecksum();
+    });
+}
+
+run100MemberBenchmark();
+run1kMemberBenchmark();
