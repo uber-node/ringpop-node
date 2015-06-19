@@ -107,8 +107,9 @@ function RingPop(options) {
     this.debugFlags = {};
     this.joinSize = options.joinSize;
     this.pingReqSize = 3;           // ping-req fanout
-    this.pingReqTimeout = 5000;
-    this.pingTimeout = 1500;
+    this.pingReqTimeout = options.pingReqTimeout || 5000;
+    this.pingTimeout = options.pingTimeout || 1500;
+    this.joinTimeout = options.joinTimeout || 1000;
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
     this.maxJoinDuration = options.maxJoinDuration || MAX_JOIN_DURATION;
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
@@ -234,7 +235,8 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     sendJoin({
         ringpop: this,
         maxJoinDuration: this.maxJoinDuration,
-        joinSize: this.joinSize
+        joinSize: this.joinSize,
+        joinTimeout: this.joinTimeout
     }, function onJoin(err, nodesJoined) {
         if (err) {
             self.logger.error('ringpop bootstrap failed', {
