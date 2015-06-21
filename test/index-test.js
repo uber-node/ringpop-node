@@ -24,6 +24,7 @@ var recvAdminLeave = require('../lib/admin-leave-recvr.js');
 var recvJoin = require('../lib/swim/join-recvr.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
+var testRingpop = require('./lib/test-ringpop.js');
 
 function createRingpop(opts) {
     return new Ringpop(_.extend({
@@ -404,6 +405,42 @@ test('emits ring changed event', function t(assert) {
 
     ringpop.destroy();
     assert.end();
+});
+
+testRingpop('max piggyback not adjusted on membership update', function t(deps, assert) {
+    assert.plan(0);
+
+    var dissemination = deps.dissemination;
+    var membership = deps.membership;
+
+    dissemination.on('maxPiggybackCountAdjusted', function onAdjusted() {
+        assert.fail('max piggyback count was adjusted');
+    });
+
+    // Reset count to prove that it goes unmodified.
+    dissemination.resetMaxPiggybackCount();
+
+    var address = '127.0.0.1:3002';
+    var incarnationNumber = Date.now();
+    membership.makeSuspect(address, incarnationNumber);
+});
+
+testRingpop('max piggyback adjusted on new members', function t(deps, assert) {
+    assert.plan(1);
+
+    var dissemination = deps.dissemination;
+    var membership = deps.membership;
+
+    dissemination.on('maxPiggybackCountAdjusted', function onAdjusted() {
+        assert.pass('max piggyback count was adjusted');
+    });
+
+    // Reset count to prove that it is modified.
+    dissemination.resetMaxPiggybackCount();
+
+    var address = '127.0.0.1:3002';
+    var incarnationNumber = Date.now();
+    membership.makeAlive(address, incarnationNumber);
 });
 
 test('first time member, not alive', function t(assert) {
