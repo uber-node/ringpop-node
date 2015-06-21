@@ -39,3 +39,34 @@ testRingpop('full sync includes all members', function t(deps, assert) {
     assert.ok(addrs.indexOf('127.0.0.1:3002') !== -1, 'third member included');
     assert.ok(addrs.indexOf('127.0.0.1:3003') === -1, 'member not included');
 });
+
+testRingpop('avoids redundant dissemination by filtering changes from source', function t(deps, assert) {
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
+    var dissemination = deps.dissemination;
+
+    var localMember = membership.localMember;
+    var addrAlive = '127.0.0.1:3001';
+    var addrSuspect = '127.0.0.1:3002';
+    var addrFaulty = '127.0.0.1:3003';
+    var addrOrig = '127.0.0.1:3004';
+    var incNo = Date.now();
+
+    // Clear changes to start fresh, otherwise local member changes
+    // recorded during bootstrap phase would have been issued.
+    dissemination.clearChanges();
+
+    membership.makeAlive(addrAlive, incNo);
+    membership.makeSuspect(addrSuspect, incNo);
+    membership.makeFaulty(addrFaulty, incNo);
+
+    // 'sender' and source of updates (above) are same; issues no changes.
+    var changes = dissemination.issueAsReceiver(localMember.address,
+        localMember.incarnationNumber, membership.checksum);
+    assert.equal(changes.length, 0, 'no changes issued');
+
+    // 'sender' and source of updates are different; issues changes.
+    changes = dissemination.issueAsReceiver(addrAlive, incNo,
+        membership.checksum);
+    assert.ok(changes.length > 0, 'changes issued');
+});
