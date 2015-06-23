@@ -162,6 +162,8 @@ test('marks member faulty after suspect period', function t(assert) {
         app: 'ringpop',
         hostPort: '127.0.0.1:3000'
     });
+    ringpop.isReady = true;
+
     var membership = ringpop.membership;
     var suspicion = ringpop.suspicion;
 

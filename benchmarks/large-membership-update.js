@@ -21,27 +21,56 @@ var largeMembership = require('./large-membership.json');
 var Ringpop = require('../index.js');
 var Suite = require('benchmark').Suite;
 
-var ringpop;
-
-function init() {
-    ringpop = new Ringpop({
-        app: 'ringpop-bench',
-        hostPort: '127.0.0.1:3000'
-    });
-}
-
 function reportPerformance(event) {
     console.log(event.target.toString());
 }
 
-function benchThis() {
-    ringpop.membership.members = [];
-    ringpop.membership.membersByAddress = {};
-    ringpop.membership.update(largeMembership);
+function benchSet() {
+    var ringpop;
+
+    var benchmark = new Suite();
+    benchmark.add('large membership set', benchThis)
+        .on('start', init)
+        .on('cycle', reportPerformance)
+        .run();
+
+    function init() {
+        ringpop = new Ringpop({
+            app: 'ringpop-bench',
+            hostPort: '127.0.0.1:3000'
+        });
+    }
+
+    function benchThis() {
+        ringpop.membership.members = [];
+        ringpop.membership.membersByAddress = {};
+        ringpop.membership.set([largeMembership]);
+    }
 }
 
-var benchmark = new Suite();
-benchmark.add('large membership update', benchThis)
-    .on('start', init)
-    .on('cycle', reportPerformance)
-    .run();
+function benchUpdate() {
+    var ringpop;
+
+    var benchmark = new Suite();
+    benchmark.add('large membership update', benchThis)
+        .on('start', init)
+        .on('cycle', reportPerformance)
+        .run();
+
+    function init() {
+        ringpop = new Ringpop({
+            app: 'ringpop-bench',
+            hostPort: '127.0.0.1:3000'
+        });
+        ringpop.membership.isSet = true;
+    }
+
+    function benchThis() {
+        ringpop.membership.members = [];
+        ringpop.membership.membersByAddress = {};
+        ringpop.membership.update(largeMembership);
+    }
+}
+
+benchUpdate();
+benchSet();
