@@ -95,7 +95,7 @@ if (require.main === module) {
 
 function createLogger(name) {
     return {
-        debug: enrich('debug', 'log'),
+        debug: function noop() {},
         info: enrich('info', 'log'),
         warn: enrich('warn', 'error'),
         error: enrich('error', 'error')
