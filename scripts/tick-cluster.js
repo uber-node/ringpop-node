@@ -24,6 +24,7 @@ var TChannel = require('tchannel');
 var color = require('cli-color');
 var farmhash = require('farmhash').hash32;
 var generateHosts = require('./generate-hosts');
+var program = require('commander');
 
 var hosts, procs, procsToStart, ringPool, localIP; // defined later
 
@@ -319,6 +320,10 @@ function onData(char) {
             case ' ':
                 console.log('-------------------------------------------------------------------------');
                 break;
+            case 'h':
+            case '?':
+                displayMenu(logMsg.bind(null, '?'));
+                break;
             default:
                 console.log('Unknown key');
         }
@@ -476,12 +481,6 @@ function startCluster() {
 }
 
 function main() {
-    procsToStart = +process.argv[2];
-    if (isNaN(procsToStart) || (procsToStart < 2)) {
-        console.error('usage: cluster-manager nodes\nNodes must be 2 or more.');
-        process.exit(1);
-    }
-
     logMsg('init', color.cyan('tick-cluster started ') + color.red('d: debug flags, g: gossip, j: join, k: kill, K: revive all, l: sleep, p: protocol stats, q: quit, s: cluster stats, t: tick'));
 
     findLocalIP();
@@ -502,6 +501,44 @@ function main() {
     stdin.resume();
     stdin.setEncoding('utf8');
     stdin.on('data', onData);
+}
+
+function displayMenu(logFn) {
+    logFn('\td <flag>\tSet debug flag');
+    logFn('\tD\t\tClear debug flags');
+    logFn('\tg\t\tStart gossip');
+    logFn('\th\t\tHelp menu');
+    logFn('\tj\t\tJoin nodes');
+    logFn('\tk <count>\tKill processes');
+    logFn('\tK\t\tRevive suspended or killed processes');
+    logFn('\tl <count>\tSuspend processes');
+    logFn('\tp\t\tPrint out protocol stats');
+    logFn('\tq\t\tQuit');
+    logFn('\ts\t\tPrint out stats');
+    logFn('\tt\t\tTick protocol period');
+    logFn('\t<space>\t\tPrint out horizontal rule');
+    logFn('\t?\t\tHelp menu');
+}
+
+program
+    .version(require('../package.json').version)
+    .arguments('<size>')
+    .description('tick-cluster is a tool that launches a ringpop cluster of arbitrary size')
+    .action(function onAction(size) {
+        procsToStart = +size;
+    });
+
+program.on('--help', function onHelp() {
+    console.log('  Press h or ? while tick-cluster is running to display the menu below:');
+    console.log();
+    displayMenu(console.log);
+});
+
+program.parse(process.argv);
+
+if (!procsToStart) {
+    console.log('Error: size is a required argument');
+    process.exit(1);
 }
 
 main();
