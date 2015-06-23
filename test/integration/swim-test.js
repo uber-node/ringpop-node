@@ -190,7 +190,9 @@ testRingpopCluster({
     // Mutating all member addresses to make each of selected ping-req members
     // unreachable and therefore, the results of ping-req inconclusive.
     ringpop.membership.members.forEach(function eachMember(member) {
-        member.address += '001';
+        if (member.address !== unreachableMember.address) {
+            member.address += '001';
+        }
     });
 
     sendPingReq({
