@@ -35,9 +35,11 @@ function testRingpop(opts, name, test) {
             hostPort: opts.hostPort || '127.0.0.1:3000'
         });
 
+        ringpop.isReady = true;
+
         ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
 
-        test({
+        var deps = {
             dissemination: ringpop.dissemination,
             gossip: ringpop.gossip,
             iterator: ringpop.memberIterator,
@@ -45,10 +47,19 @@ function testRingpop(opts, name, test) {
             membership: ringpop.membership,
             ringpop: ringpop,
             suspicion: ringpop.suspicion
-        }, assert);
+        };
 
-        assert.end();
-        ringpop.destroy();
+        if (opts.async) {
+            test(deps, assert, cleanup);
+        } else {
+            test(deps, assert);
+            cleanup();
+        }
+
+        function cleanup() {
+            assert.end();
+            ringpop.destroy();
+        }
     });
 }
 
