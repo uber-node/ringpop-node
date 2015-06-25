@@ -27,10 +27,14 @@ var test = require('tape');
 var testRingpop = require('./lib/test-ringpop.js');
 
 function createRingpop(opts) {
-    return new Ringpop(_.extend({
+    var ringpop = new Ringpop(_.extend({
         app: 'test',
         hostPort: '127.0.0.1:3000'
     }), opts);
+
+    ringpop.isReady = true;
+
+    return ringpop;
 }
 
 function createRemoteRingpop() {

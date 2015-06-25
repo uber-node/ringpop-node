@@ -168,3 +168,121 @@ testRingpop('generate checksums string preserves order of members', function t(d
 
     assert.deepEqual(membership.members, prevMembers, 'preserves order');
 });
+
+testRingpop('sets previously stashed updates', function t(deps, assert) {
+    var address = '127.0.0.1:3001';
+    var membership = deps.membership;
+    var ringpop = deps.ringpop;
+
+    // Make sure updates are stashed -- make ringpop non-ready.
+    ringpop.isReady = false;
+
+    membership.makeAlive(address, Date.now());
+    assert.notok(membership.findMemberByAddress(address), 'member is not found');
+
+    membership.set();
+
+    assert.ok(membership.findMemberByAddress(address), 'member is found');
+});
+
+testRingpop('set merges stashed updates', function t(deps, assert) {
+});
+
+testRingpop('set adds all members', function t(deps, assert) {
+    var membership = deps.membership;
+    var ringpop = deps.ringpop;
+    var addresses = createAddresses();
+
+    // Make sure updates are stashed -- make ringpop non-ready.
+    ringpop.isReady = false;
+
+    // Stash all members
+    addresses.forEach(function eachAddr(addr) {
+        membership.makeAlive(addr, Date.now());
+    });
+
+    addresses.forEach(function eachAddr(addr) {
+        assert.notok(membership.findMemberByAddress(addr),
+            'member is not found');
+    });
+
+    membership.set();
+
+    // Confirm all are added
+    addresses.forEach(function eachAddr(addr) {
+        assert.ok(membership.findMemberByAddress(addr),
+            'member is found');
+    });
+
+    function createAddresses() {
+        var addresses = [];
+
+        for (var i = 0; i < 5; i++) {
+            addresses.push('127.0.0.1:' + (3001 + i));
+        }
+
+        return addresses;
+    }
+});
+
+testRingpop('set emits an event', function t(deps, assert) {
+    assert.plan(1);
+
+    var ringpop = deps.ringpop;
+    ringpop.isReady = false;
+
+    var membership = deps.membership;
+    membership.on('set', function onSet() {
+        assert.pass('membership set');
+    });
+
+    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.set();
+});
+
+testRingpop('set computes a checksum once', function t(deps, assert) {
+    assert.plan(1);
+
+    var ringpop = deps.ringpop;
+    ringpop.isReady = false;
+
+    var membership = deps.membership;
+    membership.on('checksumComputed', function onSet() {
+        assert.pass('checksum computed');
+    });
+
+    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.set();
+});
+
+testRingpop('set does not shuffle member positions', function t(deps, assert) {
+    var membership = deps.membership;
+    var ringpop = deps.ringpop;
+    var addresses = createAddresses();
+
+    // Make sure updates are stashed -- make ringpop non-ready.
+    ringpop.isReady = false;
+
+    // Stash all members
+    addresses.forEach(function eachAddr(addr) {
+        membership.makeAlive(addr, Date.now());
+    });
+
+    membership.set();
+
+    // Confirm all are added in the correct position
+    addresses.forEach(function eachAddr(addr, i) {
+        assert.equal(membership.getMemberAt(i).address, addresses[i],
+            'member is in the correct position');
+    });
+
+    function createAddresses() {
+        var addresses = [];
+
+        for (var i = 0; i < 5; i++) {
+            addresses.push('127.0.0.1:' + (3000 + i));
+        }
+
+        return addresses;
+    }
+});

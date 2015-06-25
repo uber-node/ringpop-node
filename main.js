@@ -18,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 var program = require('commander');
-var TChannel = require('tchannel');
 var RingPop = require('./index');
+var TChannel = require('tchannel');
 
 function main() {
     program

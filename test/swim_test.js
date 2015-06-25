@@ -155,15 +155,13 @@ testRingpop('suspicion subprotocol cannot be reenabled without all timers first 
     assert.equals(suspicion.isStoppedAll, 'fakestopall', 'suspicion not reenabled');
 });
 
-test('marks member faulty after suspect period', function t(assert) {
+testRingpop({
+    async: true
+}, 'marks member faulty after suspect period', function t(deps, assert, done) {
     assert.plan(1);
 
-    var ringpop = new Ringpop({
-        app: 'ringpop',
-        hostPort: '127.0.0.1:3000'
-    });
-    var membership = ringpop.membership;
-    var suspicion = ringpop.suspicion;
+    var membership = deps.membership;
+    var suspicion = deps.suspicion;
 
     var address = '127.0.0.1:3001';
     membership.makeAlive(address, Date.now());
@@ -175,8 +173,6 @@ test('marks member faulty after suspect period', function t(assert) {
 
     setTimeout(function onTimeout() {
         assert.equals(member.status, Member.Status.faulty, 'member is faulty');
-
-        ringpop.destroy();
-        assert.end();
+        done();
     }, suspicion.period + 1);
 });
