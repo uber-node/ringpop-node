@@ -21,6 +21,7 @@
 
 var _ = require('underscore');
 var after = require('after');
+var bufferEqual = require('buffer-equal')
 var jsonBody = require('body/json');
 var test = require('tape');
 var TimeMock = require('time-mock');
@@ -1008,6 +1009,31 @@ test('send on destroyed channel not allowed', function t(assert) {
             assert.equal(resp.statusCode, 500);
             assert.ok(resp.body.indexOf(
                 'Channel was destroyed before forwarding attempt') >= 0);
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+});
+
+test('proxies big json', function t(assert) {
+    var buffer = new Buffer(1024 * 1024 * 1.5);
+    var bodyLimit = JSON.stringify(buffer).length;
+
+    var opts = {
+        bodyLimit: bodyLimit,
+        requestProxyMaxRetries: 0,
+    };
+
+    var cluster = allocCluster(opts, function onReady() {
+        cluster.request({
+            host: 'one', key: cluster.keys.two,
+            json: buffer,
+            bodyLimit: bodyLimit
+        }, function onResponse(err, resp) {
+            assert.ifError(err, 'no error occurred');
+            assert.ok(resp.body, 'response has a body');
+            assert.ok(bufferEqual(buffer, new Buffer(resp.body.payload)), 'buffers are equal');
 
             cluster.destroy();
             assert.end();
