@@ -366,7 +366,8 @@ RingPop.prototype.getStats = function getStats() {
             serverRate: this.serverRate.printObj().m1,
             totalRate: this.totalRate.printObj().m1
         },
-        ring: Object.keys(this.ring.servers)
+        ring: Object.keys(this.ring.servers),
+        version: 1
     };
 };
 
