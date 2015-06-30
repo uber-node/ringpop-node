@@ -22,6 +22,18 @@
 var noop = require('./noop.js');
 
 module.exports = {
+    waitForIdentified: function (opts, callback) {
+        callback(null)
+    },
     quit: noop,
-    send: noop
+    close: noop,
+    request: function(/* options */) {
+        return {
+            send: function(url, head, body, cb) {
+                cb(null, {
+                    ok: true
+                });
+            }
+        };
+    }
 };
