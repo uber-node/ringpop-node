@@ -148,3 +148,23 @@ testRingpop('leave does not cause neverending updates', function t(deps, assert)
     updates = membership.makeLeave(addr, incNo);
     assert.equals(updates.length, 0, 'no leave update applied');
 });
+
+testRingpop('generate checksums string preserves order of members', function t(deps, assert) {
+    var membership = deps.membership;
+
+    for (var i = 0; i < 100; i++) {
+        membership.makeAlive('127.0.0.1:' + (3000 + i), Date.now());
+    }
+
+    // Make sure they're out of order
+    membership.shuffle();
+
+    assert.equal(membership.getMemberCount(), 100, '100 members');
+
+    var prevMembers = membership.members.slice(); // Make a copy
+
+    var checksumString = membership.generateChecksumString();
+    assert.ok(checksumString, 'checksum string is a value');
+
+    assert.deepEqual(membership.members, prevMembers, 'preserves order');
+});
