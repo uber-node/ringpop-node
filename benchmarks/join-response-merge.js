@@ -19,21 +19,46 @@
 // THE SOFTWARE.
 'use strict';
 
-var noop = require('./noop.js');
+var largeMembership = require('./large-membership.json');
+var mergeJoinResponses = require('../lib/swim/join-response-merge.js');
+var Suite = require('benchmark').Suite;
 
-module.exports = {
-    waitForIdentified: function (opts, callback) {
-        callback(null)
-    },
-    quit: noop,
-    close: noop,
-    request: function(/* options */) {
-        return {
-            send: function(url, head, body, cb) {
-                cb(null, {
-                    ok: true
-                });
-            }
-        };
+function reportPerformance(event) {
+    console.log(event.target.toString());
+}
+
+function benchMerge(title, checksum) {
+    var responses = [];
+
+    var suite = new Suite();
+    suite.add(title, benchThis);
+    suite.on('start', init);
+    suite.on('cycle', reportPerformance);
+    suite.run();
+
+    function benchThis() {
+        mergeJoinResponses(responses);
     }
-};
+
+    function init() {
+        var members1k = largeMembership.slice(0, 1000);
+
+        for (var i = 0; i < 3; i++) {
+            responses.push({
+                members: members1k,
+                checksum: checksum
+            });
+        }
+    }
+}
+
+function benchMergeNoChecksum() {
+    benchMerge('merge 3 responses of 1000 members with no checksum');
+}
+
+function benchMergeSameChecksum() {
+    benchMerge('merge 3 responses of 1000 members with same checksum', 123456789);
+}
+
+benchMergeNoChecksum();
+benchMergeSameChecksum();

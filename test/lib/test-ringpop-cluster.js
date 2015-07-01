@@ -55,14 +55,19 @@ function bootstrapClusterOf(opts, onBootstrap) {
         };
     }
 
-    for (var i = 0; i < cluster.length; i++) {
-        var ringpop = cluster[i];
+    cluster.forEach(function each(ringpop, i) {
+        var parts = ringpop.hostPort.split(':');
+        ringpop.channel.on('listening', function listened() {
+            ringpop.channel.removeListener('listening', listened);
 
-        ringpop.bootstrap({
-            bootstrapFile: bootstrapHosts
-        }, Array.isArray(onBootstrap) ?
-            onBootstrap[i] : bootstrapHandler(ringpop.hostPort));
-    }
+            var cb = Array.isArray(onBootstrap) ?
+                onBootstrap[i] : bootstrapHandler(ringpop.hostPort);
+            ringpop.bootstrap({
+                bootstrapFile: bootstrapHosts
+            }, cb);
+        });
+        ringpop.channel.listen(Number(parts[1]), parts[0]);
+    });
 
     return cluster;
 }
@@ -82,24 +87,24 @@ function createClusterOf(opts) {
     return cluster;
 }
 
-function createTChannel(host, port) {
-    return new TChannel({
-        host: host,
-        port: port
-    });
-}
-
 function createRingpop(opts) {
     opts = opts || {};
+
+    var channel = new TChannel({
+        logger: DebuglogLogger('tchannel')
+    });
 
     var ringpop = new Ringpop(_.extend({
         app: 'test',
         hostPort: opts.host + ':' + opts.port,
         maxJoinDuration: opts.maxJoinDuration,
-        channel: createTChannel(opts.host, opts.port),
+        channel: channel.makeSubChannel({
+            serviceName: 'ringpop'
+        }),
         logger: DebuglogLogger('ringpop')
     }, opts));
 
+    ringpop.__channel = channel;
     ringpop.setupChannel();
 
     return ringpop;
@@ -108,6 +113,9 @@ function createRingpop(opts) {
 function destroyCluster(cluster) {
     cluster.forEach(function eachRingpop(ringpop) {
         ringpop.destroy();
+        if (!ringpop.__channel.destroyed) {
+            ringpop.__channel.close();
+        }
     });
 }
 

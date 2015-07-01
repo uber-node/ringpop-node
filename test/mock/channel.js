@@ -19,7 +19,14 @@
 // THE SOFTWARE.
 
 module.exports = {
-    send: function(options, url, head, body, cb) {
-        cb();
+    waitForIdentified: function (opts, cb) {
+        cb(null);
+    },
+    request: function(/* options */) {
+        return {
+            send: function(url, head, body, cb) {
+                cb();
+            }
+        };
     }
 };

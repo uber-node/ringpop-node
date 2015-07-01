@@ -19,6 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+'use strict';
 
 var TChannel = require('tchannel');
 var color = require('cli-color');
@@ -26,9 +27,11 @@ var farmhash = require('farmhash').hash32;
 var generateHosts = require('./generate-hosts');
 var program = require('commander');
 
-var hosts, procs, procsToStart, ringPool, localIP; // defined later
+var hosts, procs, procsToStart, ringPool, localIP, toSuspend, toKill, tchannel; // defined later
 
-function safe_parse(str) {
+/* jshint maxparams: 6 */
+
+function safeParse(str) {
     try {
         return JSON.parse(str);
     } catch (e) {
@@ -64,19 +67,14 @@ function joinAll() {
     var completed = [];
     logMsg('cluster', color.cyan('starting join of all nodes to random other nodes'));
     hosts.forEach(function (host, pos, list) {
-        var options = {
-            host: host,
-            timeout: 4000
-        };
         var postStr = JSON.stringify({});
-        var self = this;
         var start = Date.now();
-        ringPool.send(options, '/admin/join', null, postStr, function(err, res1, res2) {
+        send(host, '/admin/join', null, postStr, function onSend(err) {
             if (err) {
                 logMsg('host', color.red('err sending join to host: ' + err.message));
             }
-            var dur_ms = Date.now() - start;
-            completed.push(dur_ms);
+            var durMs = Date.now() - start;
+            completed.push(durMs);
             if (completed.length === list.length) {
                 logMsg('cluster', color.cyan('join all completed: ') + color.green(completed.join(', ')));
             }
@@ -89,20 +87,16 @@ function tickAll() {
     var csums = {};
 
     hostsUp().forEach(function (host, pos, list) {
-    	var options = {
-            host: host,
-            timeout: 15000
-        };
-        var self = this;
+        var body;
         var start = Date.now();
-        ringPool.send(options, '/admin/tick', null, null, function(err, res1, res2) {
+        send(host, '/admin/tick', function onSend(err, res, arg2, arg3) {
             if (err) {
                 console.log(color.red('err: ' + err.message + ' [' + host + ']'));
                 body = JSON.stringify({checksum: 'error'});
             }
-            var dur_ms = Date.now() - start;
-            completed.push(dur_ms);
-            var csum = safe_parse(res2.toString()).checksum;
+            var durMs = Date.now() - start;
+            completed.push(durMs);
+            var csum = safeParse(arg3.toString()).checksum;
             if (csums[csum] === undefined) {
                 csums[csum] = [];
             }
@@ -123,21 +117,17 @@ function statsAll() {
         memberships = {};
 
     hostsUp().forEach(function (host, pos, list) {
-        var options = {
-            host: host,
-            timeout: 4000
-        };
-        var self = this;
+        var body;
         var start = Date.now();
-        ringPool.send(options, '/admin/stats', null, null, function(err, res1, res2) {
-            var dur_ms = Date.now() - start;
-            completed.push(dur_ms);
+        send(host, '/admin/stats', function onSend(err, res, arg2, arg3) {
+            var durMs = Date.now() - start;
+            completed.push(durMs);
             if (err) {
                 console.log(color.red('err: ' + err.message + ' [' + host + ']'));
                 body = JSON.stringify({checksum: 'error', membership: 'error'});
             }
 
-            var membership = JSON.stringify(safe_parse(res2).membership.members);
+            var membership = JSON.stringify(safeParse(arg3).membership.members);
 
             var csum = farmhash(membership);
             if (csums[csum] === undefined) {
@@ -177,20 +167,15 @@ function protocolStatsAll() {
     var stats = {};
 
     hostsUp().forEach(function (host, pos, list) {
-        var options = {
-            host: host,
-            timeout: 4000
-        };
-        var self = this;
         var start = Date.now();
-        ringPool.send(options, '/admin/stats', null, null, function(err, res1, res2) {
-            var dur_ms = Date.now() - start;
-            completed.push(dur_ms);
+        send(host, '/admin/stats', function onSend(err, res, arg2, arg3) {
+            var durMs = Date.now() - start;
+            completed.push(durMs);
             var port = host.replace(localIP + ':', '');
             if (err) {
                 console.log(color.red('err: ' + err.message + ' [' + port + ']'));
             } else {
-                var bodyObj = safe_parse(res2.toString());
+                var bodyObj = safeParse(arg3.toString());
                 stats[port] = formatStats(bodyObj.protocol);
             }
             if (completed.length === list.length) {
@@ -207,15 +192,10 @@ function startGossip() {
 
     logMsg('cluster', color.cyan('starting gossip on all nodes'));
     hostsUp().forEach(function (host, pos, list) {
-        var options = {
-            host: host,
-            timeout: 4000
-        };
-        var self = this;
         var start = Date.now();
-        ringPool.send(options, '/admin/gossip', null, null, function(err, res1, res2) {
-            var dur_ms = Date.now() - start;
-            completed.push(dur_ms);
+        send(host, '/admin/gossip', function onSend() {
+            var durMs = Date.now() - start;
+            completed.push(durMs);
             if (completed.length === list.length) {
                 logMsg('cluster', color.cyan('gossip all completed: ') + color.green(completed.join(', ')));
             }
@@ -227,18 +207,18 @@ function debugSet(flag) {
     var completed = [];
 
     hostsUp().forEach(function (host, pos, list) {
-        var options = {
-            host: host,
-            timeout: 4000
-        };
-        var self = this;
         var start = Date.now();
-        ringPool.send(options, '/admin/debugSet', null, { debugFlag: flag }, function(err, res1, res2) {
+
+        var body = JSON.stringify({
+            debugFlag: flag
+        });
+
+        send(host, '/admin/debugSet', null, body, function onSend(err) {
             if (err) {
                 logMsg('cluster', color.red('error setting debug flag: ') + err.message);
             }
-            var dur_ms = Date.now() - start;
-            completed.push(dur_ms);
+            var durMs = Date.now() - start;
+            completed.push(durMs);
             if (completed.length === list.length) {
                 logMsg('cluster', color.cyan('debug flag set completed: ') + color.green(completed.join(', ')));
             }
@@ -250,15 +230,10 @@ function debugClear() {
     var completed = [];
 
     hostsUp().forEach(function (host, pos, list) {
-        var options = {
-            host: host,
-            timeout: 4000
-        };
-        var self = this;
         var start = Date.now();
-        ringPool.send(options, '/admin/debugClear', null, null, function(err, res1, res2) {
-            var dur_ms = Date.now() - start;
-            completed.push(dur_ms);
+        send(host, '/admin/debugClear', function onSend() {
+            var durMs = Date.now() - start;
+            completed.push(durMs);
             if (completed.length === list.length) {
                 logMsg('cluster', color.cyan('debug flags clear completed: ') + color.green(completed.join(', ')));
             }
@@ -487,13 +462,9 @@ function main() {
     hosts = generateHosts(localIP, 3000, procsToStart, 'hosts.json');
     startCluster();
 
-    ringPool = new TChannel({host: "127.0.0.1", port: 2999});
-
-    ringPool.on('health', function (msg) {
-        logMsg('cluster', 'health event: ' + msg);
-    });
-    ringPool.on('timeout', function (req) {
-        logMsg('cluster', 'timeout event: ' + req.options.endpoint + ':' + req.options.path);
+    tchannel = new TChannel({host: "127.0.0.1", port: 2999});
+    ringPool = tchannel.makeSubChannel({
+        serviceName: 'tick-cluster'
     });
 
     var stdin = process.stdin;
@@ -518,6 +489,40 @@ function displayMenu(logFn) {
     logFn('\tt\t\tTick protocol period');
     logFn('\t<space>\t\tPrint out horizontal rule');
     logFn('\t?\t\tHelp menu');
+}
+
+function send(host, arg1, arg2, arg3, callback) {
+    if (typeof arg2 === 'function') {
+        callback = arg2;
+        arg2 = null;
+        arg3 = null;
+    }
+
+    if (typeof arg3 === 'function') {
+        callback = arg3;
+        arg3 = null;
+    }
+
+    ringPool.waitForIdentified({
+        host: host
+    }, function onID(err) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        var opts = {
+            host: host,
+            timeout: 4000,
+            hasNoParent: true,
+            headers: {
+                'as': 'raw',
+                'cn': 'tick-cluster'
+            }
+        };
+
+        ringPool.request(opts).send(arg1, arg2, arg3, callback);
+    });
 }
 
 program

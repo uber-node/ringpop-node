@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 'use strict';
 
-var _ = require('underscore');
 var after = require('after');
 var jsonBody = require('body/json');
 var test = require('tape');
@@ -415,11 +414,11 @@ test('overrides /proxy/req endpoint', function t(assert) {
             assert.fail('did not bypass request proxy handler');
         });
 
-        cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
-            assert.equal(arg1.toString(), head, 'arg1 is raw head');
-            assert.equal(arg2.toString(), '{"hello":true}', 'arg2 is raw body');
-
-            cb(null, arg1, things);
+        cluster.two.channel.register(endpoint, function handler(req, res, arg2, arg3) {
+            assert.equal(arg2.toString(), head, 'arg1 is raw head');
+            assert.equal(arg3.toString(), '{"hello":true}', 'arg2 is raw body');
+            res.headers.as = 'raw';
+            res.sendOk(null, JSON.stringify(things));
         });
 
         var request = cluster.request({
@@ -449,8 +448,9 @@ test('overrides /proxy/req endpoint and fails', function t(assert) {
     var error = 'things are bad';
 
     var cluster = allocCluster(function onReady() {
-        cluster.two.channel.register(endpoint, function handler(arg1, arg2, hostInfo, cb) {
-            cb(new Error(error));
+        cluster.two.channel.register(endpoint, function handler(req, res) {
+            res.headers.as = 'raw';
+            res.sendNotOk(null, error);
         });
 
         cluster.request({
@@ -732,8 +732,7 @@ test('will timeout after default timeout', function t(assert) {
             assert.equal(resp.statusCode, 500);
             // timeout non deterministically times the cb out
             // or closes the TCP socket.
-            assert.ok(resp.body === 'timed out' ||
-                resp.body === 'socket closed');
+            assert.ok(/^request timed out|^socket closed/.test(resp.body));
 
             cluster.destroy();
             assert.end();
@@ -856,7 +855,7 @@ test('custom timeouts', function t(assert) {
             assert.ifError(err);
 
             assert.equal(resp.statusCode, 500);
-            assert.equal(resp.body, 'timed out');
+            assert.ok(resp.body.indexOf('timed out') >= 0);
 
             cluster.destroy();
             assert.end();
@@ -907,8 +906,9 @@ test('non json head is ok', function t(assert) {
         });
     });
 
-    function fakeProxyReq(arg1, arg2, hostInfo, cb) {
-        cb(null, 'fake-text', '');
+    function fakeProxyReq(req, res) {
+        res.headers.as = 'raw';
+        res.sendOk('fake-text', '');
     }
 });
 
@@ -927,7 +927,7 @@ test('handle tchannel failures', function t(assert) {
             assert.ifError(err);
 
             assert.equal(resp.statusCode, 500);
-            assert.equal(resp.body, 'socket closed');
+            assert.ok(/^tchannel: socket closed/.test(resp.body));
 
             cluster.destroy();
             assert.end();
@@ -936,8 +936,10 @@ test('handle tchannel failures', function t(assert) {
         // Reach into the the first TChannel and forcibly
         // destroy its open TCP connection
         setTimeout(function onTimer() {
-            var name = cluster.two.channel.name;
-            cluster.one.channel.getPeer(name).socket.destroy();
+            var name = cluster.two.channel.hostPort;
+            var peer = cluster.one.channel.peers.get(name);
+            var conn = peer.connections[0]; // the "out" one
+            conn.socket.destroy();
         }, 100);
     });
 });
@@ -984,10 +986,10 @@ test('does not crash when forwarding request on closed socket', function t(asser
     });
 
     function destroyAllSockets() {
-        var allPeers = cluster.one.channel.peers;
+        var allPeers = cluster.one.channel.peers.values();
 
-        Object.keys(allPeers).forEach(function each(key) {
-            allPeers[key][0].socket.destroy();
+        allPeers.forEach(function each(peer) {
+            peer.close(function noop() {});
         });
     }
 });

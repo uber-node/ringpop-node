@@ -108,8 +108,9 @@ function RingPop(options) {
     this.debugFlags = {};
     this.joinSize = options.joinSize;
     this.pingReqSize = 3;           // ping-req fanout
-    this.pingReqTimeout = 5000;
-    this.pingTimeout = 1500;
+    this.pingReqTimeout = options.pingReqTimeout || 5000;
+    this.pingTimeout = options.pingTimeout || 1500;
+    this.joinTimeout = options.joinTimeout || 1000;
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
     this.maxJoinDuration = options.maxJoinDuration || MAX_JOIN_DURATION;
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
@@ -180,8 +181,14 @@ RingPop.prototype.destroy = function destroy() {
         this.joiner.destroy();
     }
 
-    if (this.channel) {
-        this.channel.quit();
+    // HACK remove double destroy gaurd.
+    if (this.channel && !this.channel.topChannel && !this.channel.destroyed) {
+        this.channel.close();
+    }
+    if (this.channel && this.channel.topChannel &&
+        !this.channel.topChannel.destroyed
+    ) {
+        this.channel.topChannel.close();
     }
 };
 
@@ -196,7 +203,7 @@ RingPop.prototype.setupChannel = function setupChannel() {
  *   will be sent
  */
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
-    var bootstrapFile = opts.bootstrapFile || opts;
+    var bootstrapFile = opts && opts.bootstrapFile || opts || {};
 
     if (typeof bootstrapFile === 'function') {
         callback = bootstrapFile;
@@ -233,14 +240,15 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     this.membership.makeAlive(this.whoami(), Date.now());
 
     sendJoin({
-        ringpop: this,
-        maxJoinDuration: this.maxJoinDuration,
-        joinSize: this.joinSize,
-        parallelismFactor: opts.joinParallelismFactor
+        ringpop: self,
+        maxJoinDuration: self.maxJoinDuration,
+        joinSize: self.joinSize,
+        parallelismFactor: opts.joinParallelismFactor,
+        joinTimeout: self.joinTimeout
     }, function onJoin(err, nodesJoined) {
         if (err) {
             self.logger.error('ringpop bootstrap failed', {
-                err: err.message,
+                error: err,
                 address: self.hostPort
             });
             if (callback) callback(err);
@@ -257,7 +265,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
             return;
         }
 
-        self.logger.info('ringpop is ready', {
+        self.logger.debug('ringpop is ready', {
             address: self.hostPort,
             bootstrapTime: new Date() - start,
             memberCount: self.membership.getMemberCount()
@@ -475,7 +483,7 @@ RingPop.prototype.readHostsFile = function readHostsFile(file) {
         return safeParse(fs.readFileSync(file).toString());
     } catch (e) {
         this.logger.warn('failed to read bootstrap hosts file', {
-            err: e.message,
+            error: e,
             file: file
         });
     }
