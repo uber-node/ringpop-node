@@ -25,6 +25,7 @@ var fs = require('fs');
 var globalSetTimeout = require('timers').setTimeout;
 var hammock = require('uber-hammock');
 var metrics = require('metrics');
+var packageJSON = require('./package.json');
 
 var Gossip = require('./lib/swim/gossip');
 var sendPing = require('./lib/swim/ping-sender.js');
@@ -155,6 +156,14 @@ function RingPop(options) {
 
     this.destroyed = false;
     this.joiner = null;
+
+    this.startTime = Date.now(); //used for calculating uptime
+
+    var dependencies = packageJSON.devDependencies;
+    this.tchannelVersion = dependencies.tchannel;
+
+    this.ringpopVersion = packageJSON.version;
+
 }
 
 require('util').inherits(RingPop, EventEmitter);
@@ -344,6 +353,9 @@ RingPop.prototype.getStatsHooksStats = function getStatsHooksStats() {
 };
 
 RingPop.prototype.getStats = function getStats() {
+    var timestamp = Date.now();
+    var uptime = timestamp - this.startTime;
+
     return {
         hooks: this.getStatsHooksStats(),
         membership: this.membership.getStats(),
@@ -358,7 +370,11 @@ RingPop.prototype.getStats = function getStats() {
             serverRate: this.serverRate.printObj().m1,
             totalRate: this.totalRate.printObj().m1
         },
-        ring: Object.keys(this.ring.servers)
+        ring: Object.keys(this.ring.servers),
+        tchannelVersion: this.tchannelVersion,
+        version: this.ringpopVersion,
+        timestamp: timestamp,
+        uptime: uptime
     };
 };
 
