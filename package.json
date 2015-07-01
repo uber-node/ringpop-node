@@ -1,6 +1,6 @@
 {
   "name": "ringpop",
-  "description": "A hash ring with a lot of pop",
+  "description": "Scalable, fault-tolerant application-layer sharding",
   "contributors": [
     "Rui Hu <ruihu.pvt@gmail.com>",
     "Bob Nugmanov <bob.nugmanov@gmail.com>",
