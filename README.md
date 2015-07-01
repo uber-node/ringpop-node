@@ -9,6 +9,8 @@ Clients of applications that embed Ringpop remain simple and need not know of th
 
 With these 3 capabilities: membership protocol, consistent hashing and forwarding, Ringpop makes it possible to build extremely scalable and fault-tolerant distributed systems.
 
+For more documentation, go to the [wiki](https://github.com/uber/ringpop/wiki).
+
 # Installation
 
 `npm install ringpop`
