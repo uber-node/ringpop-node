@@ -19,17 +19,46 @@
 // THE SOFTWARE.
 'use strict';
 
-function Member(address, status, incarnationNumber) {
-    this.address = address;
-    this.status = status;
-    this.incarnationNumber = incarnationNumber;
+var largeMembership = require('./large-membership.json');
+var mergeJoinResponses = require('../lib/swim/join-response-merge.js');
+var Suite = require('benchmark').Suite;
+
+function reportPerformance(event) {
+    console.log(event.target.toString());
 }
 
-Member.Status = {
-    alive: 'alive',
-    faulty: 'faulty',
-    leave: 'leave',
-    suspect: 'suspect'
-};
+function benchMerge(title, checksum) {
+    var responses = [];
 
-module.exports = Member;
+    var suite = new Suite();
+    suite.add(title, benchThis);
+    suite.on('start', init);
+    suite.on('cycle', reportPerformance);
+    suite.run();
+
+    function benchThis() {
+        mergeJoinResponses(responses);
+    }
+
+    function init() {
+        var members1k = largeMembership.slice(0, 1000);
+
+        for (var i = 0; i < 3; i++) {
+            responses.push({
+                members: members1k,
+                checksum: checksum
+            });
+        }
+    }
+}
+
+function benchMergeNoChecksum() {
+    benchMerge('merge 3 responses of 1000 members with no checksum');
+}
+
+function benchMergeSameChecksum() {
+    benchMerge('merge 3 responses of 1000 members with same checksum', 123456789);
+}
+
+benchMergeNoChecksum();
+benchMergeSameChecksum();
