@@ -19,40 +19,21 @@
 // THE SOFTWARE.
 'use strict';
 
-var mergeMembershipChangesets = require('../membership-changeset-merge.js');
+var createMembershipSetListener = require('../lib/membership-set-listener.js');
+var testRingpop = require('./lib/test-ringpop.js');
 
-function hasSameChecksums(joinResponses) {
-    var lastChecksum = -1;
+testRingpop('starts suspicion period for suspect', function t(deps, assert) {
+    var ringpop = deps.ringpop;
+    var suspicion = deps.suspicion;
+    var suspect = {
+        address: '127.0.0.1:3001',
+        status: 'suspect',
+        incarnationNumber: Date.now()
+    };
 
-    for (var i = 0; i < joinResponses.length; i++) {
-        var response = joinResponses[i];
+    var listener = createMembershipSetListener(ringpop);
+    listener([suspect]);
+    assert.ok(suspicion.timers[suspect.address], 'suspicion period started');
 
-        if (!response.checksum || (lastChecksum !== -1 && lastChecksum !== response.checksum)) {
-            return false;
-        }
-
-        lastChecksum = response.checksum;
-    }
-
-    return true;
-}
-
-function mergeJoinResponses(ringpop, joinResponses) {
-    if (!Array.isArray(joinResponses) || joinResponses.length === 0) {
-        return [];
-    }
-
-    if (hasSameChecksums(joinResponses)) {
-        return joinResponses[0].members;
-    }
-
-    return mergeMembershipChangesets(ringpop, mapResponses());
-
-    function mapResponses() {
-        return joinResponses.map(function mapResponse(response) {
-            return response.members;
-        });
-    }
-}
-
-module.exports = mergeJoinResponses;
+    suspicion.stop(suspect);
+});

@@ -31,6 +31,8 @@ var sendPing = require('./lib/swim/ping-sender.js');
 var sendPingReq = require('./lib/swim/ping-req-sender.js');
 var Suspicion = require('./lib/swim/suspicion');
 
+var createEventForwarder = require('./lib/event-forwarder.js');
+var createMembershipSetListener = require('./lib/membership-set-listener.js');
 var createMembershipUpdateListener = require('./lib/membership-update-listener.js');
 var createServer = require('./server');
 var Dissemination = require('./lib/dissemination.js');
@@ -49,21 +51,6 @@ var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
 var PROXY_REQ_PROPS = ['keys', 'dest', 'req', 'res'];
-
-function onRingChecksumComputed(ringpop) {
-    ringpop.stat('increment', 'ring.checksum-computed');
-    ringpop.emit('ringChecksumComputed');
-}
-
-function onRingServerAdded(ringpop) {
-    ringpop.stat('increment', 'ring.server-added');
-    ringpop.emit('ringServerAdded');
-}
-
-function onRingServerRemoved(ringpop) {
-    ringpop.stat('increment', 'ring.server-removed');
-    ringpop.emit('ringServerRemoved');
-}
 
 function RingPop(options) {
     if (!(this instanceof RingPop)) {
@@ -123,12 +110,10 @@ function RingPop(options) {
     });
 
     this.ring = new HashRing();
-    this.ring.on('added', onRingServerAdded.bind(null, this));
-    this.ring.on('removed', onRingServerRemoved.bind(null, this));
-    this.ring.on('checksumComputed', onRingChecksumComputed.bind(null, this));
 
     this.dissemination = new Dissemination(this);
     this.membership = new Membership(this);
+    this.membership.on('set', createMembershipSetListener(this));
     this.membership.on('updated', createMembershipUpdateListener(this));
     this.memberIterator = new MembershipIterator(this);
     this.gossip = new Gossip({
@@ -143,6 +128,8 @@ function RingPop(options) {
         ringpop: this,
         flushInterval: this.membershipUpdateFlushInterval
     });
+
+    createEventForwarder(this);
 
     this.clientRate = new metrics.Meter();
     this.serverRate = new metrics.Meter();
@@ -265,14 +252,20 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
             return;
         }
 
+        // Membership stashes all changes that have been applied since the
+        // beginning of the bootstrap process. It will then efficiently apply
+        // all changes as an 'atomic' update to membership. set() must be
+        // called before `isReady` is set to true.
+        self.membership.set();
+        self.gossip.start();
+        self.isReady = true;
+
         self.logger.debug('ringpop is ready', {
             address: self.hostPort,
             bootstrapTime: new Date() - start,
             memberCount: self.membership.getMemberCount()
         });
 
-        self.gossip.start();
-        self.isReady = true;
         self.emit('ready');
 
         if (callback) callback(null, nodesJoined);
