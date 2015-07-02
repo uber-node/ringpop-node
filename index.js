@@ -206,7 +206,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         return;
     }
 
-    var start = new Date();
+    var bootstrapTime = Date.now();
 
     this.seedBootstrapHosts(bootstrapFile);
 
@@ -226,6 +226,8 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     // Add local member to membership.
     this.membership.makeAlive(this.whoami(), Date.now());
 
+    var joinTime = Date.now();
+
     sendJoin({
         ringpop: self,
         maxJoinDuration: self.maxJoinDuration,
@@ -233,6 +235,8 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         parallelismFactor: opts.joinParallelismFactor,
         joinTimeout: self.joinTimeout
     }, function onJoin(err, nodesJoined) {
+        joinTime = Date.now() - joinTime;
+
         if (err) {
             self.logger.error('ringpop bootstrap failed', {
                 error: err,
@@ -256,14 +260,21 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         // beginning of the bootstrap process. It will then efficiently apply
         // all changes as an 'atomic' update to membership. set() must be
         // called before `isReady` is set to true.
+        var setTime = Date.now();
         self.membership.set();
+        setTime = Date.now() - setTime;
+
         self.gossip.start();
         self.isReady = true;
 
+        bootstrapTime = Date.now() - bootstrapTime;
+
         self.logger.debug('ringpop is ready', {
             address: self.hostPort,
-            bootstrapTime: new Date() - start,
-            memberCount: self.membership.getMemberCount()
+            memberCount: self.membership.getMemberCount(),
+            bootstrapTime: bootstrapTime,
+            joinTime: joinTime,
+            membershipSetTime: setTime
         });
 
         self.emit('ready');
