@@ -17,10 +17,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+var createServer = require('./server');
 var program = require('commander');
-var TChannel = require('tchannel');
-var createRingPopTChannel = require('./lib/tchannel').createRingPopTChannel;
 var RingPop = require('./index');
+var TChannel = require('tchannel');
 
 var HOST_PORT_PATTERN = /^(\d+\.\d+\.\d+\.\d+):(\d+)$/;
 
@@ -85,7 +85,7 @@ function main() {
         channel: tchannel
     });
 
-    createRingPopTChannel(ringpop, tchannel);
+    createServer(ringpop, tchannel);
     ringpop.bootstrap(program.hosts);
 }
 
