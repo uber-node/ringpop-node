@@ -18,10 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 var _ = require('underscore');
+var handleAdminJoin = require('../server/admin-join-handler.js');
+var handleAdminLeave = require('../server/admin-leave-handler.js');
+var handleJoin = require('../server/join-handler.js');
 var mock = require('./mock');
-var recvAdminJoin = require('../lib/admin-join-recvr.js');
-var recvAdminLeave = require('../lib/admin-leave-recvr.js');
-var recvJoin = require('../lib/swim/join-recvr.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
 var testRingpop = require('./lib/test-ringpop.js');
@@ -69,14 +69,14 @@ test('admin join rejoins if member has previously left', function t(assert) {
 
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
 
-    recvAdminLeave({
+    handleAdminLeave({
         ringpop: ringpop
     }, function(err, res1, res2) {
         assert.equals(res2, 'ok', 'node left cluster');
 
         ringpop.membership.localMember.incarnationNumber = 2;
 
-        recvAdminJoin({
+        handleAdminJoin({
             ringpop: ringpop
         }, function onAdminJoin(err, res1, res2) {
             assert.equals(res2, 'rejoined', 'node rejoined cluster');
@@ -93,7 +93,7 @@ test('admin join cannot be performed before local member is added to membership'
 
     var ringpop = createRingpop();
 
-    recvAdminJoin({
+    handleAdminJoin({
         ringpop: ringpop
     }, function onAdminJoin(err) {
         assert.ok(err, 'an error occurred');
@@ -109,7 +109,7 @@ test('admin leave prevents redundant leave', function t(assert) {
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.membership.makeLeave(ringpop.whoami(), 1);
-    recvAdminLeave({
+    handleAdminLeave({
         ringpop: ringpop
     }, function(err) {
         assert.ok(err, 'an error occurred');
@@ -124,7 +124,7 @@ test('admin leave makes local member leave', function t(assert) {
 
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
-    recvAdminLeave({
+    handleAdminLeave({
         ringpop: ringpop
     }, function(err, _, res2) {
         assert.notok(err, 'an error did not occur');
@@ -141,7 +141,7 @@ test('admin leave stops gossip', function t(assert) {
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.gossip.start();
-    recvAdminLeave({
+    handleAdminLeave({
         ringpop: ringpop
     }, function(err) {
         assert.notok(err, 'an error did not occur');
@@ -162,7 +162,7 @@ test('admin leave stops suspicion subprotocol', function t(assert) {
     ringpop.membership.makeAlive(ringpopRemote.whoami(), Date.now());
     ringpop.suspicion.start(ringpopRemote.hostPort);
 
-    recvAdminLeave({
+    handleAdminLeave({
         ringpop: ringpop
     }, function(err) {
         assert.notok(err, 'an error did not occur');
@@ -177,7 +177,7 @@ test('admin leave cannot be attempted before local member is added', function t(
     assert.plan(2);
 
     var ringpop = createRingpop();
-    recvAdminLeave({
+    handleAdminLeave({
         ringpop: ringpop
     }, function(err) {
         assert.ok(err, 'an error occurred');
@@ -191,7 +191,7 @@ test('protocol join disallows joining itself', function t(assert) {
     assert.plan(2);
 
     var ringpop = createRingpop();
-    recvJoin({
+    handleJoin({
         ringpop: ringpop,
         source: ringpop.hostPort
     }, function(err) {
@@ -210,7 +210,7 @@ test('protocol join disallows joining different app clusters', function t(assert
         hostPort: '127.0.0.1:3000'
     });
 
-    recvJoin({
+    handleJoin({
         ringpop: ringpop,
         app: 'jupiter',
         source: '127.0.0.1:3001'

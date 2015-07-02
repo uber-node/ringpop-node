@@ -73,7 +73,7 @@ function validateJoinerApp(ringpop, app, callback) {
     return true;
 }
 
-module.exports = function recvJoin(opts, callback) {
+module.exports = function handleJoin(opts, callback) {
     var ringpop = opts.ringpop;
 
     ringpop.stat('increment', 'join.recv');

@@ -19,10 +19,39 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function recvProxyReq(opts, callback) {
-    var ringpop = opts.ringpop;
-    var header = opts.header;
-    var body = opts.body;
+var errors = require('../lib/errors.js');
+var TypedError = require('error/typed');
 
-    ringpop.requestProxy.handleRequest(header, body, callback);
+var RedundantLeaveError = TypedError({
+    type: 'ringpop.invalid-leave.redundant',
+    message: 'A node cannot leave its cluster when it has already left.'
+});
+
+module.exports = function handleAdminLeave(opts, callback) {
+    var ringpop = opts.ringpop;
+
+    if (!ringpop.membership.localMember) {
+        process.nextTick(function() {
+            callback(errors.InvalidLocalMemberError());
+        });
+        return;
+    }
+
+    if (ringpop.membership.localMember.status === 'leave') {
+        process.nextTick(function() {
+            callback(RedundantLeaveError());
+        });
+        return;
+    }
+
+    // TODO Explicitly infect other members (like admin join)?
+    ringpop.membership.makeLeave(ringpop.whoami(),
+        ringpop.membership.localMember.incarnationNumber);
+
+    ringpop.gossip.stop();
+    ringpop.suspicion.stopAll();
+
+    process.nextTick(function() {
+        callback(null, null, 'ok');
+    });
 };
