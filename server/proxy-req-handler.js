@@ -19,22 +19,10 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function recvPing(opts, callback) {
+module.exports = function handleProxyReq(opts, callback) {
     var ringpop = opts.ringpop;
-    var source = opts.source;
-    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
-    var changes = opts.changes;
-    var checksum = opts.checksum;
+    var header = opts.header;
+    var body = opts.body;
 
-    ringpop.stat('increment', 'ping.recv');
-
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
-
-    ringpop.membership.update(changes);
-
-    callback(null, {
-        changes: ringpop.dissemination.issueAsReceiver(source,
-            sourceIncarnationNumber, checksum),
-    });
+    ringpop.requestProxy.handleRequest(header, body, callback);
 };

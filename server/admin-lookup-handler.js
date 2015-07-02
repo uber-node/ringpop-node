@@ -19,34 +19,8 @@
 // THE SOFTWARE.
 'use strict';
 
-var errors = require('./errors.js');
-var sendJoin = require('./swim/join-sender.js').joinCluster;
-
-module.exports = function recvAdminJoin(opts, callback) {
-    var ringpop = opts.ringpop;
-
-    if (!ringpop.membership.localMember) {
-        process.nextTick(function() {
-            callback(errors.InvalidLocalMemberError());
-        });
-        return;
-    }
-
-    // Handle rejoin for member that left.
-    if (ringpop.membership.localMember.status === 'leave') {
-        // Assert local member is alive.
-        ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
-
-        ringpop.gossip.start();
-        ringpop.suspicion.reenable();
-
-        callback(null, null, 'rejoined');
-        return;
-    }
-
-    sendJoin({
-        ringpop: ringpop,
-        maxJoinDuration: ringpop.maxJoinDuration,
-        joinSize: ringpop.joinSize
-    }, callback);
+module.exports = function handleAdminLookup(opts, callback) {
+    callback(null, null, {
+        dest: opts.ringpop.lookup(opts.key)
+    });
 };

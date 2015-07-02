@@ -19,8 +19,22 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function recvAdminLookup(opts, callback) {
-    callback(null, null, {
-        dest: opts.ringpop.lookup(opts.key)
+module.exports = function handlePing(opts, callback) {
+    var ringpop = opts.ringpop;
+    var source = opts.source;
+    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
+    var changes = opts.changes;
+    var checksum = opts.checksum;
+
+    ringpop.stat('increment', 'ping.recv');
+
+    ringpop.serverRate.mark();
+    ringpop.totalRate.mark();
+
+    ringpop.membership.update(changes);
+
+    callback(null, {
+        changes: ringpop.dissemination.issueAsReceiver(source,
+            sourceIncarnationNumber, checksum),
     });
 };

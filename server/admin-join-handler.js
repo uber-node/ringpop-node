@@ -19,42 +19,34 @@
 // THE SOFTWARE.
 'use strict';
 
-var sendPing = require('./ping-sender.js');
+var errors = require('../lib/errors.js');
+var sendJoin = require('../lib/swim/join-sender.js').joinCluster;
 
-module.exports = function recvPingReq(opts, callback) {
+module.exports = function handleAdminJoin(opts, callback) {
     var ringpop = opts.ringpop;
 
-    ringpop.stat('increment', 'ping-req.recv');
-
-    var source = opts.source;
-    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
-    var target = opts.target;
-    var changes = opts.changes;
-    var checksum = opts.checksum;
-
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
-    ringpop.membership.update(changes);
-
-    ringpop.debugLog('ping-req send ping source=' + source + ' target=' + target, 'p');
-
-    var start = new Date();
-    sendPing({
-        ringpop: ringpop,
-        target: target
-    }, function (isOk, body) {
-        ringpop.stat('timing', 'ping-req-ping', start);
-        ringpop.debugLog('ping-req recv ping source=' + source + ' target=' + target + ' isOk=' + isOk, 'p');
-
-        if (isOk) {
-            ringpop.membership.update(body.changes);
-        }
-
-        callback(null, {
-            changes: ringpop.dissemination.issueAsReceiver(source,
-                sourceIncarnationNumber, checksum),
-            pingStatus: isOk,
-            target: target
+    if (!ringpop.membership.localMember) {
+        process.nextTick(function() {
+            callback(errors.InvalidLocalMemberError());
         });
-    });
+        return;
+    }
+
+    // Handle rejoin for member that left.
+    if (ringpop.membership.localMember.status === 'leave') {
+        // Assert local member is alive.
+        ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
+
+        ringpop.gossip.start();
+        ringpop.suspicion.reenable();
+
+        callback(null, null, 'rejoined');
+        return;
+    }
+
+    sendJoin({
+        ringpop: ringpop,
+        maxJoinDuration: ringpop.maxJoinDuration,
+        joinSize: ringpop.joinSize
+    }, callback);
 };

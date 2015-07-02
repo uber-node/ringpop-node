@@ -20,14 +20,14 @@
 
 'use strict';
 
-var recvAdminJoin = require('./admin-join-recvr.js');
-var recvAdminLeave = require('./admin-leave-recvr.js');
-var recvAdminLookup = require('./admin-lookup-recvr.js');
-var recvJoin = require('./swim/join-recvr.js');
-var recvPing = require('./swim/ping-recvr.js');
-var recvPingReq = require('./swim/ping-req-recvr.js');
-var recvProxyReq = require('./proxy-req-recvr.js');
-var safeParse = require('./util').safeParse;
+var handleAdminJoin = require('./admin-join-handler.js');
+var handleAdminLeave = require('./admin-leave-handler.js');
+var handleAdminLookup = require('./admin-lookup-handler.js');
+var handleJoin = require('./join-handler.js');
+var handlePing = require('./ping-handler.js');
+var handlePingReq = require('./ping-req-handler.js');
+var handleProxyReq = require('./proxy-req-handler.js');
+var safeParse = require('../lib/util').safeParse;
 
 var commands = {
     '/health': 'health',
@@ -102,13 +102,13 @@ RingPopTChannel.prototype.adminGossip = function (arg1, arg2, hostInfo, cb) {
 };
 
 RingPopTChannel.prototype.adminLeave = function adminLeave(arg1, arg2, hostInfo, cb) {
-    recvAdminLeave({
+    handleAdminLeave({
         ringpop: this.ringpop
     }, cb);
 };
 
 RingPopTChannel.prototype.adminLookup = function adminLookup(arg1, arg2, hostInfo, cb) {
-    recvAdminLookup({
+    handleAdminLookup({
         ringpop: this.ringpop,
         key: arg2.toString()
     }, cb);
@@ -122,7 +122,7 @@ RingPopTChannel.prototype.adminJoin = function (arg1, arg2, hostInfo, cb) {
         return;
     }
 
-    recvAdminJoin({
+    handleAdminJoin({
         ringpop: this.ringpop
     }, function onAdminJoin(err, candidateHosts) {
         if (err) {
@@ -162,7 +162,7 @@ RingPopTChannel.prototype.protocolJoin = function (arg1, arg2, hostInfo, cb) {
         return cb(new Error('need req body with app, source and incarnationNumber'));
     }
 
-    recvJoin({
+    handleJoin({
         ringpop: this.ringpop,
         app: app,
         source: source,
@@ -181,7 +181,7 @@ RingPopTChannel.prototype.protocolPing = function (arg1, arg2, hostInfo, cb) {
         return cb(new Error('need req body with source, changes, and checksum'));
     }
 
-    recvPing({
+    handlePing({
         ringpop: this.ringpop,
         source: body.source,
         sourceIncarnationNumber: body.sourceIncarnationNumber,
@@ -201,7 +201,7 @@ RingPopTChannel.prototype.protocolPingReq = function protocolPingReq(arg1, arg2,
         return cb(new Error('need req body with source, target, changes, and checksum'));
     }
 
-    recvPingReq({
+    handlePingReq({
         ringpop: this.ringpop,
         source: body.source,
         sourceIncarnationNumber: body.sourceIncarnationNumber,
@@ -219,15 +219,15 @@ RingPopTChannel.prototype.proxyReq = function (arg1, arg2, hostInfo, cb) {
         return cb(new Error('need header to exist'));
     }
 
-    recvProxyReq({
+    handleProxyReq({
         ringpop: this.ringpop,
         header: header,
         body: arg2
     }, cb);
 };
 
-function createRingPopTChannel(ringpop, tchannel) {
+function createServer(ringpop, tchannel) {
     return new RingPopTChannel(ringpop, tchannel);
 }
 
-exports.createRingPopTChannel = createRingPopTChannel;
+module.exports = createServer;
