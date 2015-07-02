@@ -32,7 +32,7 @@ var sendPingReq = require('./lib/swim/ping-req-sender.js');
 var Suspicion = require('./lib/swim/suspicion');
 
 var createMembershipUpdateListener = require('./lib/membership-update-listener.js');
-var createRingPopTChannel = require('./lib/tchannel.js').createRingPopTChannel;
+var createServer = require('./server');
 var Dissemination = require('./lib/dissemination.js');
 var errors = require('./lib/errors.js');
 var HashRing = require('./lib/ring');
@@ -186,7 +186,7 @@ RingPop.prototype.destroy = function destroy() {
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
-    createRingPopTChannel(this, this.channel);
+    createServer(this, this.channel);
 };
 
 /*

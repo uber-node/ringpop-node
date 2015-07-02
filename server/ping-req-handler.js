@@ -19,39 +19,42 @@
 // THE SOFTWARE.
 'use strict';
 
-var errors = require('./errors.js');
-var TypedError = require('error/typed');
+var sendPing = require('../lib/swim/ping-sender.js');
 
-var RedundantLeaveError = TypedError({
-    type: 'ringpop.invalid-leave.redundant',
-    message: 'A node cannot leave its cluster when it has already left.'
-});
-
-module.exports = function recvAdminLeave(opts, callback) {
+module.exports = function handlePingReq(opts, callback) {
     var ringpop = opts.ringpop;
 
-    if (!ringpop.membership.localMember) {
-        process.nextTick(function() {
-            callback(errors.InvalidLocalMemberError());
+    ringpop.stat('increment', 'ping-req.recv');
+
+    var source = opts.source;
+    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
+    var target = opts.target;
+    var changes = opts.changes;
+    var checksum = opts.checksum;
+
+    ringpop.serverRate.mark();
+    ringpop.totalRate.mark();
+    ringpop.membership.update(changes);
+
+    ringpop.debugLog('ping-req send ping source=' + source + ' target=' + target, 'p');
+
+    var start = new Date();
+    sendPing({
+        ringpop: ringpop,
+        target: target
+    }, function (isOk, body) {
+        ringpop.stat('timing', 'ping-req-ping', start);
+        ringpop.debugLog('ping-req recv ping source=' + source + ' target=' + target + ' isOk=' + isOk, 'p');
+
+        if (isOk) {
+            ringpop.membership.update(body.changes);
+        }
+
+        callback(null, {
+            changes: ringpop.dissemination.issueAsReceiver(source,
+                sourceIncarnationNumber, checksum),
+            pingStatus: isOk,
+            target: target
         });
-        return;
-    }
-
-    if (ringpop.membership.localMember.status === 'leave') {
-        process.nextTick(function() {
-            callback(RedundantLeaveError());
-        });
-        return;
-    }
-
-    // TODO Explicitly infect other members (like admin join)?
-    ringpop.membership.makeLeave(ringpop.whoami(),
-        ringpop.membership.localMember.incarnationNumber);
-
-    ringpop.gossip.stop();
-    ringpop.suspicion.stopAll();
-
-    process.nextTick(function() {
-        callback(null, null, 'ok');
     });
 };
