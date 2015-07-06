@@ -20,6 +20,14 @@
 'use strict';
 
 var sendPing = require('../lib/swim/ping-sender.js');
+var TypedError = require('error/typed');
+
+var PingReqTargetUnreachableError = TypedError({
+    type: 'ringpop.ping-req.target-unreachable',
+    message: 'Ping-req target is unreachable',
+    changes: null,
+    nameAsThrift: 'pingReqTargetUnreachable'
+});
 
 module.exports = function handlePingReq(opts, callback) {
     var ringpop = opts.ringpop;
@@ -36,25 +44,32 @@ module.exports = function handlePingReq(opts, callback) {
     ringpop.totalRate.mark();
     ringpop.membership.update(changes);
 
-    ringpop.debugLog('ping-req send ping source=' + source + ' target=' + target, 'p');
+    ringpop.debugLog('ping-req send ping target=' + target, 'p');
 
     var start = new Date();
     sendPing({
         ringpop: ringpop,
         target: target
-    }, function (isOk, body) {
-        ringpop.stat('timing', 'ping-req-ping', start);
-        ringpop.debugLog('ping-req recv ping source=' + source + ' target=' + target + ' isOk=' + isOk, 'p');
+    }, function (isOk, res) {
+        var err = !isOk;
 
-        if (isOk) {
-            ringpop.membership.update(body.changes);
+        ringpop.stat('timing', 'ping-req-ping', start);
+        ringpop.debugLog('ping-req recv ping target=' + target + ' isOk=' + isOk, 'p');
+
+        var changes = ringpop.dissemination.issueAsReceiver(source,
+            sourceIncarnationNumber, checksum);
+
+        if (err) {
+            callback(PingReqTargetUnreachableError({
+                changes: changes
+            }));
+            return;
         }
 
+        ringpop.membership.update(res.changes);
+
         callback(null, {
-            changes: ringpop.dissemination.issueAsReceiver(source,
-                sourceIncarnationNumber, checksum),
-            pingStatus: isOk,
-            target: target
+            changes: changes
         });
     });
 };

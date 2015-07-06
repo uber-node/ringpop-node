@@ -175,9 +175,8 @@ RingPop.prototype.destroy = function destroy() {
         this.joiner.destroy();
     }
 
-    // HACK remove double destroy gaurd.
-    if (this.channel && !this.channel.topChannel && !this.channel.destroyed) {
-        this.channel.close();
+    if (this.clientServer) {
+        this.clientServer.destroy();
     }
     if (this.channel && this.channel.topChannel &&
         !this.channel.topChannel.destroyed
@@ -187,7 +186,10 @@ RingPop.prototype.destroy = function destroy() {
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
-    createServer(this, this.channel);
+    this.clientServer = createServer({
+        ringpop: this,
+        channel: this.channel
+    });
 };
 
 /*
@@ -276,7 +278,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
 
         bootstrapTime = Date.now() - bootstrapTime;
 
-        self.logger.debug('ringpop is ready', {
+        self.logger.info('ringpop is ready', {
             address: self.hostPort,
             memberCount: self.membership.getMemberCount(),
             bootstrapTime: bootstrapTime,

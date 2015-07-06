@@ -121,18 +121,25 @@ testRingpopCluster({
 testRingpopCluster({
     size: 2,
     tap: function tap(cluster) {
-        cluster[1].channel.register('/protocol/join', function protocolJoin(req, res, head, body) {
+        var thriftChannel = cluster[1].clientServer.tchannelAsThrift;
+
+        var rawChannel = cluster[1].channel;
+        thriftChannel.register(rawChannel, 'Ringpop::join', null, protocolJoin);
+
+        function protocolJoin(opts, req, head, body, callback) {
             setTimeout(function onTimeout() {
                 cluster[0].destroy();
 
-                res.headers.as = 'raw';
-                res.sendOk(null, JSON.stringify({
-                    app: 'test',
-                    coordinator: cluster[1].hostPort,
-                    membership: cluster[1].dissemination.fullSync()
-                }));
+                callback(null, {
+                    ok: true,
+                    body: {
+                        app: 'test',
+                        coordinator: cluster[1].hostPort,
+                        membership: cluster[1].dissemination.fullSync()
+                    }
+                });
             }, 100);
-        });
+        }
     }
 }, 'slow joiner', function t(bootRes, cluster, assert) {
     assert.equal(cluster.length, 2, 'cluster of 2');

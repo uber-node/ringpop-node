@@ -52,10 +52,18 @@ function mkNoGossip(cluster) {
 }
 
 function mkBadPingReqResponder(ringpop) {
-    ringpop.channel.register('/protocol/ping-req', function protocolPingReq(req, res) {
-        res.headers.as = 'raw';
-        res.sendOk(null, JSON.stringify('badbody'));
-    });
+    var thriftChannel = ringpop.clientServer.tchannelAsThrift;
+
+    var rawChannel = ringpop.channel;
+    thriftChannel.register(rawChannel, 'Ringpop::pingReq', null, protocolPingReq);
+
+    /* jshint maxparams: 6 */
+    function protocolPingReq(opts, req, head, body, callback) {
+        callback(null, {
+            ok: true,
+            body: 'badbody'
+        });
+    }
 }
 
 testRingpopCluster({
