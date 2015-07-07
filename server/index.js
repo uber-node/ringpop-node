@@ -22,8 +22,6 @@
 var fs = require('fs');
 var path = require('path');
 
-var TChannelAsThrift = require('tchannel/as/thrift');
-
 var handleAdminJoin = require('./admin-join-handler.js');
 var handleAdminLeave = require('./admin-leave-handler.js');
 var handleAdminLookup = require('./admin-lookup-handler.js');
@@ -63,8 +61,7 @@ function ThriftResponse(body) {
 function initThriftChannel(opts) {
     var thriftSpecSource = fs.readFileSync(path.join(__dirname, '..', './ringpop.thrift'), 'utf-8');
 
-    return new TChannelAsThrift({
-        channel: opts.channel,
+    return opts.channel.TChannelAsThrift({
         source: thriftSpecSource
     });
 }
