@@ -161,7 +161,12 @@ function registerThriftHandlers(ringpop, tchannel, tchannelAsThrift) {
 function thriftCallback(callback) {
     return function onCallback(err, res) {
         if (err) {
-            callback(null, new ThriftError(err));
+            if (err.nameAsThrift) {
+                callback(null, new ThriftError(err));
+                return;
+            }
+
+            callback(err);
             return;
         }
 
