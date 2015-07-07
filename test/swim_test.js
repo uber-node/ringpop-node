@@ -22,6 +22,7 @@ var Member = require('../lib/member.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
 var testRingpop = require('./lib/test-ringpop.js');
+var TimeMock = require('time-mock');
 
 testRingpop('starting and stopping gossip sets timer / unsets timers', function t(deps, assert) {
     var gossip = deps.gossip;
@@ -155,24 +156,25 @@ testRingpop('suspicion subprotocol cannot be reenabled without all timers first 
     assert.equals(suspicion.isStoppedAll, 'fakestopall', 'suspicion not reenabled');
 });
 
-testRingpop({
-    async: true
-}, 'marks member faulty after suspect period', function t(deps, assert, done) {
+testRingpop('marks member faulty after suspect period', function t(deps, assert) {
     assert.plan(1);
 
+    // Add member, make it alive
     var membership = deps.membership;
-    var suspicion = deps.suspicion;
-
     var address = '127.0.0.1:3001';
     membership.makeAlive(address, Date.now());
 
-    var member = membership.findMemberByAddress(address);
-
+    var suspicion = deps.suspicion;
     suspicion.period = 1;
+
+    var timers = TimeMock(Date.now());
+    suspicion.setTimeout = timers.setTimeout;
+
+    // Start suspicion period for alive member
+    var member = membership.findMemberByAddress(address);
     suspicion.start(member);
 
-    setTimeout(function onTimeout() {
-        assert.equals(member.status, Member.Status.faulty, 'member is faulty');
-        done();
-    }, suspicion.period + 1);
+    // Advance time and make suspicion period expire.
+    timers.advance(suspicion.period + 1); // Arbitrary amount of time in the future
+    assert.equals(member.status, Member.Status.faulty, 'member is faulty');
 });
