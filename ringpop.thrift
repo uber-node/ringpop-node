@@ -10,22 +10,22 @@ struct Ack {
     2: optional double membershipChecksum;
 }
 
-struct DenyingJoinsError {
+exception DenyingJoinsError {
     1: required string type;
     2: required string message;
 }
 
-struct InvalidJoinAppError {
+exception InvalidJoinAppError {
     1: required string type;
     2: required string message;
 }
 
-struct InvalidJoinSourceError {
+exception InvalidJoinSourceError {
     1: required string type;
     2: required string message;
 }
 
-struct PingReqTargetUnreachableError {
+exception PingReqTargetUnreachableError {
     1: required string type;
     2: required string message;
     3: optional list<Change> changes;
