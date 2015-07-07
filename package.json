@@ -30,7 +30,6 @@
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "readable-stream": "^1.0.33",
-    "thriftify": "^1.0.0-alpha14",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
