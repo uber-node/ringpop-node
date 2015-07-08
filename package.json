@@ -2,6 +2,7 @@
   "name": "ringpop",
   "description": "A hash ring with a lot of pop",
   "contributors": [
+    "Alex Hauser <ahauser@uber.com>",
     "Rui Hu <ruihu.pvt@gmail.com>",
     "Bob Nugmanov <bob.nugmanov@gmail.com>",
     "Matt Ranney <mranney@uber.com>",
