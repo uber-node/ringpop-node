@@ -30,6 +30,14 @@ var handlePing = require('./ping-handler.js');
 var handlePingReq = require('./ping-req-handler.js');
 var handleProxyReq = require('./proxy-req-handler.js');
 var safeParse = require('../lib/util.js').safeParse;
+var TypedError = require('error/typed');
+
+var BadRequestError = TypedError({
+    type: 'ringpop.bad-request',
+    message: 'Request is invalid: {reason}',
+    reason: null,
+    nameAsThrift: 'badRequest'
+});
 
 var commands = {
     '/health': 'health',
@@ -70,14 +78,22 @@ function protocolJoinHandler(ringpop) {
     /* jshint maxparams:5 */
     return function handleIt(opts, req, head, body, callback) {
         if (!body) {
-            // TODO Typed Error
-            callback(new Error('body is required'));
+            respondWithBadRequest(callback, 'body is required');
             return;
         }
 
-        if (!body.app || !body.source || !body.incarnationNumber) {
-            // TODO Typed Error
-            callback(new Error('app, source, incarnationNumber are all required'));
+        if (!body.app) {
+            respondWithBadRequest(callback, 'app is required');
+            return;
+        }
+
+        if (!body.source) {
+            respondWithBadRequest(callback, 'source is required');
+            return;
+        }
+
+        if (!body.incarnationNumber) {
+            respondWithBadRequest(callback, 'incarnationNumber is required');
             return;
         }
 
@@ -156,6 +172,13 @@ function registerThriftHandlers(ringpop, tchannel, tchannelAsThrift) {
         tchannelAsThrift.register(tchannel, def, null,
             thriftHandlers[def]);
     });
+}
+
+function respondWithBadRequest(callback, reason) {
+    callback(null, new ThriftError(
+        BadRequestError({
+            reason: reason
+        })));
 }
 
 function thriftCallback(callback) {
@@ -339,7 +362,9 @@ RingPopTChannel.prototype.sendAsThrift = function sendAsThrift(endpoint, opts, c
             retryLimit: 1,
             trace: false,
             headers: {
-                'as': 'raw',
+                // tchannel/as/thrift module takes care of setting
+                // the 'as' header to 'thrift'. No need to do it
+                // here explicitly.
                 'cn': 'ringpop'
             }
         });

@@ -10,6 +10,11 @@ struct Ack {
     2: optional double membershipChecksum;
 }
 
+exception BadRequestError {
+    1: required string type;
+    2: required string message;
+}
+
 exception DenyingJoinsError {
     1: required string type;
     2: required string message;
@@ -39,7 +44,8 @@ service Ringpop {
     ) throws (
         1: DenyingJoinsError denyingJoins,
         2: InvalidJoinAppError invalidJoinApp,
-        3: InvalidJoinSourceError invalidJoinSource
+        3: InvalidJoinSourceError invalidJoinSource,
+        4: BadRequestError badRequest
     );
 
     Ack ping(
