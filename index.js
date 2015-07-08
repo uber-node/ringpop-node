@@ -25,6 +25,7 @@ var fs = require('fs');
 var globalSetTimeout = require('timers').setTimeout;
 var hammock = require('uber-hammock');
 var metrics = require('metrics');
+var packageJSON = require('./package.json');
 
 var Gossip = require('./lib/swim/gossip');
 var sendPing = require('./lib/swim/ping-sender.js');
@@ -37,6 +38,7 @@ var createMembershipUpdateListener = require('./lib/membership-update-listener.j
 var createServer = require('./server');
 var Dissemination = require('./lib/dissemination.js');
 var errors = require('./lib/errors.js');
+var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
 var HashRing = require('./lib/ring');
 var Membership = require('./lib/membership.js');
 var MembershipIterator = require('./lib/membership-iterator.js');
@@ -143,6 +145,11 @@ function RingPop(options) {
 
     this.destroyed = false;
     this.joiner = null;
+
+    this.startTime = Date.now(); //used for calculating uptime
+
+    this.tchannelVersion = getTChannelVersion();
+    this.ringpopVersion = packageJSON.version;
 }
 
 require('util').inherits(RingPop, EventEmitter);
@@ -356,7 +363,11 @@ RingPop.prototype.getStatsHooksStats = function getStatsHooksStats() {
 };
 
 RingPop.prototype.getStats = function getStats() {
-    return {
+    var timestamp = Date.now();
+    var uptime = timestamp - this.startTime;
+
+
+    var stats = {
         hooks: this.getStatsHooksStats(),
         membership: this.membership.getStats(),
         process: {
@@ -370,8 +381,17 @@ RingPop.prototype.getStats = function getStats() {
             serverRate: this.serverRate.printObj().m1,
             totalRate: this.totalRate.printObj().m1
         },
-        ring: Object.keys(this.ring.servers)
+        ring: Object.keys(this.ring.servers),
+        version: this.ringpopVersion,
+        timestamp: timestamp,
+        uptime: uptime
     };
+
+    if (this.tchannelVersion !== null) {
+        stats.tchannelVersion = this.tchannelVersion;
+    }
+
+    return stats;
 };
 
 RingPop.prototype.handleTick = function handleTick(cb) {
