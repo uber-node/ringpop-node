@@ -82,18 +82,9 @@ function protocolJoinHandler(ringpop) {
             return;
         }
 
-        if (!body.app) {
-            respondWithBadRequest(callback, 'app is required');
-            return;
-        }
-
-        if (!body.source) {
-            respondWithBadRequest(callback, 'source is required');
-            return;
-        }
-
-        if (!body.incarnationNumber) {
-            respondWithBadRequest(callback, 'incarnationNumber is required');
+        // validateBodyParams will call callback if invalid
+        if (!validateBodyParams(body, ['app', 'source', 'incarnationNumber'],
+            callback)) {
             return;
         }
 
@@ -110,16 +101,13 @@ function protocolPingHandler(ringpop) {
     /* jshint maxparams:5 */
     return function handleIt(opts, req, head, body, callback) {
         if (!body) {
-            // TODO Typed error
-            callback(new Error('body is required'));
+            respondWithBadRequest(callback, 'body is required');
             return;
         }
 
-        // NOTE sourceIncarnationNumber is an optional argument. It was not present
-        // until after the v9.8.12 release.
-        if (!body.changes || !body.checksum || !body.source) {
-            // TODO Typed error
-            callback(new Error('changes, checksum and source are all required'));
+        // validateBodyParams will call callback if invalid
+        if (!validateBodyParams(body, ['changes', 'checksum', 'source',
+            'sourceIncarnationNumber'], callback)) {
             return;
         }
 
@@ -172,6 +160,19 @@ function registerThriftHandlers(ringpop, tchannel, tchannelAsThrift) {
         tchannelAsThrift.register(tchannel, def, null,
             thriftHandlers[def]);
     });
+}
+
+function validateBodyParams(body, params, callback) {
+    for (var i = 0; i < params.length; i++) {
+        var param = params[i];
+
+        if (!body[param]) {
+            respondWithBadRequest(callback, param + ' is required');
+            return false;
+        }
+    }
+
+    return true;
 }
 
 function respondWithBadRequest(callback, reason) {

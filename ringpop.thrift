@@ -50,14 +50,16 @@ service Ringpop {
 
     Ack ping(
         1: required double checksum,
-        2: optional list<Change> changes,
+        2: required list<Change> changes,
         3: required string source,
         4: required double sourceIncarnationNumber
+    ) throws (
+        1: BadRequestError badRequest
     );
 
     Ack pingReq(
         1: required double checksum,
-        2: optional list<Change> changes,
+        2: required list<Change> changes,
         3: required string target,
         4: required string source,
         5: required double sourceIncarnationNumber

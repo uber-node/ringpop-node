@@ -24,12 +24,7 @@ var createServer = require('../../server/index.js');
 var TChannel = require('tchannel');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 
-testRingpopCluster('sends join without required params, regrets it', function(bootRes, cluster, assert) {
-    assert.plan(4);
-
-    var host = '127.0.0.1';
-    var port = 3004;
-
+function assertBodies(assert, cluster, bodies, serverFn) {
     var tchannel = new TChannel();
     var server = createServer({
         channel: tchannel.makeSubChannel({
@@ -37,16 +32,8 @@ testRingpopCluster('sends join without required params, regrets it', function(bo
         })
     });
 
-    var bodies = [
-        // A null body exposes a thriftify bug. Comment
-        // out the below test case, for now.
-        //null,
-        { app: 'test' },
-        { app: 'test', source: host + ':' + port }
-    ];
-
     async.eachSeries(bodies, function each(body, callback) {
-        server.join({
+        server[serverFn]({
             host: cluster[0].hostPort,
             timeout: 1000,
             head: null,
@@ -62,4 +49,36 @@ testRingpopCluster('sends join without required params, regrets it', function(bo
         tchannel.close();
         assert.end();
     }
+
+}
+
+testRingpopCluster('sends join without required params, regrets it', function(bootRes, cluster, assert) {
+    assert.plan(6);
+
+    var bodies = [
+        // A null body exposes a thriftify bug. Comment
+        // out the below test case, for now.
+        //null,
+        {},
+        { app: 'test' },
+        { app: 'test', source: '127.0.0.1:3004' }
+    ];
+
+    assertBodies(assert, cluster, bodies, 'join');
+});
+
+testRingpopCluster('sends ping without required params, regrets it', function(bootRes, cluster, assert) {
+    assert.plan(8);
+
+    var bodies = [
+        // A null body exposes a thriftify bug. Comment
+        // out the below test case, for now.
+        //null,
+        {},
+        { checksum: Date.now() },
+        { checksum: Date.now(), changes: [] },
+        { checksum: Date.now(), changes: [], source: '127.0.0.1:3004' }
+    ];
+
+    assertBodies(assert, cluster, bodies, 'ping');
 });
