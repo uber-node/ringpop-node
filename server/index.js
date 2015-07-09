@@ -22,22 +22,14 @@
 var fs = require('fs');
 var path = require('path');
 
+var createJoinHandler = require('./join-handler.js');
+var createPingHandler = require('./ping-handler.js');
+var createPingReqHandler = require('./ping-req-handler.js');
 var handleAdminJoin = require('./admin-join-handler.js');
 var handleAdminLeave = require('./admin-leave-handler.js');
 var handleAdminLookup = require('./admin-lookup-handler.js');
-var handleJoin = require('./join-handler.js');
-var handlePing = require('./ping-handler.js');
-var handlePingReq = require('./ping-req-handler.js');
 var handleProxyReq = require('./proxy-req-handler.js');
 var safeParse = require('../lib/util.js').safeParse;
-var TypedError = require('error/typed');
-
-var BadRequestError = TypedError({
-    type: 'ringpop.bad-request',
-    message: 'Request is invalid: {reason}',
-    reason: null,
-    nameAsThrift: 'badRequest'
-});
 
 var commands = {
     '/health': 'health',
@@ -55,17 +47,6 @@ var commands = {
     '/proxy/req': 'proxyReq'
 };
 
-function ThriftError(err) {
-    this.ok = false;
-    this.body = err;
-    this.typeName = err.nameAsThrift;
-}
-
-function ThriftResponse(body) {
-    this.ok = true;
-    this.body = body;
-}
-
 function initThriftChannel(opts) {
     var thriftSpecSource = fs.readFileSync(path.join(__dirname, '..', './ringpop.thrift'), 'utf-8');
 
@@ -74,86 +55,11 @@ function initThriftChannel(opts) {
     });
 }
 
-function protocolJoinHandler(ringpop) {
-    /* jshint maxparams:5 */
-    return function handleIt(opts, req, head, body, callback) {
-        if (!body) {
-            respondWithBadRequest(callback, 'body is required');
-            return;
-        }
-
-        // validateBodyParams will call callback if invalid
-        if (!validateBodyParams(body, ['app', 'source', 'incarnationNumber'],
-            callback)) {
-            return;
-        }
-
-        handleJoin({
-            ringpop: ringpop,
-            app: body.app,
-            source: body.source,
-            incarnationNumber: body.incarnationNumber
-        }, thriftCallback(callback));
-    };
-}
-
-function protocolPingHandler(ringpop) {
-    /* jshint maxparams:5 */
-    return function handleIt(opts, req, head, body, callback) {
-        if (!body) {
-            respondWithBadRequest(callback, 'body is required');
-            return;
-        }
-
-        // validateBodyParams will call callback if invalid
-        if (!validateBodyParams(body, ['changes', 'checksum', 'source',
-            'sourceIncarnationNumber'], callback)) {
-            return;
-        }
-
-        handlePing({
-            ringpop: ringpop,
-            source: body.source,
-            sourceIncarnationNumber: body.sourceIncarnationNumber,
-            changes: body.changes,
-            checksum: body.checksum
-        }, thriftCallback(callback));
-    };
-}
-
-function protocolPingReqHandler(ringpop) {
-    /* jshint maxparams:5 */
-    return function handleIt(opts, req, head, body, callback) {
-        if (!body) {
-            // TODO Typed error
-            callback(new Error('body is required'));
-            return;
-        }
-
-        // NOTE sourceIncarnationNumber is an optional argument. It was not present
-        // until after the v9.8.12 release.
-        if (!body.target || !body.changes || !body.checksum || !body.source) {
-            // TODO Typed error
-            callback(new Error('target, changes, checksum and source are all required'));
-            return;
-        }
-
-        handlePingReq({
-            ringpop: ringpop,
-            source: body.source,
-            sourceIncarnationNumber: body.sourceIncarnationNumber,
-            target: body.target,
-            changes: body.changes,
-            checksum: body.checksum
-        }, thriftCallback(callback));
-    };
-}
-
 function registerThriftHandlers(ringpop, tchannel, tchannelAsThrift) {
     var thriftHandlers = {
-        'Ringpop::join': protocolJoinHandler(ringpop),
-        'Ringpop::ping': protocolPingHandler(ringpop),
-        'Ringpop::pingReq': protocolPingReqHandler(ringpop)
+        'Ringpop::join': createJoinHandler(ringpop),
+        'Ringpop::ping': createPingHandler(ringpop),
+        'Ringpop::pingReq': createPingReqHandler(ringpop)
     };
 
     Object.keys(thriftHandlers).forEach(function eachDef(def) {
@@ -162,47 +68,10 @@ function registerThriftHandlers(ringpop, tchannel, tchannelAsThrift) {
     });
 }
 
-function validateBodyParams(body, params, callback) {
-    for (var i = 0; i < params.length; i++) {
-        var param = params[i];
-
-        if (!body[param]) {
-            respondWithBadRequest(callback, param + ' is required');
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function respondWithBadRequest(callback, reason) {
-    callback(null, new ThriftError(
-        BadRequestError({
-            reason: reason
-        })));
-}
-
-function thriftCallback(callback) {
-    return function onCallback(err, res) {
-        if (err) {
-            if (err.nameAsThrift) {
-                callback(null, new ThriftError(err));
-                return;
-            }
-
-            callback(err);
-            return;
-        }
-
-        callback(null, new ThriftResponse(res));
-    };
-}
-
 function RingPopTChannel(opts) {
     this.ringpop = opts.ringpop;
     this.tchannel = opts.channel;
-    // hack to disable retries until we reconcile wrt them
-    this.tchannel.requestDefaults.retryLimit = 1;
+
     this.tchannelAsThrift = initThriftChannel({
         channel: this.tchannel
     });

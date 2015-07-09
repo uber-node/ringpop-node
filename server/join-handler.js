@@ -19,7 +19,12 @@
 // THE SOFTWARE.
 'use strict';
 
+var thriftUtils = require('./thrift-utils.js');
 var TypedError = require('error/typed');
+
+var respondWithBadRequest = thriftUtils.respondWithBadRequest;
+var validateBodyParams = thriftUtils.validateBodyParams;
+var wrapCallbackAsThrift = thriftUtils.wrapCallbackAsThrift;
 
 var DenyJoinError = TypedError({
     type: 'ringpop.deny-join',
@@ -76,25 +81,39 @@ function validateJoinerApp(ringpop, app, callback) {
     return true;
 }
 
-module.exports = function handleJoin(opts, callback) {
-    var ringpop = opts.ringpop;
+module.exports = function createJoinHandler(ringpop) {
+    /* jshint maxparams: 5 */
+    return function handleJoin(opts, req, head, body, callback) {
+        ringpop.stat('increment', 'join.recv');
 
-    ringpop.stat('increment', 'join.recv');
+        if (!body) {
+            respondWithBadRequest(callback, 'body is required');
+            return;
+        }
 
-    // NOTE Validators call callback if invalid.
-    if (!validateDenyingJoins(ringpop, callback) ||
-        !validateJoinerAddress(ringpop, opts.source, callback) ||
-        !validateJoinerApp(ringpop, opts.app, callback)) {
-        return;
-    }
+        // validateBodyParams will call callback if invalid
+        if (!validateBodyParams(body, ['app', 'source', 'incarnationNumber'],
+            callback)) {
+            return;
+        }
 
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
+        var thriftCallback = wrapCallbackAsThrift(callback);
 
-    ringpop.membership.makeAlive(opts.source, opts.incarnationNumber);
+        // NOTE Validators call callback if invalid.
+        if (!validateDenyingJoins(ringpop, thriftCallback) ||
+            !validateJoinerAddress(ringpop, body.source, thriftCallback) ||
+            !validateJoinerApp(ringpop, body.app, thriftCallback)) {
+            return;
+        }
 
-    callback(null, {
-        changes: ringpop.dissemination.fullSync(),
-        membershipChecksum: ringpop.membership.checksum
-    });
+        ringpop.serverRate.mark();
+        ringpop.totalRate.mark();
+
+        ringpop.membership.makeAlive(body.source, body.incarnationNumber);
+
+        thriftCallback(null, {
+            changes: ringpop.dissemination.fullSync(),
+            membershipChecksum: ringpop.membership.checksum
+        });
+    };
 };

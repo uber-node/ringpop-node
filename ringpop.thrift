@@ -64,6 +64,7 @@ service Ringpop {
         4: required string source,
         5: required double sourceIncarnationNumber
     ) throws (
-        1: PingReqTargetUnreachableError pingReqTargetUnreachable
+        1: PingReqTargetUnreachableError pingReqTargetUnreachable,
+        2: BadRequestError badRequest
     );
 }

@@ -20,7 +20,12 @@
 'use strict';
 
 var sendPing = require('../lib/swim/ping-sender.js');
+var thriftUtils = require('./thrift-utils.js');
 var TypedError = require('error/typed');
+
+var respondWithBadRequest = thriftUtils.respondWithBadRequest;
+var validateBodyParams = thriftUtils.validateBodyParams;
+var wrapCallbackAsThrift = thriftUtils.wrapCallbackAsThrift;
 
 var PingReqTargetUnreachableError = TypedError({
     type: 'ringpop.ping-req.target-unreachable',
@@ -29,47 +34,57 @@ var PingReqTargetUnreachableError = TypedError({
     nameAsThrift: 'pingReqTargetUnreachable'
 });
 
-module.exports = function handlePingReq(opts, callback) {
-    var ringpop = opts.ringpop;
+module.exports = function createPingReqHandler(ringpop) {
+    /* jshint maxparams: 6 */
+    return function handlePingReq(opts, req, head, body, callback) {
+        ringpop.stat('increment', 'ping-req.recv');
 
-    ringpop.stat('increment', 'ping-req.recv');
-
-    var source = opts.source;
-    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
-    var target = opts.target;
-    var changes = opts.changes;
-    var checksum = opts.checksum;
-
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
-    ringpop.membership.update(changes);
-
-    ringpop.debugLog('ping-req send ping target=' + target, 'p');
-
-    var start = new Date();
-    sendPing({
-        ringpop: ringpop,
-        target: target
-    }, function (isOk, res) {
-        var err = !isOk;
-
-        ringpop.stat('timing', 'ping-req-ping', start);
-        ringpop.debugLog('ping-req recv ping target=' + target + ' isOk=' + isOk, 'p');
-
-        var changes = ringpop.dissemination.issueAsReceiver(source,
-            sourceIncarnationNumber, checksum);
-
-        if (err) {
-            callback(PingReqTargetUnreachableError({
-                changes: changes
-            }));
+        if (!body) {
+            respondWithBadRequest(callback, 'body is required');
             return;
         }
 
-        ringpop.membership.update(res.changes);
+        if (!validateBodyParams(body, ['target', 'changes', 'checksum',
+            'source', 'sourceIncarnationNumber'], callback)) {
+            return;
+        }
 
-        callback(null, {
-            changes: changes
-        });
-    });
+        ringpop.serverRate.mark();
+        ringpop.totalRate.mark();
+        ringpop.membership.update(body.changes);
+
+        ringpop.debugLog('ping-req send ping target=' + body.target, 'p');
+
+        var start = new Date();
+
+        sendPing({
+            ringpop: ringpop,
+            target: body.target
+        }, onPing);
+
+        function onPing(isOk, res) {
+            var err = !isOk;
+
+            ringpop.stat('timing', 'ping-req-ping', start);
+            ringpop.debugLog('ping-req recv ping target=' + body.target + ' isOk=' + isOk, 'p');
+
+            var changes = ringpop.dissemination.issueAsReceiver(body.source,
+                body.sourceIncarnationNumber, body.checksum);
+
+            var thriftCallback = wrapCallbackAsThrift(callback);
+
+            if (err) {
+                thriftCallback(PingReqTargetUnreachableError({
+                    changes: changes
+                }));
+                return;
+            }
+
+            ringpop.membership.update(res.changes);
+
+            thriftCallback(null, {
+                changes: changes
+            });
+        }
+    };
 };

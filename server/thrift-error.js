@@ -19,37 +19,10 @@
 // THE SOFTWARE.
 'use strict';
 
-var thriftUtils = require('./thrift-utils.js');
+function ThriftError(err) {
+    this.ok = false;
+    this.body = err;
+    this.typeName = err.nameAsThrift;
+}
 
-var respondWithBadRequest = thriftUtils.respondWithBadRequest;
-var validateBodyParams = thriftUtils.validateBodyParams;
-var wrapCallbackAsThrift = thriftUtils.wrapCallbackAsThrift;
-
-module.exports = function createPingHandler(ringpop) {
-    /* jshint maxparams: 5 */
-    return function handlePing(opts, req, head, body, callback) {
-        ringpop.stat('increment', 'ping.recv');
-
-        if (!body) {
-            respondWithBadRequest(callback, 'body is required');
-            return;
-        }
-
-        // validateBodyParams will call callback if invalid
-        if (!validateBodyParams(body, ['changes', 'checksum', 'source',
-            'sourceIncarnationNumber'], callback)) {
-            return;
-        }
-
-        ringpop.serverRate.mark();
-        ringpop.totalRate.mark();
-
-        ringpop.membership.update(body.changes);
-
-        var thriftCallback = wrapCallbackAsThrift(callback);
-        thriftCallback(null, {
-            changes: ringpop.dissemination.issueAsReceiver(body.source,
-                body.sourceIncarnationNumber, body.checksum),
-        });
-    };
-};
+module.exports = ThriftError;

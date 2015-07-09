@@ -82,3 +82,22 @@ testRingpopCluster('sends ping without required params, regrets it', function(bo
 
     assertBodies(assert, cluster, bodies, 'ping');
 });
+
+testRingpopCluster('send ping-req without required params, regrets it', function(bootRes, cluster, assert) {
+    assert.plan(10);
+
+    var checksum = Date.now();
+    var changes = [];
+    var target = '127.0.0.1:3004';
+    var source = '127.0.0.1:3005';
+
+    var bodies = [
+        {},
+        { checksum: checksum },
+        { checksum: checksum, changes: changes },
+        { checksum: checksum, changes: changes, target: target },
+        { checksum: checksum, changes: changes, target: target, source: source }
+    ];
+
+    assertBodies(assert, cluster, bodies, 'pingReq');
+});
