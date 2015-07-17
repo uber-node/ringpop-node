@@ -19,6 +19,13 @@ The checksums detect a divergence in the cluster in the event a request is forwa
 Ringpop retains members that are “down” in its membership list. SWIM manages membership status by removing down members from the list, whereas Ringpop keeps down members in the list allowing the ability to merge a split-brain after a network partition. For example, let’s say two clusters form your application. If there isn’t a way to identify which nodes were previously faulty or down because the network partition happened during that time, there would be no way to merge them back together.
 
 ### Consistent Hashing
+Ringpop leverages consistent hashing to minimize the number of keys to rebalance when your application cluster is resized. Consistent hashing in Ringpop allows the nodes to rebalance themselves, and traffic is evenly distributed. Ringpop uses FarmHash as its hashing function because it is fast and provides good distribution. Consistent hashing applies a hash function to not only the identity of your data, but also the nodes within your cluster that are operating on that data.
+
+Ringpop maintains a consistent hash ring of its members. Once members are discovered to join or leave the cluster, that information is added into the consistent hash ring. Then the instances’ addresses along that ring are hashed, giving a particular part about of the key space over to that instance for the time it is alive and operating.
+
+Ringpop uses a red-black tree to implement its underlying data structure for its ring which provides log n, lookups, inserts, and removals. 
+
+Ringpop adds a uniform number of replica points per node. To spread the nodes around the ring for a more even distribution, replica points are added for every node within the ring. It also adds a uniform number of replica points so the nodes and the hosts running these nodes are treated as homogeneous.
 
 ### Forwarding
 
