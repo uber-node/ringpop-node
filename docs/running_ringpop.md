@@ -1,5 +1,7 @@
 # Running Ringpop
 
+Learning how to incorporate Ringpop into your application.
+
 ## Running with tick-cluster
 tick-cluster is a utility located in the `scripts/` directory of the Ringpop repo that allows you to quickly spin up a Ringpop cluster of arbitrary size and test basic failure modes: suspending, killing and respawning nodes.
 
