@@ -29,6 +29,18 @@ Ringpop adds a uniform number of replica points per node. To spread the nodes ar
 
 ### Forwarding
 
+Ringpop offers proxying as a convenience and can be used to route your application's requests. As your application is receiving traffic, that traffic is probably directed toward a particular entity in your system like an object with an id. That id belongs somewhere in your cluster on a particular instance, depending on how it hashes. If the key hashes to an instance that did not receive the request, then that request is simply forwarded and everything is taken care of under the hood. This acts like a middleware layer for applications. Before the request even gets to your business logic, it is already routed to the appropriate node.
+
+Ringpop has codified a handle or forward pattern. If a key arriving at instance A hashes to the node, it can process it, otherwise, it forwards it. This information is forwarded using a protocol called [TChannel](https://github.com/uber/tchannel). TChannel is a networking framing protocol developed by Uber, used for general RPC. Ringpop uses TChannel as its proxying channel and transport of choice. It supports out-of-order responses at extremely high performance with benchmarks ranging from 20,000 to 40,000 operations per second.
+
+Ringpop packs forwarded requests as HTTP over TChannel. HTTP is packed into the message that's transported over TChannel when it's forwarded, and then reconstructed on the other side.
+
+#### Forwarding Requests
+
+As an example, let's say node C joins a ring and now all of the addresses and replica points are evenly distributed around the ring. A, B, and C are pinging one another. The handle or forward pattern peforms a `ringpop.lookup`, gives it the sharding key and gets a destination back. If the destination resolves to A, then A can handle the request; otherwise it forwards it over TChannel transport to its destination.
+
+**Note**: Eventually, this process will be moved over to a Thrift model instead of HTTP.
+
 ## How Ringpop Works
 
 ### Joining a Cluster
