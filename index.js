@@ -452,11 +452,10 @@ RingPop.prototype.pingMemberNow = function pingMemberNow(callback) {
     sendPing({
         ringpop: self,
         target: member
-    }, function(isOk, body) {
+    }, function(isOk) {
         self.stat('timing', 'ping', start);
         if (isOk) {
             self.isPinging = false;
-            self.membership.update(body.changes);
             return callback();
         }
 
