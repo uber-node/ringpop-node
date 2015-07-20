@@ -29,12 +29,29 @@ Ringpop adds a uniform number of replica points per node. To spread the nodes ar
 
 ### Forwarding
 
-
 ## How Ringpop Works
 
 ### Joining a Cluster
 
 ### Handle or Forward
+Upon arrival of a proxied request at its destination, membership checksums of the sender and receiver will be compared. The request will be refused if checksums differ. Mismatches are expected when nodes are entering or exiting the cluster due to deploys, added/removed capacity, or failures. The cluster will eventually converge on one membership checksum, therefore refused requests are best handled by retrying them.
+
+Ringpop's request proxy has retries built in and can be tuned using two parameters provided at the time Ringpop is instantiated: `requestProxyMaxRetries` and `requestProxyRetrySchedule` or per-request with: `maxRetries` and `retrySchedule`. The first parameter is an integer representing the number of times a particular request is retried. The second parameter is an array of integer or floating point values representing the delay in-between consecutive retries.
+
+Ringpop has codified the aforementioned routing pattern in the `handleOrProxy` function:
+- returns `true` when key hashes to the "current" node and `false` otherwise.
+- returns `false` results in the request being proxied to the correct destination. Its usage looks like this:
+
+```javascript
+var opts = {
+    maxRetries: 3,
+    retrySchedule: [0, 0.5, 2]
+};
+
+if (ringpop.handleOrProxy(key, req, res, opts)) {
+    // handle request
+}
+```
 
 ### Node Statuses
 
