@@ -86,6 +86,23 @@ Say the damp score for B exceeds the red line. A fans out a damp-req request to 
 
 ### TChannel
 
+TChannel is a network multiplexing and framing protocol for RPC. Some of the characteristics of TChannel:
+- Easy to implement in multiple languages, especially JavaScript and Python.
+- High performance forwarding path. Intermediaries can make a forwarding decision quickly.
+- Request/response model with out-of-order responses. Slow request will not block subsequent faster requests at head of line.
+- Large requests/responses may/must be broken into fragments to be sent progressively.
+- Optional checksums.
+- Can be used to transport multiple protocols between endpoints, e.g., HTTP + JSON and Thrift
+
+#### Components
+- [tchannel-node](https://github.com/uber/tchannel/tree/master/node): TChannel peer library for Node.js.
+- [tchannel-python](https://github.com/uber/tchannel/tree/master/python): TChannel peer library for Python.
+- [tchannel-golang](https://github.com/uber/tchannel/tree/master/golang): TChannel peer library for Go.
+- [tcap](https://github.com/uber/tcap/): TChannel packet capture tool, for eavesdropping and inspecting TChannel traffic.
+- [bufrw](https://github.com/uber/bufrw/): Node.js buffer structured reading and writing library, used for TChannel and [Thrift](https://thrift.apache.org/).
+- [thriftrw](https://github.com/uber/thriftrw): Node.js [Thrift](https://thrift.apache.org/) buffer reader and writer.
+- [thriftify](https://github.com/uber/thriftify): Node.js [Thrift](https://thrift.apache.org/) object serializer and deserializer with run-time Thrift IDL compiler.
+
 ## Extensions
 
 ### Sharding
