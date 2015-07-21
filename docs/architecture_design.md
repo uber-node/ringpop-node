@@ -117,6 +117,8 @@ Messages arrive concurrently, and we want them to be processed one by one. We pu
 
 ### Replication
 
-### Reliable Background Operations
+Building Redundancy with Ringpop.
 
-### Leader Election
+#### Reliable Background Operations
+
+#### Leader Election
