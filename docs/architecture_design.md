@@ -45,6 +45,10 @@ As an example, let's say node C joins a ring and now all of the addresses and re
 
 ### Joining a Cluster
 
+1. The first node, A, checks a bootstrap list and finds that no other nodes are running.
+2. Next, B starts up and has A to join. B reads the file from disk, then selects a random number of members. It will find A and start to form a consistent hash ring in the background, running within memory in Ringpop.
+3. The nodes are positioned along the ring and exchange information with one another, forming a two-node cluster and pinging each other back and forth.
+
 ### Handle or Forward
 Upon arrival of a proxied request at its destination, membership checksums of the sender and receiver will be compared. The request will be refused if checksums differ. Mismatches are expected when nodes are entering or exiting the cluster due to deploys, added/removed capacity, or failures. The cluster will eventually converge on one membership checksum, therefore refused requests are best handled by retrying them.
 
