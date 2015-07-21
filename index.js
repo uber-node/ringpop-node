@@ -228,10 +228,12 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
 
     var joinTime = Date.now();
 
-    sendJoin({
+    return sendJoin({
         ringpop: this,
-        maxJoinDuration: this.maxJoinDuration,
+        joinRetryDelay: opts.joinRetryDelay,
         joinSize: this.joinSize,
+        maxJoinAttempts: opts.maxJoinAttempts,
+        maxJoinDuration: this.maxJoinDuration,
         parallelismFactor: opts.joinParallelismFactor
     }, function onJoin(err, nodesJoined) {
         joinTime = Date.now() - joinTime;

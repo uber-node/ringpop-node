@@ -460,3 +460,38 @@ test('first time member, not alive', function t(assert) {
     ringpop.destroy();
     assert.end();
 });
+
+test('joins with opts', function t(assert) {
+    var maxJoinAttempts = 1000;
+    var joinRetryDelay = 10000;
+
+    var fakeChannel = {
+        send: function send() {
+
+        },
+        quit: function quit() {
+
+        }
+    };
+
+    var ringpop = new Ringpop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000',
+        channel: fakeChannel
+    });
+
+    var joiner = ringpop.bootstrap({
+        bootstrapFile: ['127.0.0.1:3001'],
+        joinRetryDelay: joinRetryDelay,
+        maxJoinAttempts: maxJoinAttempts
+    }, function onBootstrap() {
+        // noop
+    });
+
+    assert.equals(joiner.maxJoinAttempts, maxJoinAttempts,
+        'sets max join attempts');
+    assert.equals(joiner.joinRetryDelay, joinRetryDelay,
+        'sets join retry delay');
+    ringpop.destroy();
+    assert.end();
+});
