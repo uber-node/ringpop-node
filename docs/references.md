@@ -16,12 +16,9 @@ Alive: A membership status signifying the node is healthy, and not suspect, faul
 
 ### C 
 
-- **Cluster**:
-
 ### D 
 
 - **Damped**: Flap damping is a technique used to identify and evict bad nodes from a cluster. Flaps are detected by storing membership update history and penalize nodes when flap is detected. When the penalty exceeds a specified suppress limit, the node is damped. The damped status is disseminated throughout the cluster and removed from the ring. 
-- **Down list**:
 
 ### E 
 
@@ -55,14 +52,11 @@ Alive: A membership status signifying the node is healthy, and not suspect, faul
 
 ### N
 
-- **Node**:
-
 ### O
 
 ### P
 
 - **Ping**: Ringpop uses pings to disseminate information and for fault detection. Members ping each other in random fashion until they get through the full membership list, rotate the list, then repeat the full round of pinging.
-- **Ping-req**:
 
 ### Q
 
