@@ -12,18 +12,16 @@ Let’s say you have a cluster with two nodes: A and B. A is pinging B and B is 
 ####SWIM Gossip Protocol for Fault Detection
 Ringpop gossips over TCP for its forwarding mechanism. Nodes within the ring/membership list are gossiping and forwarding requests over the same channels. For fault detection, Ringpop computes membership and ring checksums.
 
-A membership list contains instances’ addresses and statuses (alive, suspect, faulty, etc.). It also contains additional metadata like the incarnation number, which is the logical clock. All this information is combined and we compute a checksum from it. 
+A membership list contains the addresses and statuses (alive, suspect, faulty, etc.) of the instances. It also contains additional metadata like the incarnation number, which is the logical clock. All this information is combined and we compute a checksum from it. 
 
 The checksums detect a divergence in the cluster in the event a request is forwarded, or a ping occurs, and the source and destinations checksums differ.
 
 Ringpop retains members that are “down” in its membership list. SWIM manages membership status by removing down members from the list, whereas Ringpop keeps down members in the list allowing the ability to merge a split-brain after a network partition. For example, let’s say two clusters form your application. If there isn’t a way to identify which nodes were previously faulty or down because the network partition happened during that time, there would be no way to merge them back together.
 
 ### Consistent Hashing
-Ringpop leverages consistent hashing to minimize the number of keys to rebalance when your application cluster is resized. Consistent hashing in Ringpop allows the nodes to rebalance themselves with traffic evenly distributed. Ringpop uses [FarmHash](https://code.google.com/p/farmhash/) as its hashing function because it's fast and provides good distribution. Consistent hashing applies a hash function to not only the identity of your data, but also the nodes within your cluster that are operating on that data.
+Ringpop leverages consistent hashing to minimize the number of keys to rebalance when your application cluster is resized. Consistent hashing in Ringpop allows the nodes to rebalance themselves with traffic evenly distributed. Ringpop uses [FarmHash](https://code.google.com/p/farmhash/) as its hashing function because it's fast and provides good distribution. Consistent hashing applies a hash function to not only the identity of your data, but also the nodes within your cluster that are operating on that data. Ringpop uses a red-black tree to implement its underlying data structure for its ring which provides log n, lookups, inserts, and removals. 
 
-Ringpop maintains a consistent hash ring of its members. Once members are discovered to join or leave the cluster, that information is added into the consistent hash ring. Then the instances’ addresses along that ring are hashed, giving a particular part about of the key space over to that instance for the time it is alive and operating.
-
-Ringpop uses a red-black tree to implement its underlying data structure for its ring which provides log n, lookups, inserts, and removals. 
+Ringpop maintains a consistent hash ring of its members. Once members are discovered to join or leave the cluster, that information is added into the consistent hash ring. Then the addresses of the instances in the ring are hashed.
 
 Ringpop adds a uniform number of replica points per node. To spread the nodes around the ring for a more even distribution, replica points are added for every node within the ring. It also adds a uniform number of replica points so the nodes and the hosts running these nodes are treated as homogeneous.
 
@@ -56,7 +54,7 @@ Ringpop's request proxy has retries built in and can be tuned using two paramete
 
 Ringpop has codified the aforementioned routing pattern in the `handleOrProxy` function:
 - returns `true` when key hashes to the "current" node and `false` otherwise.
-- returns `false` results in the request being proxied to the correct destination. Its usage looks like this:
+- returns `false` and results in the request being proxied to the correct destination. Its usage looks like this:
 
 ```javascript
 var opts = {
@@ -112,8 +110,6 @@ Ringpop is highly extensible and makes possible for a multitude of extensions an
 ### Actor Model
 
 Every actor in the system has a home (a node in the cluster). That node receives concurrent requests for every actor. For every actor, there is a mailbox. Requests get pulled off the mailbox one by one. Processing a request may result in new requests being sent or new actors being created. Each request that's processed one by one may result in some other request to another service, or a request for more actors to be spun up. 
-
-Messages arrive concurrently, and we want them to be processed one by one. We put the messages in a mailbox based on the sharding key, and then process them one by one.  
 
 ### Replication
 
