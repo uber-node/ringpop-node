@@ -19,11 +19,17 @@
 // THE SOFTWARE.
 'use strict';
 
+var thriftUtils = require('./thrift-utils.js');
 var TypedError = require('error/typed');
+
+var respondWithBadRequest = thriftUtils.respondWithBadRequest;
+var validateBodyParams = thriftUtils.validateBodyParams;
+var wrapCallbackAsThrift = thriftUtils.wrapCallbackAsThrift;
 
 var DenyJoinError = TypedError({
     type: 'ringpop.deny-join',
-    message: 'Node is currently configured to deny joins'
+    message: 'Node is currently configured to deny joins',
+    nameAsThrift: 'denyingJoins'
 });
 
 var InvalidJoinAppError = TypedError({
@@ -31,14 +37,16 @@ var InvalidJoinAppError = TypedError({
     message: 'A node tried joining a different app cluster. The expected app' +
         ' ({expected}) did not match the actual app ({actual}).',
     expected: null,
-    actual: null
+    actual: null,
+    nameAsThrift: 'invalidJoinApp'
 });
 
 var InvalidJoinSourceError = TypedError({
     type: 'ringpop.invalid-join.source',
     message:  'A node tried joining a cluster by attempting to join itself.' +
         ' The joiner ({actual}) must join someone else.',
-    actual: null
+    actual: null,
+    nameAsThrift: 'invalidJoinSource'
 });
 
 function validateDenyingJoins(ringpop, callback) {
@@ -73,26 +81,39 @@ function validateJoinerApp(ringpop, app, callback) {
     return true;
 }
 
-module.exports = function handleJoin(opts, callback) {
-    var ringpop = opts.ringpop;
+module.exports = function createJoinHandler(ringpop) {
+    /* jshint maxparams: 5 */
+    return function handleJoin(opts, req, head, body, callback) {
+        ringpop.stat('increment', 'join.recv');
 
-    ringpop.stat('increment', 'join.recv');
+        if (!body) {
+            respondWithBadRequest(callback, 'body is required');
+            return;
+        }
 
-    if (!validateDenyingJoins(ringpop, callback) ||
-        !validateJoinerAddress(ringpop, opts.source, callback) ||
-        !validateJoinerApp(ringpop, opts.app, callback)) {
-        return;
-    }
+        // validateBodyParams will call callback if invalid
+        if (!validateBodyParams(body, ['app', 'source', 'incarnationNumber'],
+            callback)) {
+            return;
+        }
 
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
+        var thriftCallback = wrapCallbackAsThrift(callback);
 
-    ringpop.membership.makeAlive(opts.source, opts.incarnationNumber);
+        // NOTE Validators call callback if invalid.
+        if (!validateDenyingJoins(ringpop, thriftCallback) ||
+            !validateJoinerAddress(ringpop, body.source, thriftCallback) ||
+            !validateJoinerApp(ringpop, body.app, thriftCallback)) {
+            return;
+        }
 
-    callback(null, {
-        app: ringpop.app,
-        coordinator: ringpop.whoami(),
-        membership: ringpop.dissemination.fullSync(),
-        membershipChecksum: ringpop.membership.checksum
-    });
+        ringpop.serverRate.mark();
+        ringpop.totalRate.mark();
+
+        ringpop.membership.makeAlive(body.source, body.incarnationNumber);
+
+        thriftCallback(null, {
+            changes: ringpop.dissemination.fullSync(),
+            membershipChecksum: ringpop.membership.checksum
+        });
+    };
 };

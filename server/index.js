@@ -17,17 +17,19 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-
 'use strict';
 
+var fs = require('fs');
+var path = require('path');
+
+var createJoinHandler = require('./join-handler.js');
+var createPingHandler = require('./ping-handler.js');
+var createPingReqHandler = require('./ping-req-handler.js');
 var handleAdminJoin = require('./admin-join-handler.js');
 var handleAdminLeave = require('./admin-leave-handler.js');
 var handleAdminLookup = require('./admin-lookup-handler.js');
-var handleJoin = require('./join-handler.js');
-var handlePing = require('./ping-handler.js');
-var handlePingReq = require('./ping-req-handler.js');
 var handleProxyReq = require('./proxy-req-handler.js');
-var safeParse = require('../lib/util').safeParse;
+var safeParse = require('../lib/util.js').safeParse;
 
 var commands = {
     '/health': 'health',
@@ -42,25 +44,47 @@ var commands = {
     '/admin/reload': 'adminReload',
     '/admin/tick': 'adminTick',
 
-    '/protocol/join': 'protocolJoin',
-    '/protocol/ping': 'protocolPing',
-    '/protocol/ping-req': 'protocolPingReq',
-
     '/proxy/req': 'proxyReq'
 };
 
-function RingPopTChannel(ringpop, tchannel) {
-    this.ringpop = ringpop;
-    this.tchannel = tchannel;
+function initThriftChannel(opts) {
+    var thriftSpecSource = fs.readFileSync(path.join(__dirname, '..', './ringpop.thrift'), 'utf-8');
+
+    return opts.channel.TChannelAsThrift({
+        source: thriftSpecSource
+    });
+}
+
+function registerThriftHandlers(ringpop, tchannel, tchannelAsThrift) {
+    var thriftHandlers = {
+        'Ringpop::join': createJoinHandler(ringpop),
+        'Ringpop::ping': createPingHandler(ringpop),
+        'Ringpop::pingReq': createPingReqHandler(ringpop)
+    };
+
+    Object.keys(thriftHandlers).forEach(function eachDef(def) {
+        tchannelAsThrift.register(tchannel, def, null,
+            thriftHandlers[def]);
+    });
+}
+
+function RingPopTChannel(opts) {
+    this.ringpop = opts.ringpop;
+    this.tchannel = opts.channel;
+
+    this.tchannelAsThrift = initThriftChannel({
+        channel: this.tchannel
+    });
 
     var self = this;
 
+    // Register non-Thrift handlers
     Object.keys(commands).forEach(registerEndpoint);
 
     function registerEndpoint(url) {
         var methodName = commands[url];
 
-        tchannel.register(url, function (req, res, arg2, arg3) {
+        self.tchannel.register(url, function (req, res, arg2, arg3) {
             self[methodName](arg2, arg3, req.remoteAddr, onResponse);
 
             function onResponse(err, res1, res2) {
@@ -73,6 +97,8 @@ function RingPopTChannel(ringpop, tchannel) {
             }
         });
     }
+
+    registerThriftHandlers(this.ringpop, this.tchannel, this.tchannelAsThrift);
 }
 
 RingPopTChannel.prototype.health = function (arg1, arg2, hostInfo, cb) {
@@ -149,70 +175,6 @@ RingPopTChannel.prototype.adminTick = function (arg1, arg2, hostInfo, cb) {
     });
 };
 
-RingPopTChannel.prototype.protocolJoin = function (arg1, arg2, hostInfo, cb) {
-    var body = safeParse(arg2.toString());
-    if (body === null) {
-        return cb(new Error('need JSON req body with source and incarnationNumber'));
-    }
-
-    var app = body.app;
-    var source = body.source;
-    var incarnationNumber = body.incarnationNumber;
-    if (app === undefined || source === undefined || incarnationNumber === undefined) {
-        return cb(new Error('need req body with app, source and incarnationNumber'));
-    }
-
-    handleJoin({
-        ringpop: this.ringpop,
-        app: app,
-        source: source,
-        incarnationNumber: incarnationNumber
-    }, function(err, res) {
-        cb(err, null, JSON.stringify(res));
-    });
-};
-
-RingPopTChannel.prototype.protocolPing = function (arg1, arg2, hostInfo, cb) {
-    var body = safeParse(arg2);
-
-    // NOTE sourceIncarnationNumber is an optional argument. It was not present
-    // until after the v9.8.12 release.
-    if (body === null || !body.source || !body.changes || !body.checksum) {
-        return cb(new Error('need req body with source, changes, and checksum'));
-    }
-
-    handlePing({
-        ringpop: this.ringpop,
-        source: body.source,
-        sourceIncarnationNumber: body.sourceIncarnationNumber,
-        changes: body.changes,
-        checksum: body.checksum
-    }, function(err, res) {
-        cb(err, null, JSON.stringify(res));
-    });
-};
-
-RingPopTChannel.prototype.protocolPingReq = function protocolPingReq(arg1, arg2, hostInfo, cb) {
-    var body = safeParse(arg2);
-
-    // NOTE sourceIncarnationNumber is an optional argument. It was not present
-    // until after the v9.8.12 release.
-    if (body === null || !body.source || !body.target || !body.changes || !body.checksum) {
-        return cb(new Error('need req body with source, target, changes, and checksum'));
-    }
-
-    handlePingReq({
-        ringpop: this.ringpop,
-        source: body.source,
-        sourceIncarnationNumber: body.sourceIncarnationNumber,
-        target: body.target,
-        changes: body.changes,
-        checksum: body.checksum
-    }, function onHandled(err, result) {
-        cb(err, null, JSON.stringify(result));
-    });
-};
-
 RingPopTChannel.prototype.proxyReq = function (arg1, arg2, hostInfo, cb) {
     var header = safeParse(arg1);
     if (header === null) {
@@ -226,8 +188,77 @@ RingPopTChannel.prototype.proxyReq = function (arg1, arg2, hostInfo, cb) {
     }, cb);
 };
 
-function createServer(ringpop, tchannel) {
-    return new RingPopTChannel(ringpop, tchannel);
+RingPopTChannel.prototype.destroy = function destroy() {
+    // HACK remove double destroy gaurd.
+    if (this.tchannel &&
+        !this.tchannel.topChannel &&
+        !this.tchannel.destroyed) {
+        this.tchannel.close();
+    }
+};
+
+// Convenience functions to hide away the endpoint name
+// conventions and Thrift details from callers.
+RingPopTChannel.prototype.join = function join(opts, callback) {
+    this.sendAsThrift('Ringpop::join', opts, callback);
+};
+
+RingPopTChannel.prototype.ping = function ping(opts, callback) {
+    this.sendAsThrift('Ringpop::ping', opts, callback);
+};
+
+RingPopTChannel.prototype.pingReq = function pingReq(opts, callback) {
+    this.sendAsThrift('Ringpop::pingReq', opts, callback);
+};
+
+RingPopTChannel.prototype.sendAsThrift = function sendAsThrift(endpoint, opts, callback) {
+    var self = this;
+
+    this.tchannel.waitForIdentified({
+        host: opts.host
+    }, onIdentified);
+
+    function onIdentified(err) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        var request = self.tchannel.request({
+            host: opts.host,
+            timeout: opts.timeout,
+            hasNoParent: true,
+            serviceName: 'ringpop',
+            retryLimit: 1,
+            trace: false,
+            headers: {
+                // tchannel/as/thrift module takes care of setting
+                // the 'as' header to 'thrift'. No need to do it
+                // here explicitly.
+                'cn': 'ringpop'
+            }
+        });
+
+        self.tchannelAsThrift.send(request, endpoint, opts.head,
+            opts.body, onSend);
+    }
+
+    function onSend(err, res) {
+        if (!err && !res.ok) {
+            err = res.body;
+        }
+
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        callback(null, res.body);
+    }
+};
+
+function createServer(opts) {
+    return new RingPopTChannel(opts);
 }
 
 module.exports = createServer;

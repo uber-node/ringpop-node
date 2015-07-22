@@ -20,41 +20,71 @@
 'use strict';
 
 var sendPing = require('../lib/swim/ping-sender.js');
+var thriftUtils = require('./thrift-utils.js');
+var TypedError = require('error/typed');
 
-module.exports = function handlePingReq(opts, callback) {
-    var ringpop = opts.ringpop;
+var respondWithBadRequest = thriftUtils.respondWithBadRequest;
+var validateBodyParams = thriftUtils.validateBodyParams;
+var wrapCallbackAsThrift = thriftUtils.wrapCallbackAsThrift;
 
-    ringpop.stat('increment', 'ping-req.recv');
+var PingReqTargetUnreachableError = TypedError({
+    type: 'ringpop.ping-req.target-unreachable',
+    message: 'Ping-req target is unreachable',
+    changes: null,
+    nameAsThrift: 'pingReqTargetUnreachable'
+});
 
-    var source = opts.source;
-    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
-    var target = opts.target;
-    var changes = opts.changes;
-    var checksum = opts.checksum;
+module.exports = function createPingReqHandler(ringpop) {
+    /* jshint maxparams: 6 */
+    return function handlePingReq(opts, req, head, body, callback) {
+        ringpop.stat('increment', 'ping-req.recv');
 
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
-    ringpop.membership.update(changes);
-
-    ringpop.debugLog('ping-req send ping source=' + source + ' target=' + target, 'p');
-
-    var start = new Date();
-    sendPing({
-        ringpop: ringpop,
-        target: target
-    }, function (isOk, body) {
-        ringpop.stat('timing', 'ping-req-ping', start);
-        ringpop.debugLog('ping-req recv ping source=' + source + ' target=' + target + ' isOk=' + isOk, 'p');
-
-        if (isOk) {
-            ringpop.membership.update(body.changes);
+        if (!body) {
+            respondWithBadRequest(callback, 'body is required');
+            return;
         }
 
-        callback(null, {
-            changes: ringpop.dissemination.issueAsReceiver(source,
-                sourceIncarnationNumber, checksum),
-            pingStatus: isOk,
-            target: target
-        });
-    });
+        if (!validateBodyParams(body, ['target', 'changes', 'checksum',
+            'source', 'sourceIncarnationNumber'], callback)) {
+            return;
+        }
+
+        ringpop.serverRate.mark();
+        ringpop.totalRate.mark();
+        ringpop.membership.update(body.changes);
+
+        ringpop.debugLog('ping-req send ping target=' + body.target, 'p');
+
+        var start = new Date();
+
+        sendPing({
+            ringpop: ringpop,
+            target: body.target
+        }, onPing);
+
+        function onPing(isOk, res) {
+            var err = !isOk;
+
+            ringpop.stat('timing', 'ping-req-ping', start);
+            ringpop.debugLog('ping-req recv ping target=' + body.target + ' isOk=' + isOk, 'p');
+
+            var changes = ringpop.dissemination.issueAsReceiver(body.source,
+                body.sourceIncarnationNumber, body.checksum);
+
+            var thriftCallback = wrapCallbackAsThrift(callback);
+
+            if (err) {
+                thriftCallback(PingReqTargetUnreachableError({
+                    changes: changes
+                }));
+                return;
+            }
+
+            ringpop.membership.update(res.changes);
+
+            thriftCallback(null, {
+                changes: changes
+            });
+        }
+    };
 };

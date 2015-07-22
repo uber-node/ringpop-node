@@ -36,10 +36,7 @@ function main() {
         process.exit(1);
     }
 
-    var tchannel = new TChannel({
-        logger: createLogger('tchannel'),
-    });
-
+    var tchannel = new TChannel();
     var ringpop = new RingPop({
         app: 'ringpop',
         hostPort: listen,
@@ -49,10 +46,10 @@ function main() {
         })
     });
 
-    ringpop.setupChannel();
-
     ringpop.channel.on('listening', function onListening() {
         ringpop.channel.removeListener('listening', onListening);
+
+        ringpop.setupChannel();
         ringpop.bootstrap(program.hosts);
     });
 

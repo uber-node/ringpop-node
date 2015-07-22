@@ -19,37 +19,10 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function mergeMembershipChangesets(ringpop, changesets) {
-    var mergeIndex = {};
+function ThriftError(err) {
+    this.ok = false;
+    this.body = err;
+    this.typeName = err.nameAsThrift;
+}
 
-    for (var i = 0; i < changesets.length; i++) {
-        var changes = changesets[i];
-
-        if (!Array.isArray(changes) || changes.length === 0) {
-            return;
-        }
-
-        for (var j = 0; j < changes.length; j++) {
-            var change = changes[j];
-
-            if (change.address === ringpop.whoami()) {
-                continue;
-            }
-
-            var indexVal = mergeIndex[change.address];
-
-            if (!indexVal || indexVal.incarnationNumber < change.incarnationNumber) {
-                mergeIndex[change.address] = change;
-            }
-        }
-    }
-
-    var indexKeys = Object.keys(mergeIndex);
-    var updates = new Array(indexKeys.length);
-
-    for (i = 0; i < indexKeys.length; i++) {
-        updates[i] = mergeIndex[indexKeys[i]];
-    }
-
-    return updates;
-};
+module.exports = ThriftError;

@@ -18,9 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 var _ = require('underscore');
+var createJoinHandler = require('../server/join-handler.js');
 var handleAdminJoin = require('../server/admin-join-handler.js');
 var handleAdminLeave = require('../server/admin-leave-handler.js');
-var handleJoin = require('../server/join-handler.js');
 var mock = require('./mock');
 var Ringpop = require('../index.js');
 var test = require('tape');
@@ -192,35 +192,40 @@ test('admin leave cannot be attempted before local member is added', function t(
 });
 
 test('protocol join disallows joining itself', function t(assert) {
-    assert.plan(2);
+    assert.plan(3);
 
     var ringpop = createRingpop();
-    handleJoin({
-        ringpop: ringpop,
-        source: ringpop.hostPort
-    }, function(err) {
-        assert.ok(err, 'an error occurred');
-        assert.equals(err.type, 'ringpop.invalid-join.source', 'a node cannot join itself');
+    var handleJoin = createJoinHandler(ringpop);
+    handleJoin(null, null, null, {
+        app: ringpop.app,
+        source: ringpop.hostPort,
+        incarnationNumber: Date.now()
+    }, function(err, res) {
+        assert.ifErr(err, 'no err');
+        assert.notok(res.ok, 'result is not ok');
+        assert.equals(res.typeName, 'invalidJoinSource', 'a node cannot join itself');
         ringpop.destroy();
         assert.end();
     });
 });
 
 test('protocol join disallows joining different app clusters', function t(assert) {
-    assert.plan(2);
+    assert.plan(3);
 
     var ringpop = new Ringpop({
         app: 'mars',
         hostPort: '127.0.0.1:3000'
     });
-
-    handleJoin({
-        ringpop: ringpop,
+    var handleJoin = createJoinHandler(ringpop);
+    handleJoin(null, null, null, {
         app: 'jupiter',
-        source: '127.0.0.1:3001'
-    }, function(err) {
-        assert.ok(err, 'an error occurred');
-        assert.equals(err.type, 'ringpop.invalid-join.app', 'a node cannot join a different app cluster');
+        source: '127.0.0.1:3001',
+        incarnationNumber: Date.now()
+    }, function(err, res) {
+        assert.ifErr(err, 'no error');
+        assert.notok(res.ok, 'result is not ok');
+        assert.equals(res.typeName, 'invalidJoinApp',
+            'a node cannot join a different app cluster');
         ringpop.destroy();
         assert.end();
     });

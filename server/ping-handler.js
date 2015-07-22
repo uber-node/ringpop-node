@@ -19,22 +19,37 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function handlePing(opts, callback) {
-    var ringpop = opts.ringpop;
-    var source = opts.source;
-    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
-    var changes = opts.changes;
-    var checksum = opts.checksum;
+var thriftUtils = require('./thrift-utils.js');
 
-    ringpop.stat('increment', 'ping.recv');
+var respondWithBadRequest = thriftUtils.respondWithBadRequest;
+var validateBodyParams = thriftUtils.validateBodyParams;
+var wrapCallbackAsThrift = thriftUtils.wrapCallbackAsThrift;
 
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
+module.exports = function createPingHandler(ringpop) {
+    /* jshint maxparams: 5 */
+    return function handlePing(opts, req, head, body, callback) {
+        ringpop.stat('increment', 'ping.recv');
 
-    ringpop.membership.update(changes);
+        if (!body) {
+            respondWithBadRequest(callback, 'body is required');
+            return;
+        }
 
-    callback(null, {
-        changes: ringpop.dissemination.issueAsReceiver(source,
-            sourceIncarnationNumber, checksum),
-    });
+        // validateBodyParams will call callback if invalid
+        if (!validateBodyParams(body, ['changes', 'checksum', 'source',
+            'sourceIncarnationNumber'], callback)) {
+            return;
+        }
+
+        ringpop.serverRate.mark();
+        ringpop.totalRate.mark();
+
+        ringpop.membership.update(body.changes);
+
+        var thriftCallback = wrapCallbackAsThrift(callback);
+        thriftCallback(null, {
+            changes: ringpop.dissemination.issueAsReceiver(body.source,
+                body.sourceIncarnationNumber, body.checksum),
+        });
+    };
 };

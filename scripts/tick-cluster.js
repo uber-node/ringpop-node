@@ -245,6 +245,7 @@ var state = 'top';
 var func = null;
 var numArgRe = /^[1-9]$/;
 var debugRe = /^[ph]$/;
+
 function onData(char) {
     if (state === 'top') {
         switch (char) {
