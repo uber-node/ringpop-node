@@ -68,6 +68,7 @@ if (ringpop.handleOrProxy(key, req, res, opts)) {
 ```
 
 ### Node Statuses
+Content coming soon...
 
 ### Flap Damping
 Flap damping is a technique used to identify and evict bad nodes from a cluster. We detect flaps by storing membership update history and penalize nodes when flap is detected. When the penalty exceeds a specified suppress limit, the node is damped. When things go wrong and nodes are removed from the hash ring, you may see a lot of shaky lookups.
@@ -81,8 +82,10 @@ If the damp score goes down and then decays, the problem is fixed and it will no
 Say the damp score for B exceeds the red line. A fans out a damp-req request to _k_ random members and asks for their damp score of B. If they also communicate that B is flapping, then B is considered damped due to excessive flapping. A marks B as damped, and disseminates that information using the gossip protocol.
 
 ### Full Syncing
+Content coming soon...
 
 ### TChannel
+Content coming soon...
 
 [TChannel] (https://github.com/uber/tchannel) is a network multiplexing and framing protocol for RPC. Some of the characteristics of TChannel:
 - Easy to implement in multiple languages, especially JavaScript and Python.
@@ -106,6 +109,7 @@ Say the damp score for B exceeds the red line. A fans out a damp-req request to 
 Ringpop is highly extensible and makes possible for a multitude of extensions and tooling built around it. Here are the libraries that extend Ringpop.
 
 ### Sharding
+Content coming soon...
 
 ### Actor Model
 
@@ -116,5 +120,7 @@ Every actor in the system has a home (a node in the cluster). That node receives
 Building Redundancy with Ringpop.
 
 #### Reliable Background Operations
+Content coming soon...
 
 #### Leader Election
+Content coming soon...
