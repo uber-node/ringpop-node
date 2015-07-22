@@ -28,7 +28,7 @@ Alive: A membership status signifying the node is healthy, and not suspect, faul
 ### F 
 
 - **Flap damping**: Flap damping is a technique used to identify and evict bad nodes from a cluster.
-= **FarmHash**: Hashing function used by Ringpop. 
+- **FarmHash**: Hashing function used by Ringpop. 
 - **Faulty**: A state of the node that is reached after a defined “suspect” period, where a node is unstable or not responding to pings from other nodes. A suspect period will begin, and if it ends with the node not recovering, the node is considered faulty and is removed from the ring.
 
 ### G 
