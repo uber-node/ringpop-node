@@ -97,6 +97,7 @@ Ringpop forwarding:
 
 ## Papers
 
+- [BGP Route Flap Damping](http://www2.ensc.sfu.ca/~ljilja/cnl/pdf/steve_thesis.pdf)
 - [Dynamo: Amazon’s Highly Available Key-value Store](http://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf)
 - [Efficient Reconciliation and Flow Control for Anti-Entropy Protocols](http://www.cs.cornell.edu/home/rvr/papers/flowgossip.pdf)
 - [Epidemic Broadcast Trees](http://www.gsd.inesc-id.pt/~jleitao/pdf/srds07-leitao.pdf)
