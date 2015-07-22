@@ -111,7 +111,7 @@ Ringpop is highly extensible and makes possible for a multitude of extensions an
 
 ### Actor Model
 
-Every actor in the system has a home (a node in the cluster). That node receives concurrent requests for every actor. For every actor, there is a mailbox. Requests get pulled off the mailbox one by one. Processing a request may result in new requests being sent or new actors beign created. Each request that's processed one by one may result in some other request to another service, or a request for more actors to be spun up. 
+Every actor in the system has a home (a node in the cluster). That node receives concurrent requests for every actor. For every actor, there is a mailbox. Requests get pulled off the mailbox one by one. Processing a request may result in new requests being sent or new actors being created. Each request that's processed one by one may result in some other request to another service, or a request for more actors to be spun up. 
 
 Messages arrive concurrently, and we want them to be processed one by one. We put the messages in a mailbox based on the sharding key, and then process them one by one.  
 
