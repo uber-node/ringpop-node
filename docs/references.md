@@ -28,7 +28,7 @@ Alive: A membership status signifying the node is healthy, and not suspect, faul
 ### F 
 
 - **Flap damping**: Flap damping is a technique used to identify and evict bad nodes from a cluster.
-FarmHash: Hashing function used by Ringpop. 
+= **FarmHash**: Hashing function used by Ringpop. 
 - **Faulty**: A state of the node that is reached after a defined “suspect” period, where a node is unstable or not responding to pings from other nodes. A suspect period will begin, and if it ends with the node not recovering, the node is considered faulty and is removed from the ring.
 
 ### G 
@@ -37,7 +37,7 @@ FarmHash: Hashing function used by Ringpop.
 
 ### H 
 
-- **Handle or forward**: This is Ringpop’s forwarding approach. If a key hashes to an instance that is not the one that received the request, then that request is simply forwarded to the proper instance and everything is taken care of under the hood. This acts like a middle layer for applications that before the request even gets to your business logic, it is already routed to the appropriate node.
+- **Handle or forward**: This is Ringpop’s forwarding approach. If a key hashes to an instance that is not the one that received the request, then that request is simply forwarded to the proper instance and everything is taken care of under the hood. This acts like a middleware layer for applications that before the request even gets to your business logic, it is already routed to the appropriate node.
 - **Hash ring**: Ringpop leverages consistent hashing to minimize the number of keys to rebalance when your application cluster is resized. Ringpop’s consistent hashing allows the nodes to rebalance themselves and evenly distribute traffic. Ringpop maintains a consistent hash ring of its members. Once members are discovered to join or leave the cluster, that information is added into the consistent hash ring. Then the instances’ addresses along that ring are hashed.
 
 ### I 
@@ -50,8 +50,8 @@ FarmHash: Hashing function used by Ringpop.
 
 ### M 
 
-- **Membership list**: Ringpop uses a variation of swim to disseminate membership updates across the members of a membership list, which contains additional metadata like the incarnation number, instances’ addresses, and status (alive, suspect, faulty, etc.). Members ping each other in random fashion until they get through the full membership list, rotate the list, then repeat the full round of pinging.
-Multi-cast:
+- **Membership list**: Ringpop uses a variation of SWIM to disseminate membership updates across the members of a membership list, which contains additional metadata like the incarnation number, instances’ addresses, and status (alive, suspect, faulty, etc.). Members ping each other in random fashion until they get through the full membership list, rotate the list, then repeat the full round of pinging.
+- **Multi-cast**:
 
 ### N
 
@@ -70,7 +70,7 @@ Multi-cast:
 
 - **Replica points**: Ringpop adds a uniform number of replica points per node to spread the nodes around the ring for a more even distribution. Ringpop also adds a uniform number of replica points so the nodes and the hosts running these nodes are treated as homogeneous.
 - **Ringpop**: Ringpop is a library that brings application-layer sharding to your services, partitioning data in a way that’s reliable, scalable and fault tolerant.
-Ringpop forwarding:
+- **Ringpop forwarding**:
 
 ### S
 
