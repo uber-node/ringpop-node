@@ -84,7 +84,7 @@ Say the damp score for B exceeds the red line. A fans out a damp-req request to 
 
 ### TChannel
 
-TChannel is a network multiplexing and framing protocol for RPC. Some of the characteristics of TChannel:
+[TChannel] (https://github.com/uber/tchannel) is a network multiplexing and framing protocol for RPC. Some of the characteristics of TChannel:
 - Easy to implement in multiple languages, especially JavaScript and Python.
 - High performance forwarding path. Intermediaries can make a forwarding decision quickly.
 - Request/response model with out-of-order responses. Slow request will not block subsequent faster requests at head of line.
