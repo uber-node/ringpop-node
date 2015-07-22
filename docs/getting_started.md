@@ -8,8 +8,6 @@ Ringpop implements a membership protocol that allows those workers to discover o
 
 Ringpop makes it possible to build extremely scalable and fault-tolerant distributed systems with 3 main capabilities: membership protocol, consistent hashing, and forwarding.
 
-Ringpop consists of three main components: membership protocol, consistent hash ring, and forwarding. Nodes can join and leave a cluster automatically, allowing the cluster to grow and shrink without manual intervention.
-
 ## Why use Ringpop?
 Ringpop is a library that brings application-layer sharding to your services, partitioning data in a way that is fault-tolerant and scalable. Ringpop offers availability over consistency, and massive scaling capability for architectures with realtime, highly transactional and volatile data.
 
