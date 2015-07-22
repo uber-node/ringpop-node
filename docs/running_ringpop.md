@@ -12,15 +12,15 @@ $ git clone git@github.com:uber/ringpop.git
 $ npm install
 ```
 
-Then run tick-cluster:
+Then run `tick-cluster`:
 
 ```
 $ ./scripts/tick-cluster.js <size-of-cluster>
 ```
 
-tick-cluster will spawn a child process for each node in the cluster. They will bootstrap themselves using an auto-generated `hosts.json` bootstrap file and converge on a single membership list within seconds. Commands can be issued against the cluster while tick-cluster runs. Press `h` or `?` to see which commands are available.
+`tick-cluster` will spawn a child process for each node in the cluster. They will bootstrap themselves using an auto-generated `hosts.json` bootstrap file and converge on a single membership list within seconds. Commands can be issued against the cluster while tick-cluster runs. Press `h` or `?` to see which commands are available.
 
-Here's a sample of the output you may see after launching a 5-node cluster with tick-cluster:
+Here's a sample of the output you may see after launching a 5-node cluster with `tick-cluster`:
 
 ```
 $ ./scripts/tick-cluster.js 5
