@@ -26,8 +26,10 @@ var color = require('cli-color');
 var farmhash = require('farmhash').hash32;
 var generateHosts = require('./generate-hosts');
 var program = require('commander');
+var fs = require('fs');
 
-var hosts, procs, procsToStart, ringPool, localIP, toSuspend, toKill, tchannel; // defined later
+var programInterpreter, programPath, procsToStart = 5;
+var hosts, procs, ringPool, localIP, toSuspend, toKill, tchannel; // defined later
 
 /* jshint maxparams: 6 */
 
@@ -87,21 +89,21 @@ function tickAll() {
     var csums = {};
 
     hostsUp().forEach(function (host, pos, list) {
-        var body;
         var start = Date.now();
         send(host, '/admin/tick', function onSend(err, res, arg2, arg3) {
-            if (err) {
-                console.log(color.red('err: ' + err.message + ' [' + host + ']'));
-                body = JSON.stringify({checksum: 'error'});
-            }
             var durMs = Date.now() - start;
             completed.push(durMs);
-            var csum = safeParse(arg3.toString()).checksum;
-            if (csums[csum] === undefined) {
-                csums[csum] = [];
+            if (err) {
+                console.log(color.red('err: ' + err.message + ' [' + host + ']'));
+            } else {
+                var csum = safeParse(arg3.toString()).checksum;
+                if (csums[csum] === undefined) {
+                    csums[csum] = [];
+                }
+                var port = host.replace(localIP + ':', '');
+                csums[csum].push(port);
             }
-            var port = host.replace(localIP + ':', '');
-            csums[csum].push(port);
+
             if (completed.length === list.length) {
                 console.log(Object.keys(csums).sort(function (a, b) { return csums[a].length - csums[b].length; }).map(function (csum) {
                     return color.blue('[' + csums[csum].join(', ') + '] ') + color.magenta(csum + ' (' + csums[csum].length + ')');
@@ -117,26 +119,25 @@ function statsAll() {
         memberships = {};
 
     hostsUp().forEach(function (host, pos, list) {
-        var body;
         var start = Date.now();
         send(host, '/admin/stats', function onSend(err, res, arg2, arg3) {
             var durMs = Date.now() - start;
             completed.push(durMs);
             if (err) {
                 console.log(color.red('err: ' + err.message + ' [' + host + ']'));
-                body = JSON.stringify({checksum: 'error', membership: 'error'});
+            } else {
+                var membership = JSON.stringify(safeParse(arg3).membership.members);
+                
+                var csum = farmhash(membership);
+                if (csums[csum] === undefined) {
+                    csums[csum] = [];
+                    memberships[csum] = membership;
+                }
+
+                var port = host.replace(localIP + ':', '');
+                csums[csum].push(port);
             }
 
-            var membership = JSON.stringify(safeParse(arg3).membership.members);
-
-            var csum = farmhash(membership);
-            if (csums[csum] === undefined) {
-                csums[csum] = [];
-                memberships[csum] = membership;
-            }
-
-            var port = host.replace(localIP + ':', '');
-            csums[csum].push(port);
             if (completed.length === list.length) {
                 console.log(Object.keys(csums).sort(function (a, b) { return csums[a].length - csums[b].length; }).map(function (csum) {
                     return color.blue('[' + csums[csum].join(', ') + '] ') + color.magenta(memberships[csum]);
@@ -346,8 +347,24 @@ function findLocalIP() {
     localIP = '127.0.0.1';
 }
 
+
 function ClusterProc(port) {
-    var newProc = require('child_process').spawn('node', ['main.js', '--listen=' + localIP + ':' + port, '--hosts=./hosts.json']);
+    var newProc;
+    var hostport = localIP + ':' + port;
+    if (programInterpreter) {
+        newProc = require('child_process').spawn(programInterpreter, [programPath, '--listen=' + hostport, '--hosts=./hosts.json']);
+    } else {
+        newProc = require('child_process').spawn(programPath, ['--listen=' + hostport, '--hosts=./hosts.json']);
+    }
+    newProc.on('error', function(err) {
+        console.log('Error: ' + err.message + ', failed to spawn ' + programPath + ' on ' + hostport);
+    });
+
+    newProc.on('exit', function(code) {
+        if (code !== null) {
+            console.log('Program ' + programPath + ' ended with exit code ' + code);
+        }
+    });
 
     function logOutput(data) {
         var lines = data.toString('utf8').split('\n');
@@ -429,7 +446,7 @@ function killProc(count) {
         var proc = procs[rand];
         if (proc.killed === null && proc.suspended === null) {
             logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for death'));
-            process.kill(proc.proc.pid, 'SIGTERM');
+            process.kill(proc.proc.pid, 'SIGKILL');
             proc.killed = Date.now();
             killed.push(proc);
         }
@@ -438,7 +455,7 @@ function killProc(count) {
 
 function killAllProcs() {
     console.log('Killing all ' + procsToStart + ' procs to exit...');
-    for (var i = 0; i < procsToStart ; i++) {
+    for (var i = 0; i < procsToStart; i++) {
         if (! procs[i].killed) {
             process.kill(procs[i].pid, 'SIGKILL');
         }
@@ -448,7 +465,6 @@ function killAllProcs() {
 function startCluster() {
     var port = 3000;
     procs = []; // note module scope
-
     for (var i = 0; i < procsToStart ; i++) {
         procs[i] = new ClusterProc(port + i);
     }
@@ -518,7 +534,8 @@ function send(host, arg1, arg2, arg3, callback) {
             headers: {
                 'as': 'raw',
                 'cn': 'tick-cluster'
-            }
+            },
+            serviceName: 'ringpop'
         };
 
         ringPool.request(opts).send(arg1, arg2, arg3, callback);
@@ -527,10 +544,20 @@ function send(host, arg1, arg2, arg3, callback) {
 
 program
     .version(require('../package.json').version)
-    .arguments('<size>')
+    .option('-n <size>')
+    .option('-i, --interpreter <interpreter>')
+    .arguments('<program>')
     .description('tick-cluster is a tool that launches a ringpop cluster of arbitrary size')
-    .action(function onAction(size) {
-        procsToStart = +size;
+    .action(function onAction(path, options) {
+        programPath = path;
+        if (programPath[0] !== '/') {
+            programPath = './' + programPath;
+        }
+        
+        if (options.N) {
+            procsToStart = parseInt(options.N);
+        }
+        programInterpreter = options.interpreter;
     });
 
 program.on('--help', function onHelp() {
@@ -541,8 +568,14 @@ program.on('--help', function onHelp() {
 
 program.parse(process.argv);
 
-if (!procsToStart) {
-    console.log('Error: size is a required argument');
+
+if(!fs.existsSync(programPath)) {
+    console.log('Error: program ' + programPath + ' does not exist. Check path');
+    process.exit(1);
+}
+
+if(isNaN(procsToStart)) {
+    console.log('Error: number of processes to start is not an integer');
     process.exit(1);
 }
 
