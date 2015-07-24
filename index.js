@@ -96,7 +96,9 @@ function RingPop(options) {
 
     this.debugFlags = {};
     this.joinSize = options.joinSize;
-    this.pingReqSize = 3;           // ping-req fanout
+    this.pingUpdateFanoutSize = 2;   // REVIEW 
+    this.pingUpdateFanoutAgeMax = 0; // 0 = only send out unsent changes
+    this.pingReqSize = 3;            // ping-req fanout
     this.pingReqTimeout = options.pingReqTimeout || 5000;
     this.pingTimeout = options.pingTimeout || 1500;
     this.joinTimeout = options.joinTimeout || 1000;
