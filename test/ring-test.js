@@ -29,6 +29,10 @@ function createServers(size) {
     });
 }
 
+function extractPort(server) {
+    return parseInt(server.substr(server.lastIndexOf(':')+1));
+}
+
 var servers = createServers(1000);
 
 test('has correct number of servers on add/remove', function t(assert) {
@@ -71,6 +75,90 @@ test('1000 lookups', function t(assert) {
         assert.equal(ring.lookup(server + '0'), server,
             'server hashes correctly');
     }
+
+    assert.end();
+});
+
+test('1000 lookupN', function t(assert) {
+    assert.plan(1000);
+
+    var ring = new HashRing({
+        hashFunc: extractPort
+    });
+    ring.addRemoveServers(servers, null);
+
+    for (var i = 0; i < servers.length; i++) {
+        var server = servers[i];
+        var server2 = servers[(i+1)%servers.length];
+        var server3 = servers[(i+2)%servers.length];
+
+        assert.deepEqual(ring.lookupN(server + '0', 3), [server, server2, server3],
+            'server hashes correctly');
+    }
+
+    assert.end();
+});
+
+test('lookupN on ring of size 1', function t(assert) {
+    assert.plan(1);
+
+    var ring = new HashRing({
+        hashFunc: extractPort
+    });
+    var server = servers[0];
+    ring.addRemoveServers([server], null);
+
+    assert.deepEqual(ring.lookupN(server + '0', 3), [server],
+        'server hashes correctly');
+
+    assert.end();
+});
+
+test('lookupN on empty ring', function t(assert) {
+    assert.plan(1);
+
+    var ring = new HashRing({
+        hashFunc: extractPort
+    });
+
+    var server = servers[0];
+    assert.deepEqual(ring.lookupN(server + '0', 3), [],
+        'server hashes correctly');
+
+    assert.end();
+});
+
+test('lookupN on corrupted ring of size 1', function t(assert) {
+    assert.plan(1);
+
+    var ring = new HashRing({
+        hashFunc: extractPort
+    });
+
+    // ring has two servers, but rbtree has one
+    var server = servers[0];
+    ring.addRemoveServers([server], null);
+    ring.servers = [servers[0], servers[1]];
+
+    assert.deepEqual(ring.lookupN(server + '0', 3), [server],
+        'server hashes correctly');
+
+    assert.end();
+});
+
+test('lookupN on corrupted empty ring', function t(assert) {
+    assert.plan(1);
+
+    var ring = new HashRing({
+        hashFunc: extractPort
+    });
+
+    // ring has 1 server, but rbtree is empty
+    ring.servers = [servers[0]];
+
+    var server = servers[0];
+    assert.deepEqual(ring.lookupN(server + '0', 3), [],
+        'server hashes correctly');
 
     assert.end();
 });
