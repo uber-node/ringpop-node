@@ -419,6 +419,26 @@ RingPop.prototype.lookup = function lookup(key) {
     return dest;
 };
 
+// find (up to) N unique successor nodes (aka the 'preference list') for the given key
+RingPop.prototype.lookupN = function lookupN(key, n) {
+    var startTime = Date.now();
+
+    var dests = this.ring.lookupN(key + '', n);
+
+    this.emit('lookupN', {
+        timing: Date.now() - startTime
+    });
+
+    if (!dests || dests.length === 0) {
+        this.logger.debug('could not find destinations for a key', {
+            key: key
+        });
+        return [this.whoami()];
+    }
+
+    return dests;
+};
+
 RingPop.prototype.reload = function reload(file, callback) {
     this.seedBootstrapHosts(file);
 
