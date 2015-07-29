@@ -581,12 +581,12 @@ if (!programPath) {
     process.exit(1);
 }
 
-if(!fs.existsSync(programPath)) {
+if (!fs.existsSync(programPath)) {
     console.log('Error: program ' + programPath + ' does not exist. Check path');
     process.exit(1);
 }
 
-if(isNaN(procsToStart)) {
+if (isNaN(procsToStart)) {
     console.log('Error: number of processes to start is not an integer');
     process.exit(1);
 }
