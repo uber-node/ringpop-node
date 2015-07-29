@@ -1,7 +1,7 @@
 Ringpop
 =======
 
-Ringpop is a library that brings cooperation and coordination to distrubted applications.
+Ringpop is a library that brings cooperation and coordination to distributed applications.
 
 Interested? Start with the Getting Started section below.
 
