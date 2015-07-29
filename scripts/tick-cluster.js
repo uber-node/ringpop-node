@@ -28,6 +28,7 @@ var generateHosts = require('./generate-hosts');
 var program = require('commander');
 
 var hosts, procs, procsToStart, ringPool, localIP, toSuspend, toKill, tchannel; // defined later
+var gridViewIntervalObj;
 
 /* jshint maxparams: 6 */
 
@@ -146,6 +147,46 @@ function statsAll() {
     });
 }
 
+function grid() {
+    var cols = [color.red, color.green, color.yellow, color.blue, color.magenta, color.cyan, color.redBright,
+     color.greenBright, color.yellowBright, color.blueBright, color.magentaBright, color.cyanBright];
+
+    // clear terminal
+    console.log('\x1B[2J');
+    
+    procs.forEach(function (proc) {
+        // TODO (wieger): print proc status in order, with dead nodes as an X-ed row 
+        // if (proc.killed || proc.suspended) {
+        //     var row = "";
+        //     for (var i=0; i<procs.length; i++) {
+        //         row += "X";
+        //     }
+        //     console.log(row)
+        //     return;
+        // }
+        var host = proc.hostPort;
+        send(host, '/admin/stats', function onSend(err, res, arg2, arg3) {
+            if (err) {
+                return;
+            }
+
+            var row = "";
+            var memList = safeParse(arg3).membership.members;
+            memList.forEach(function(member) {
+                var letter = member.status[0];
+                row += {'a': color.green, 's': color.xterm(202), 'f': color.red}[letter](letter);
+            });
+            row += " csum ";
+
+            var membership = JSON.stringify(memList);
+            var csum = farmhash(membership);
+            row += cols[csum%cols.length](csum);
+            console.log(row);
+        });
+    });
+}
+
+
 function formatStats(obj) {
     return {
         protocolRate: obj.protocolRate,
@@ -251,6 +292,8 @@ function onData(char) {
             case '\u0003': // watch for control-c explicitly, because we are in raw-mode
             case 'q':
                 killAllProcs();
+                if (gridViewIntervalObj && gridViewIntervalObj._idleTimeout !== -1)
+                    clearInterval(gridViewIntervalObj);
                 process.exit();
                 break;
             case 't':
@@ -261,6 +304,14 @@ function onData(char) {
                 break;
             case 'g':
                 startGossip();
+                break;
+            case 'z':
+                if (gridViewIntervalObj && gridViewIntervalObj._idleTimeout !== -1) {
+                    clearInterval(gridViewIntervalObj);
+                    setTimeout(function() { console.log("grid mode off"); }, 50);
+                } else {
+                    gridViewIntervalObj = setInterval(grid, 50);
+                }
                 break;
             case 's':
                 statsAll();
@@ -350,6 +401,9 @@ function ClusterProc(port) {
     var newProc = require('child_process').spawn('node', ['main.js', '--listen=' + localIP + ':' + port, '--hosts=./hosts.json']);
 
     function logOutput(data) {
+        // suppress output when grid is showing
+        if (gridViewIntervalObj) { return; }
+
         var lines = data.toString('utf8').split('\n');
 
         var totalOpenBraces = 0;
@@ -486,6 +540,7 @@ function displayMenu(logFn) {
     logFn('\tp\t\tPrint out protocol stats');
     logFn('\tq\t\tQuit');
     logFn('\ts\t\tPrint out stats');
+    logFn('\tz\t\tToggle grid view mode');
     logFn('\tt\t\tTick protocol period');
     logFn('\t<space>\t\tPrint out horizontal rule');
     logFn('\t?\t\tHelp menu');
