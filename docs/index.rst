@@ -1,7 +1,9 @@
 Ringpop
 =======
 
-Ringpop is a library that brings cooperation and coordination to applications that would otherwise run as a set of independent worker processes.
+Ringpop is a library that brings cooperation and coordination to distrubted applications.
+
+Interested? Start with the Getting Started section below.
 
 .. toctree::
    :maxdepth: 2
