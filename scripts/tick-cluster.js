@@ -21,11 +21,12 @@
 // THE SOFTWARE.
 'use strict';
 
-var TChannel = require('tchannel');
+var childProc = require('child_process');
 var color = require('cli-color');
 var farmhash = require('farmhash').hash32;
 var generateHosts = require('./generate-hosts');
 var program = require('commander');
+var TChannel = require('tchannel');
 var fs = require('fs');
 
 var programInterpreter, programPath, procsToStart = 5;
@@ -350,14 +351,23 @@ function findLocalIP() {
 
 function ClusterProc(port) {
     var newProc;
-    var hostport = localIP + ':' + port;
+
+    this.port = port;
+    this.hostPort = localIP + ':' + port;
+
     if (programInterpreter) {
-        newProc = require('child_process').spawn(programInterpreter, [programPath, '--listen=' + hostport, '--hosts=./hosts.json']);
+        newProc = childProc.spawn(programInterpreter,
+            [programPath, '--listen=' + this.hostPort, '--hosts=./hosts.json']);
     } else {
-        newProc = require('child_process').spawn(programPath, ['--listen=' + hostport, '--hosts=./hosts.json']);
+        newProc = childProc.spawn(programPath,
+            ['--listen=' + this.hostPort, '--hosts=./hosts.json']);
     }
+
+    var self = this;
+
     newProc.on('error', function(err) {
-        console.log('Error: ' + err.message + ', failed to spawn ' + programPath + ' on ' + hostport);
+        console.log('Error: ' + err.message + ', failed to spawn ' +
+            programPath + ' on ' + self.hostPort);
     });
 
     newProc.on('exit', function(code) {
@@ -398,8 +408,6 @@ function ClusterProc(port) {
     newProc.stdout.on('data', logOutput);
     newProc.stderr.on('data', logOutput);
 
-    this.port = port;
-    this.hostPort = localIP + ':' + port;
     this.proc = newProc;
     this.pid = newProc.pid;
     this.killed = null;
@@ -544,8 +552,8 @@ function send(host, arg1, arg2, arg3, callback) {
 
 program
     .version(require('../package.json').version)
-    .option('-n <size>')
-    .option('-i, --interpreter <interpreter>')
+    .option('-n <size>', 'Size of cluster. Default is ' + procsToStart + '.')
+    .option('-i, --interpreter <interpreter>', 'Interpreter that runs program.')
     .arguments('<program>')
     .description('tick-cluster is a tool that launches a ringpop cluster of arbitrary size')
     .action(function onAction(path, options) {
@@ -553,7 +561,7 @@ program
         if (programPath[0] !== '/') {
             programPath = './' + programPath;
         }
-        
+
         if (options.N) {
             procsToStart = parseInt(options.N);
         }
@@ -568,6 +576,10 @@ program.on('--help', function onHelp() {
 
 program.parse(process.argv);
 
+if (!programPath) {
+    console.log('Error: program is required');
+    process.exit(1);
+}
 
 if(!fs.existsSync(programPath)) {
     console.log('Error: program ' + programPath + ' does not exist. Check path');
