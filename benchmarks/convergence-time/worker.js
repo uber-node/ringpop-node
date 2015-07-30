@@ -24,6 +24,8 @@ var program = require('commander');
 var TChannel = require('tchannel');
 
 var Swim = require('../../');
+var leaveHandler = require('../../server/admin-leave-handler');
+var joinHandler = require('../../server/admin-join-handler');
 
 if (require.main === module) {
     parseArgs();
@@ -67,7 +69,7 @@ function handleMessage(swim) {
                 });
                 break;
             case 'join':
-                swim.adminJoin(function onAdminJoin(err) {
+                join(swim, function onJoin(err) {
                     if (err) {
                         console.error(err);
                         process.exit(1);
@@ -81,10 +83,10 @@ function handleMessage(swim) {
                 });
                 break;
             case 'leave':
-                swim.adminLeave(function onLeave() {});
+                leave(swim, function onLeave() {});
                 break;
             case 'shutdown':
-                swim.adminLeave(function onLeave() {});
+                leave(swim, function onLeave() {});
                 process.removeListener('message', onMessage);
                 process.exit();
                 break;
@@ -130,4 +132,16 @@ function bootstrap(callback) {
     });
 
     swim.channel.listen(Number(port), host);
+}
+
+function join(swim, callback) {
+    joinHandler({
+        ringpop: swim
+    }, callback);
+}
+
+function leave(swim, callback) {
+    leaveHandler({
+        ringpop: swim
+    }, callback);
 }
