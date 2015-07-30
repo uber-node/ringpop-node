@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "after": "^0.8.1",
+    "async": "^0.9.0",
     "benchmark": "^1.0.0",
     "cli-color": "^0.3.2",
     "commander": "^2.6.0",

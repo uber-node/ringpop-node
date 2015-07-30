@@ -19,43 +19,30 @@
 // THE SOFTWARE.
 'use strict';
 
-var errors = require('../lib/errors.js');
-var TypedError = require('error/typed');
+function halfClusterFailure(context, callback) {
+    var hosts = Object.keys(context.hostToAliveWorker);
+    var selected = [];
+    var index;
+    var i;
 
-var RedundantLeaveError = TypedError({
-    type: 'ringpop.invalid-leave.redundant',
-    message: 'A node cannot leave its cluster when it has already left.'
-});
-
-module.exports = function handleAdminLeave(opts, callback) {
-    var ringpop = opts.ringpop;
-
-    if (typeof callback !== 'function') {
-        callback = function noop() {};
+    for (i = 0; i < hosts.length / 2; i++) {
+        index = i + Math.floor(Math.random() * (hosts.length - i));
+        selected.push(hosts[index]);
+        hosts[index] = hosts[i];
     }
 
-    if (!ringpop.membership.localMember) {
-        process.nextTick(function() {
-            callback(errors.InvalidLocalMemberError());
+    selected.forEach(function leave(host) {
+        context.hostToFaultyWorker[host] = context.hostToAliveWorker[host];
+        delete context.hostToAliveWorker[host];
+        context.hostToFaultyWorker[host].send({
+            cmd: 'leave'
         });
-        return;
-    }
-
-    if (ringpop.membership.localMember.status === 'leave') {
-        process.nextTick(function() {
-            callback(RedundantLeaveError());
-        });
-        return;
-    }
-
-    // TODO Explicitly infect other members (like admin join)?
-    ringpop.membership.makeLeave(ringpop.whoami(),
-        ringpop.membership.localMember.incarnationNumber);
-
-    ringpop.gossip.stop();
-    ringpop.suspicion.stopAll();
-
-    process.nextTick(function() {
-        callback(null, null, 'ok');
     });
+
+    process.nextTick(callback);
+}
+
+module.exports = {
+    name: 'half cluster failure',
+    fn: halfClusterFailure
 };
