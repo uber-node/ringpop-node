@@ -107,7 +107,8 @@ function RingPop(options) {
     this.requestProxy = new RequestProxy({
         ringpop: this,
         maxRetries: options.requestProxyMaxRetries,
-        retrySchedule: options.requestProxyRetrySchedule
+        retrySchedule: options.requestProxyRetrySchedule,
+        enforceConsistency: options.enforceConsistency
     });
 
     this.ring = new HashRing();

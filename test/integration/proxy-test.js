@@ -284,6 +284,46 @@ test('no retries, invalid checksum', function t(assert) {
     });
 });
 
+test('no retries, invalid checksum emit request when enforceConsistency is false', function t(assert) {
+    assert.plan(6);
+
+    var numAttempts = 0;
+    var emittedRequest = false;
+    var ringpopOpts = {
+        requestProxyMaxRetries: 0,
+        enforceConsistency: false
+    };
+
+    var cluster = allocCluster(ringpopOpts, function onReady() {
+        cluster.two.ring.checksum = cluster.one.ring.checksum + 1;
+
+        cluster.two.on('requestProxy.checksumsDiffer', function onBadChecksum() {
+            numAttempts++;
+            assert.pass('received request with invalid checksum');
+        });
+
+        cluster.two.once('request', function onGoodChecksum() {
+            emittedRequest = true;
+            assert.pass('received request with invalid checksum');
+        });
+
+        cluster.request({
+            key: cluster.keys.two,
+            host: 'one',
+            json: { hello: true }
+        }, function onResponse(err, resp) {
+            assert.ifErr(err);
+
+            assert.equal(resp.statusCode, 200);
+            assert.equal(numAttempts, 1, 'only 1 attempt because no retries');
+            assert.ok(emittedRequest, 'request is emmitted');
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+});
+
 test('exceeds max retries, errors out', function t(assert) {
     assert.plan(9);
 

@@ -50,6 +50,7 @@ function allocRingpop(name, options) {
         logger: DebuglogLogger(name || 'ringpop'),
         requestProxyMaxRetries: options.requestProxyMaxRetries,
         requestProxyRetrySchedule: options.requestProxyRetrySchedule,
+        enforceConsistency: options.enforceConsistency,
         setTimeout: options.useFakeTimers && timers.setTimeout
     });
 
