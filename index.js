@@ -109,7 +109,7 @@ function RingPop(options) {
         ringpop: this,
         maxRetries: options.requestProxyMaxRetries,
         retrySchedule: options.requestProxyRetrySchedule,
-        enforceConsistency: options.enforceConsistency === undefined ? true : options.enforceConsistency
+        enforceConsistency: options.enforceConsistency
     });
 
     this.ring = new HashRing();
