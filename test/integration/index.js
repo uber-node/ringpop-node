@@ -22,3 +22,5 @@
 require('./join-test.js');
 require('./proxy-test.js');
 require('./ring-test.js');
+require('./swim-test.js');
+require('./tchannel-proxy-test.js');
