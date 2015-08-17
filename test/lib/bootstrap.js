@@ -34,13 +34,13 @@ function bootstrap(ringpops, done) {
         var host = hostPortParts[0];
         var port = Number(hostPortParts[1]);
 
-        r.channel.on('listening', function onListening() {
-            r.channel.removeListener('listening', onListening);
+        r.channel.topChannel.on('listening', function onListening() {
+            r.channel.topChannel.removeListener('listening', onListening);
             r.once('ready', onReady);
             r.bootstrap(hosts.slice());
         });
 
-        r.channel.listen(port, host);
+        r.channel.topChannel.listen(port, host);
     });
 
     function onReady() {
