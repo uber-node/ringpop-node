@@ -64,8 +64,8 @@ function allocRingpop(name, options) {
 }
 
 function semiRandPort() {
-    var base = 20000;
-    var rand = Math.floor(Math.random() * 20000);
+    var base = 10000;
+    var rand = Math.floor(Math.random() * 10000);
 
     return base + rand;
 }
