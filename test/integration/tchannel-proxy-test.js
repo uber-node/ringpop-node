@@ -83,3 +83,67 @@ TChannelProxyCluster.test('RingpopHandler for two', {
         assert.end();
     }
 });
+
+TChannelProxyCluster.test('RingpopHandler for two', {
+    size: 3
+}, function t(cluster, assert) {
+    cluster.client.request({
+        serviceName: cluster.serviceName,
+        headers: {
+            sk: cluster.keys.two
+        },
+        host: cluster.hosts.one
+    }).send('ping', '', '', onResponse);
+
+    function onResponse(err, resp, arg2, arg3) {
+        assert.ifError(err);
+
+        assert.ok(resp.ok);
+        assert.equal(arg3.toString(), 'ping from two');
+
+        assert.end();
+    }
+});
+
+TChannelProxyCluster.test('RingpopHandler blacklist', {
+    size: 3,
+    blacklist: {
+        'ping': true
+    }
+}, function t(cluster, assert) {
+    cluster.client.request({
+        serviceName: cluster.serviceName,
+        headers: {
+            sk: cluster.keys.two
+        },
+        host: cluster.hosts.one
+    }).send('ping', '', '', onResponse);
+
+    function onResponse(err, resp, arg2, arg3) {
+        assert.ifError(err);
+
+        assert.ok(resp.ok);
+        assert.equal(arg3.toString(), 'ping from one');
+
+        assert.end();
+    }
+});
+
+TChannelProxyCluster.test('RingpopHandler bad request', {
+    size: 3
+}, function t(cluster, assert) {
+    cluster.client.request({
+        serviceName: cluster.serviceName,
+        host: cluster.hosts.one
+    }).send('ping', '', '', onResponse);
+
+    function onResponse(err, resp, arg2, arg3) {
+        assert.ok(err);
+
+        assert.equal(err.codeName, 'BadRequest');
+        assert.equal(err.message,
+            '[ringpop] Request does not have sk header set');
+
+        assert.end();
+    }
+});

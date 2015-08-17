@@ -39,6 +39,7 @@ function TChannelProxyCluster(options) {
     var self = this;
 
     self.size = options.size;
+    self.blacklist = options.blacklist;
     self.serviceName = options.serviceName || 'app';
 
     self.keys = null;
@@ -108,6 +109,7 @@ function setupHandler(name, ringpop) {
         realHandler: realHandler,
         channel: channel,
         ringpop: ringpop,
+        blacklist: self.blacklist,
         logger: ringpop.logger
     });
 
