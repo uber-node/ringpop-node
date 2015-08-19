@@ -93,13 +93,20 @@ RingpopHandler.prototype.handleRequest = function handleRequest(req, buildRes) {
         );
     }
 
-    var dest = self.ringpop.lookup(shardKey);
+    var dest = self.resolveHost(shardKey);
     if (self.ringpop.whoami() === dest) {
         return self.realHandler.handleRequest(req, buildRes);
     }
 
     var outreq = new RelayRequest(self.channel, req, buildRes);
     outreq.createOutRequest(dest);
+};
+
+RingpopHandler.prototype.resolveHost =
+function resolveHost(shardKey) {
+    var self = this;
+
+    return self.ringpop.lookup(shardKey);
 };
 
 RingpopHandler.prototype.register = function register(arg1, fn) {
