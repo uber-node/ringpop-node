@@ -84,7 +84,8 @@ RingpopHandler.prototype.handleRequest = function handleRequest(req, buildRes) {
             serviceName: req.serviceName,
             endpoint: req.endpoint,
             callerName: req.headers.cn,
-            headers: req.headers
+            headers: req.headers,
+            local: self.ringpop.whoami()
         });
         return buildRes().sendError(
             'BadRequest',
