@@ -30,7 +30,6 @@
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "node-uuid": "^1.4.3",
-    "readable-stream": "^1.0.33",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
