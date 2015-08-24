@@ -57,18 +57,50 @@ testRingpop('responses with same checksum uses first response', function t(deps,
 
 testRingpop('merges responses when checksums are null', function t(deps, assert) {
     var firstResponse = createResponse(null, [
-        new Member('127.0.0.1:3001', 'suspect', 1),
-        new Member('127.0.0.1:3002', 'alive', 2)
+        new Member(deps.ringpop, {
+            address: '127.0.0.1:3001',
+            status: 'suspect',
+            incarnationNumber: 1
+        }),
+        new Member(deps.ringpop, {
+            address: '127.0.0.1:3002',
+            status: 'alive',
+            incarnationNumber: 2
+        })
     ]);
     var secondResponse = createResponse(null, [
-        new Member('127.0.0.1:3001', 'alive', 2),
-        new Member('127.0.0.1:3002', 'suspect', 1),
-        new Member('127.0.0.1:3003', 'faulty', 1)
+        new Member(deps.ringpop, {
+            address: '127.0.0.1:3001',
+            status: 'alive',
+            incarnationNumber: 2
+        }),
+        new Member(deps.ringpop, {
+            address: '127.0.0.1:3002',
+            status: 'suspect',
+            incarnationNumber: 1
+        }),
+        new Member(deps.ringpop, {
+            address: '127.0.0.1:3003',
+            status: 'faulty',
+            incarnationNumber: 1
+        })
     ]);
     var mergedMembers = [
-        new Member('127.0.0.1:3001', 'alive', 2),
-        new Member('127.0.0.1:3002', 'alive', 2),
-        new Member('127.0.0.1:3003', 'faulty', 1)
+        new Member(deps.ringpop, {
+            address: '127.0.0.1:3001',
+            status: 'alive',
+            incarnationNumber: 2
+        }),
+        new Member(deps.ringpop, {
+            address: '127.0.0.1:3002',
+            status: 'alive',
+            incarnationNumber: 2
+        }),
+        new Member(deps.ringpop, {
+            address: '127.0.0.1:3003',
+            status: 'faulty',
+            incarnationNumber: 1
+        })
     ];
 
     var result = mergeJoinResponses(deps.ringpop, [firstResponse, secondResponse]);
