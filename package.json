@@ -18,6 +18,7 @@
   "scripts": {
     "test": "npm run jshint && node test/index.js",
     "test-integration": "node test/integration/index.js",
+    "test-unit": "node test/unit/index.js",
     "add-licence": "uber-licence",
     "check-licence": "uber-licence --dry",
     "cover": "istanbul cover --print detail --report html test/index.js",

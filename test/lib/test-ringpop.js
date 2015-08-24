@@ -39,7 +39,10 @@ function testRingpop(opts, name, test) {
 
         ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
 
+        // These are made top-level dependencies as a mere
+        // convenience to users of the test suite.
         var deps = {
+            config: ringpop.config,
             dissemination: ringpop.dissemination,
             gossip: ringpop.gossip,
             iterator: ringpop.memberIterator,
