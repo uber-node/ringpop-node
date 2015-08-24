@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-var mergeMembershipChangesets = require('../lib/membership-changeset-merge.js');
+var mergeMembershipChangesets = require('../lib/membership/merge.js');
 var testRingpop = require('./lib/test-ringpop.js');
 
 testRingpop('merges incarnation numbers', function t(deps, assert) {
