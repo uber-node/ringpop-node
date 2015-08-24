@@ -19,8 +19,15 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function handleAdminLookup(opts, callback) {
-    callback(null, null, {
-        dest: opts.ringpop.lookup(opts.key)
-    });
+var safeParse = require('../../lib/util.js').safeParse;
+
+module.exports = function createHandler(ringpop) {
+    return function handle(arg1, arg2, hostInfo, callback) {
+        var body = safeParse(arg2.toString());
+        if (body && body.file) {
+            ringpop.reload(body.file, function(err) {
+                callback(err);
+            });
+        }
+    };
 };

@@ -1,0 +1,59 @@
+// Copyright (c) 2015 Uber Technologies, Inc.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+'use strict';
+
+module.exports = {
+    debugClear: {
+        endpoint: '/admin/debugClear',
+        handler: require('./debug-clear.js')
+    },
+    debugSet: {
+        endpoint: '/admin/debugSet',
+        handler: require('./debug-set.js')
+    },
+    gossip: {
+        endpoint: '/admin/gossip',
+        handler: require('./gossip.js')
+    },
+    join: {
+        endpoint: '/admin/join',
+        handler: require('./join.js')
+    },
+    leave: {
+        endpoint: '/admin/leave',
+        handler: require('./leave.js')
+    },
+    lookup: {
+        endpoint: '/admin/lookup',
+        handler: require('./lookup.js')
+    },
+    reload: {
+        endpoint: '/admin/reload',
+        handler: require('./reload.js')
+    },
+    stats: {
+        endpoint: '/admin/stats',
+        handler: require('./stats.js')
+    },
+    tick: {
+        endpoint: '/admin/tick',
+        handler: require('./tick.js')
+    }
+};
