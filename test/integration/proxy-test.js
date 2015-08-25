@@ -979,8 +979,12 @@ test('handle tchannel failures', function t(assert) {
             var name = cluster.two.channel.hostPort;
             var peer = cluster.one.channel.peers.get(name);
 
-            var conn = peer.connections[1]; // the "in" one
-            conn.socket.destroy();
+            // Kill all connections. This will trigger the
+            // socket closed response we're asserting on
+            // above.
+            peer.connections.forEach(function each(conn) {
+                conn.socket.destroy();
+            });
         }, 100);
     });
 });
