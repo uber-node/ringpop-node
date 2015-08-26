@@ -19,10 +19,17 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function handleProxyReq(opts, callback) {
-    var ringpop = opts.ringpop;
-    var header = opts.header;
-    var body = opts.body;
-
-    ringpop.requestProxy.handleRequest(header, body, callback);
+module.exports = {
+    join: {
+        endpoint: '/protocol/join',
+        handler: require('./join.js')
+    },
+    ping: {
+        endpoint: '/protocol/ping',
+        handler: require('./ping.js')
+    },
+    pingReq: {
+        endpoint: '/protocol/ping-req',
+        handler: require('./ping-req.js')
+    }
 };

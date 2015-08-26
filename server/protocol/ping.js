@@ -19,22 +19,33 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function handlePing(opts, callback) {
-    var ringpop = opts.ringpop;
-    var source = opts.source;
-    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
-    var changes = opts.changes;
-    var checksum = opts.checksum;
+var safeParse = require('../../lib/util').safeParse;
 
-    ringpop.stat('increment', 'ping.recv');
+module.exports = function createPingHandler(ringpop) {
+    return function handlePing(arg1, arg2, hostInfo, callback) {
+        var body = safeParse(arg2);
 
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
+        // NOTE sourceIncarnationNumber is an optional argument. It was not present
+        // until after the v9.8.12 release.
+        if (body === null || !body.source || !body.changes || !body.checksum) {
+            return callback(new Error('need req body with source, changes, and checksum'));
+        }
 
-    ringpop.membership.update(changes);
+        var source = body.source;
+        var sourceIncarnationNumber = body.sourceIncarnationNumber;
+        var changes = body.changes;
+        var checksum = body.checksum;
 
-    callback(null, {
-        changes: ringpop.dissemination.issueAsReceiver(source,
-            sourceIncarnationNumber, checksum),
-    });
+        ringpop.stat('increment', 'ping.recv');
+
+        ringpop.serverRate.mark();
+        ringpop.totalRate.mark();
+
+        ringpop.membership.update(changes);
+
+        callback(null, null, JSON.stringify({
+            changes: ringpop.dissemination.issueAsReceiver(source,
+                sourceIncarnationNumber, checksum),
+        }));
+    };
 };

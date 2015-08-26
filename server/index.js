@@ -19,38 +19,27 @@
 // THE SOFTWARE.
 'use strict';
 
-var handleJoin = require('./join-handler.js');
-var handlePing = require('./ping-handler.js');
-var handlePingReq = require('./ping-req-handler.js');
-var handleProxyReq = require('./proxy-req-handler.js');
-var safeParse = require('../lib/util').safeParse;
-
-var commands = {
-    '/health': 'health',
-    '/protocol/join': 'protocolJoin',
-    '/protocol/ping': 'protocolPing',
-    '/protocol/ping-req': 'protocolPingReq',
-    '/proxy/req': 'proxyReq'
-};
-
 function RingPopTChannel(ringpop, tchannel) {
     this.ringpop = ringpop;
     this.tchannel = tchannel;
 
-    var self = this;
+    registerEndpointHandlers(require('./admin'));
+    registerEndpointHandlers(require('./protocol'));
 
-    // Register admin endpoint handlers
-    var endpointHandlers = require('./admin');
-    Object.keys(endpointHandlers).forEach(function each(key) {
-        var endpointHandler = endpointHandlers[key];
-        registerEndpoint(endpointHandler.endpoint,
-            endpointHandler.handler(ringpop));
-    });
+    // Register stragglers ;)
+    var createProxyReqHandler = require('./proxy-req.js');
+    registerEndpoint('/proxy/req', createProxyReqHandler(this.ringpop));
 
-    // Register protocol and proxy endpoint handlers
-    Object.keys(commands).forEach(function each(url) {
-        registerEndpoint(url, self[commands[url]].bind(self));
-    });
+    var createHealthHandler = require('./health.js');
+    registerEndpoint('/health', createHealthHandler());
+
+    function registerEndpointHandlers(endpointHandlers) {
+        Object.keys(endpointHandlers).forEach(function each(key) {
+            var endpointHandler = endpointHandlers[key];
+            registerEndpoint(endpointHandler.endpoint,
+                endpointHandler.handler(ringpop));
+        });
+    }
 
     // Wraps endpoint handler so that it doesn't have to
     // know TChannel req/res API.
@@ -69,87 +58,6 @@ function RingPopTChannel(ringpop, tchannel) {
         });
     }
 }
-
-RingPopTChannel.prototype.health = function (arg1, arg2, hostInfo, cb) {
-    cb(null, null, 'ok');
-};
-
-RingPopTChannel.prototype.protocolJoin = function (arg1, arg2, hostInfo, cb) {
-    var body = safeParse(arg2.toString());
-    if (body === null) {
-        return cb(new Error('need JSON req body with source and incarnationNumber'));
-    }
-
-    var app = body.app;
-    var source = body.source;
-    var incarnationNumber = body.incarnationNumber;
-    if (app === undefined || source === undefined || incarnationNumber === undefined) {
-        return cb(new Error('need req body with app, source and incarnationNumber'));
-    }
-
-    handleJoin({
-        ringpop: this.ringpop,
-        app: app,
-        source: source,
-        incarnationNumber: incarnationNumber
-    }, function(err, res) {
-        cb(err, null, JSON.stringify(res));
-    });
-};
-
-RingPopTChannel.prototype.protocolPing = function (arg1, arg2, hostInfo, cb) {
-    var body = safeParse(arg2);
-
-    // NOTE sourceIncarnationNumber is an optional argument. It was not present
-    // until after the v9.8.12 release.
-    if (body === null || !body.source || !body.changes || !body.checksum) {
-        return cb(new Error('need req body with source, changes, and checksum'));
-    }
-
-    handlePing({
-        ringpop: this.ringpop,
-        source: body.source,
-        sourceIncarnationNumber: body.sourceIncarnationNumber,
-        changes: body.changes,
-        checksum: body.checksum
-    }, function(err, res) {
-        cb(err, null, JSON.stringify(res));
-    });
-};
-
-RingPopTChannel.prototype.protocolPingReq = function protocolPingReq(arg1, arg2, hostInfo, cb) {
-    var body = safeParse(arg2);
-
-    // NOTE sourceIncarnationNumber is an optional argument. It was not present
-    // until after the v9.8.12 release.
-    if (body === null || !body.source || !body.target || !body.changes || !body.checksum) {
-        return cb(new Error('need req body with source, target, changes, and checksum'));
-    }
-
-    handlePingReq({
-        ringpop: this.ringpop,
-        source: body.source,
-        sourceIncarnationNumber: body.sourceIncarnationNumber,
-        target: body.target,
-        changes: body.changes,
-        checksum: body.checksum
-    }, function onHandled(err, result) {
-        cb(err, null, JSON.stringify(result));
-    });
-};
-
-RingPopTChannel.prototype.proxyReq = function (arg1, arg2, hostInfo, cb) {
-    var header = safeParse(arg1);
-    if (header === null) {
-        return cb(new Error('need header to exist'));
-    }
-
-    handleProxyReq({
-        ringpop: this.ringpop,
-        header: header,
-        body: arg2
-    }, cb);
-};
 
 function createServer(ringpop, tchannel) {
     return new RingPopTChannel(ringpop, tchannel);

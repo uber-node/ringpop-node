@@ -20,7 +20,7 @@
 var _ = require('underscore');
 var createAdminJoinHandler = require('../server/admin/join.js');
 var createAdminLeaveHandler = require('../server/admin/leave.js');
-var handleJoin = require('../server/join-handler.js');
+var createJoinHandler = require('../server/protocol/join.js');
 var mock = require('./mock');
 var Ringpop = require('../index.js');
 var test = require('tape');
@@ -191,10 +191,12 @@ test('protocol join disallows joining itself', function t(assert) {
     assert.plan(2);
 
     var ringpop = createRingpop();
-    handleJoin({
-        ringpop: ringpop,
-        source: ringpop.hostPort
-    }, function(err) {
+    var handleJoin = createJoinHandler(ringpop);
+    handleJoin(null, JSON.stringify({
+        app: ringpop.app,
+        source: ringpop.hostPort,
+        incarnationNumber: 1
+    }), null, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.source', 'a node cannot join itself');
         ringpop.destroy();
@@ -210,11 +212,12 @@ test('protocol join disallows joining different app clusters', function t(assert
         hostPort: '127.0.0.1:3000'
     });
 
-    handleJoin({
-        ringpop: ringpop,
+    var handleJoin = createJoinHandler(ringpop);
+    handleJoin(null, JSON.stringify({
         app: 'jupiter',
-        source: '127.0.0.1:3001'
-    }, function(err) {
+        source: '127.0.0.1:3001',
+        incarnationNumber: 1
+    }), null, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.app', 'a node cannot join a different app cluster');
         ringpop.destroy();
