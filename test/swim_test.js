@@ -18,9 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-var Member = require('../lib/member.js');
-var Ringpop = require('../index.js');
-var test = require('tape');
+var Member = require('../lib/membership/member.js');
 var testRingpop = require('./lib/test-ringpop.js');
 
 testRingpop('starting and stopping gossip sets timer / unsets timers', function t(deps, assert) {

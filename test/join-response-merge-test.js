@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-var Member = require('../lib/member.js');
+var Member = require('../lib/membership/member.js');
 var mergeJoinResponses = require('../lib/swim/join-response-merge.js');
 var testRingpop = require('./lib/test-ringpop.js');
 

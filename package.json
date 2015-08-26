@@ -10,13 +10,14 @@
     "Jake Verbaten <raynos2@gmail.com>",
     "Mark Yen <mark@uber.com>"
   ],
-  "version": "10.3.1",
+  "version": "10.3.2",
   "repository": "git://github.com/uber/ringpop.git",
   "bin": {
     "ringpop": "./main.js"
   },
   "scripts": {
     "test": "npm run jshint && node test/index.js",
+    "test-integration": "node test/integration/index.js",
     "add-licence": "uber-licence",
     "check-licence": "uber-licence --dry",
     "cover": "istanbul cover --print detail --report html test/index.js",
@@ -30,7 +31,6 @@
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "node-uuid": "^1.4.3",
-    "readable-stream": "^1.0.33",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },

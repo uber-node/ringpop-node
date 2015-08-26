@@ -46,6 +46,7 @@ function testRingpop(opts, name, test) {
             localMember: ringpop.membership.localMember,
             membership: ringpop.membership,
             ringpop: ringpop,
+            rollup: ringpop.membershipUpdateRollup,
             suspicion: ringpop.suspicion
         };
 

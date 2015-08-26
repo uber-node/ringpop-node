@@ -71,7 +71,7 @@ test('proxyReq enforces required args', function t(assert) {
         assert.equals(exception.type, 'ringpop.options.property-required', 'err type is correct');
         assert.equals(property, exception.property, 'err property is correct');
 
-        return opts
+        return opts;
     }
 
     var exception = assertProxyReqThrows();
@@ -85,4 +85,5 @@ test('proxyReq enforces required args', function t(assert) {
     opts = _.extend(opts, { res: {} });
     assert.doesNotThrow(function() { ringpop.proxyReq(opts); });
     assert.end();
+    ringpop.destroy();
 });
