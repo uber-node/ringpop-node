@@ -19,8 +19,8 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function createHandler(ringpop) {
-    return function handle(arg1, arg2, hostInfo, callback) {
+module.exports = function createStatsHandler(ringpop) {
+    return function handleStats(arg1, arg2, hostInfo, callback) {
         callback(null, null, JSON.stringify(ringpop.getStats()));
     };
 };

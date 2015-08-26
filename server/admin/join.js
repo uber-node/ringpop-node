@@ -22,8 +22,8 @@
 var errors = require('../../lib/errors.js');
 var sendJoin = require('../../lib/swim/join-sender.js').joinCluster;
 
-module.exports = function createHandler(ringpop) {
-    return function handle(arg1, arg2, hostInfo, callback) {
+module.exports = function createJoinHandler(ringpop) {
+    return function handleJoin(arg1, arg2, hostInfo, callback) {
         if (!ringpop.membership.localMember) {
             process.nextTick(function() {
                 callback(errors.InvalidLocalMemberError());

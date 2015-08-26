@@ -27,8 +27,8 @@ var RedundantLeaveError = TypedError({
     message: 'A node cannot leave its cluster when it has already left.'
 });
 
-module.exports = function createHandler(ringpop) {
-    return function handle(arg1, arg2, hostInfo, callback) {
+module.exports = function createLeaveHandler(ringpop) {
+    return function handleLeave(arg1, arg2, hostInfo, callback) {
         if (typeof callback !== 'function') {
             callback = function noop() {};
         }

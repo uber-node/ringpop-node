@@ -19,8 +19,8 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function createHandler(ringpop) {
-    return function handle(arg1, arg2, hostInfo, callback) {
+module.exports = function createLookupHandler(ringpop) {
+    return function handleLookup(arg1, arg2, hostInfo, callback) {
         var key = arg2.toString();
         callback(null, null, JSON.stringify({
             dest: ringpop.lookup(key)

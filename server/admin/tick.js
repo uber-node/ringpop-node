@@ -19,8 +19,8 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function createHandler(ringpop) {
-    return function handle(arg1, arg2, hostInfo, callback) {
+module.exports = function createTickHandler(ringpop) {
+    return function handleTick(arg1, arg2, hostInfo, callback) {
         ringpop.handleTick(function onTick(err, resp) {
             callback(err, null, JSON.stringify(resp));
         });

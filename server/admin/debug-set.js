@@ -21,8 +21,8 @@
 
 var safeParse = require('../../lib/util.js').safeParse;
 
-module.exports = function createHandler(ringpop) {
-    return function handle(arg1, arg2, hostInfo, callback) {
+module.exports = function createDebugSetHandler(ringpop) {
+    return function handleDebugSet(arg1, arg2, hostInfo, callback) {
         var body = safeParse(arg2.toString());
         if (body && body.debugFlag) {
             ringpop.setDebugFlag(body.debugFlag);

@@ -19,8 +19,8 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function createHandler(ringpop) {
-    return function handle(arg1, arg2, hostInfo, callback) {
+module.exports = function createDebugClearHandler(ringpop) {
+    return function handleDebugClear(arg1, arg2, hostInfo, callback) {
         ringpop.clearDebugFlags();
         callback(null, null, 'ok');
     };
