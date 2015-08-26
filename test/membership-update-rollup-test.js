@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-var MembershipUpdateRollup = require('../lib/membership-update-rollup.js');
+var MembershipUpdateRollup = require('../lib/membership/rollup.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
 var testRingpop = require('./lib/test-ringpop.js');

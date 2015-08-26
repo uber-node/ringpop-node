@@ -21,7 +21,7 @@
 'use strict';
 
 // Test dependencies
-var Member = require('../lib/member.js');
+var Member = require('../lib/membership/member.js');
 
 // Test helpers
 var testRingpop = require('./lib/test-ringpop.js');
