@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 'use strict';
 
-var MemberUpdate = require('../lib/member-update.js');
 var mergeMembershipChangesets = require('../lib/membership-changeset-merge.js');
 var testRingpop = require('./lib/test-ringpop.js');
 
@@ -30,12 +29,11 @@ testRingpop('merges incarnation numbers', function t(deps, assert) {
         expectedChangeset(), 'updates are merged');
 
     function createUpdate(address, status, incarnationNumber) {
-        var update = new MemberUpdate();
-        update.address = address;
-        update.status = status;
-        update.incarnationNumber = incarnationNumber;
-
-        return update;
+        return {
+            address: address,
+            status: status,
+            incarnationNumber: incarnationNumber
+        };
     }
 
     function firstChangeset() {
