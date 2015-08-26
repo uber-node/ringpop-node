@@ -66,10 +66,12 @@ function genNodesOnDiffHosts(numNodes) {
 }
 
 test('create a joiner', function t(assert) {
+    var ringpop = createRingpop();
     createJoiner({
-        ringpop: createRingpop()
+        ringpop: ringpop
     });
     assert.end();
+    ringpop.destroy();
 });
 
 test('create throws with no ringpop', function t(assert) {
@@ -92,12 +94,14 @@ test('create throws with no bootstrap hosts', function t(assert) {
     }, function assertOn(e) {
         assert.equal(e.type, 'ringpop.invalid-option', 'error is of the correct type');
         assert.equal(e.option, 'ringpop', 'error has the correct option');
+        ringpop.destroy();
     });
 });
 
 test('inits all nodes on same host', function t(assert) {
+    var ringpop = createRingpop();
     var joiner = createJoiner({
-        ringpop: createRingpop()
+        ringpop: ringpop
     });
     joiner.init();
 
@@ -105,13 +109,15 @@ test('inits all nodes on same host', function t(assert) {
     assert.deepEqual(joiner.preferredNodes, [], 'no preferred nodes');
     assert.deepEqual(joiner.nonPreferredNodes, ['127.0.0.1:3001', '127.0.0.1:3002'], 'non-preferred nodes');
     assert.end();
+    ringpop.destroy();
 });
 
 test('inits single node cluster', function t(assert) {
+    var ringpop = createRingpop({
+        bootstrapHosts: genNodes(1)
+    });
     var joiner = createJoiner({
-        ringpop: createRingpop({
-            bootstrapHosts: genNodes(1)
-        })
+        ringpop: ringpop
     });
     joiner.init();
 
@@ -119,13 +125,16 @@ test('inits single node cluster', function t(assert) {
     assert.deepEqual(joiner.preferredNodes, [], 'no preferred nodes');
     assert.deepEqual(joiner.nonPreferredNodes, [], 'no non-preferred nodes');
     assert.end();
+
+    ringpop.destroy();
 });
 
 test('inits multi-host cluster', function t(assert) {
+    var ringpop = createRingpop({
+        bootstrapHosts: ['127.0.0.1:3000', '127.0.0.1:3001', '127.0.0.2:3000']
+    });
     var joiner = createJoiner({
-        ringpop: createRingpop({
-            bootstrapHosts: ['127.0.0.1:3000', '127.0.0.1:3001', '127.0.0.2:3000']
-        })
+        ringpop: ringpop
     });
     joiner.init();
 
@@ -133,11 +142,14 @@ test('inits multi-host cluster', function t(assert) {
     assert.deepEqual(joiner.preferredNodes, ['127.0.0.2:3000'], 'preferred nodes');
     assert.deepEqual(joiner.nonPreferredNodes, ['127.0.0.1:3001'], 'no non-preferred nodes');
     assert.end();
+
+    ringpop.destroy();
 });
 
 test('select group initializes node collections', function t(assert) {
+    var ringpop = createRingpop();
     var joiner = createJoiner({
-        ringpop: createRingpop()
+        ringpop: ringpop
     });
 
     var group = joiner.selectGroup();
@@ -150,13 +162,16 @@ test('select group initializes node collections', function t(assert) {
     // Must sort. Group selection is random.
     assert.deepEqual(group.sort(), potentialNodes.sort(), 'group has only 2 nodes');
     assert.end();
+
+    ringpop.destroy();
 });
 
 test('select multiple rounds of groups', function t(assert) {
+    var ringpop = createRingpop({
+        bootstrapHosts: genNodes(4)
+    });
     var joiner = createJoiner({
-        ringpop: createRingpop({
-            bootstrapHosts: genNodes(4)
-        })
+        ringpop: ringpop
     });
 
     var group1 = joiner.selectGroup();
@@ -166,13 +181,15 @@ test('select multiple rounds of groups', function t(assert) {
     assert.equal(group2.length, 3, 'group is of correct size');
     assert.deepEqual(group1.sort(), group2.sort(), 'groups are equal');
     assert.end();
+    ringpop.destroy();
 });
 
 test('select group of preferred nodes', function t(assert) {
+    var ringpop = createRingpop({
+        bootstrapHosts: genNodesOnDiffHosts(4)
+    });
     var joiner = createJoiner({
-        ringpop: createRingpop({
-            bootstrapHosts: genNodesOnDiffHosts(4)
-        })
+        ringpop: ringpop
     });
 
     var group = joiner.selectGroup();
@@ -180,13 +197,15 @@ test('select group of preferred nodes', function t(assert) {
     assert.equal(group.length, 3, 'group is of correct size');
     assert.deepEqual(group.sort(), joiner.preferredNodes, 'group is made up of preferred nodes');
     assert.end();
+    ringpop.destroy();
 });
 
 test('select group of mixed nodes', function t(assert) {
+    var ringpop = createRingpop({
+        bootstrapHosts: ['127.0.0.1:3000', '127.0.0.1:3001', '127.0.0.2:3000']
+    });
     var joiner = createJoiner({
-        ringpop: createRingpop({
-            bootstrapHosts: ['127.0.0.1:3000', '127.0.0.1:3001', '127.0.0.2:3000']
-        })
+        ringpop: ringpop
     });
 
     var group = joiner.selectGroup();
@@ -194,6 +213,7 @@ test('select group of mixed nodes', function t(assert) {
     assert.equal(group.length, 2, 'group is of correct size');
     assert.deepEqual(group.sort(), joiner.preferredNodes.concat(joiner.nonPreferredNodes).sort(), 'group is a mixed bag');
     assert.end();
+    ringpop.destroy();
 });
 
 test('join after destroyed', function t(assert) {
