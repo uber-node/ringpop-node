@@ -64,7 +64,7 @@ test('ringpop with invalid hostPort', function t(assert) {
         Ringpop({
             app: 'foo',
             hostPort: 'localhost:4000'
-        });
+        }).destroy();
     });
 
     assert.throws(function throwIt() {

@@ -19,10 +19,10 @@
 // THE SOFTWARE.
 'use strict';
 
-var after = require('after');
 var MembershipUpdateRollup = require('../lib/membership-update-rollup.js');
 var Ringpop = require('../index.js');
 var test = require('tape');
+var testRingpop = require('./lib/test-ringpop.js');
 
 var localMemberUpdate = {
     address: '127.0.0.1:3000',
@@ -39,22 +39,8 @@ var updates = [
     remoteMemberUpdate
 ];
 
-function createRingpop() {
-    return new Ringpop({
-        app: 'test',
-        hostPort: '127.0.0.1:3000'
-    });
-}
-
-function createRollup() {
-    return new MembershipUpdateRollup({
-        ringpop: createRingpop(),
-        flushInterval: Number.MAX_VALUE
-    });
-}
-
-test('track handles empty/invalid array', function t(assert) {
-    var rollup = createRollup();
+testRingpop('track handles empty/invalid array', function t(deps, assert) {
+    var rollup = deps.rollup;
 
     assert.doesNotThrow(function noThrow() {
         rollup.trackUpdates();
@@ -62,25 +48,19 @@ test('track handles empty/invalid array', function t(assert) {
     assert.doesNotThrow(function noThrow() {
         rollup.trackUpdates([]);
     }, null, 'empty array does not throw');
-
-    rollup.destroy();
-    assert.end();
 });
 
-test('track sets flush timer', function t(assert) {
-    var rollup = createRollup();
+testRingpop('track sets flush timer', function t(deps, assert) {
+    var rollup = deps.rollup;
     rollup.trackUpdates(updates);
     assert.ok(rollup.flushTimer, 'flush timer is set');
-    rollup.destroy();
-    assert.end();
 });
 
-test('flushes buffer if time since last update exceeds flush interval', function t(assert) {
+testRingpop('flushes buffer if time since last update exceeds flush interval', function t(deps, assert) {
     assert.plan(1);
 
-    var rollup = createRollup({
-        flushInterval: 123456789
-    });
+    var rollup = deps.rollup;
+    rollup.flushInterval = 123456789;
 
     // `trackUpdates` kicks off timer that sets to expire after `flushInterval`
     rollup.on('flush', assert.fail);
@@ -88,45 +68,40 @@ test('flushes buffer if time since last update exceeds flush interval', function
     rollup.removeAllListeners();
 
     rollup.lastUpdateTime = 0; // Simulate passing time
-    rollup.on('flushed', function onFlushed() {
-        assert.pass('buffer flushed');
-        rollup.destroy();
-        assert.end();
-    });
+    rollup.on('flushed', onFlushed);
     rollup.trackUpdates(updates);
+
+    function onFlushed() {
+        assert.pass('buffer flushed');
+    }
 });
 
-test('flush multiple times', function t(assert) {
+testRingpop('flush multiple times', function t(deps, assert) {
     assert.plan(2);
 
-    var rollup = createRollup();
-    var done = after(2, function onDone() {
-        rollup.destroy();
-        assert.end();
-    });
+    var rollup = deps.rollup;
+
+    assertFlushed();
+    assertFlushed();
 
     function assertFlushed() {
-        rollup.once('flushed', function onFlushed() {
-            assert.pass('flushed');
-            done();
-        });
+        rollup.once('flushed', onFlushed);
         rollup.trackUpdates(updates);
         rollup.flushBuffer();
     }
 
-    assertFlushed();
-    assertFlushed();
+    function onFlushed() {
+        assert.pass('flushed');
+    }
 });
 
-test('uses max num updates', function t(assert) {
+test('initializes max num updates', function t(assert) {
     var maxNumUpdates = updates.length - 1;
+
     var rollup = new MembershipUpdateRollup({
-        flushInterval: Number.MAX_VALUE,
-        maxNumUpdates: maxNumUpdates,
-        ringpop: createRingpop()
+        maxNumUpdates: maxNumUpdates
     });
-    rollup.trackUpdates(updates);
-    rollup.flushBuffer();
+
     assert.equal(rollup.maxNumUpdates, maxNumUpdates, 'maxNumUpdates is set');
     assert.end();
 });
