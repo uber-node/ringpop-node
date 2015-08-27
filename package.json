@@ -52,7 +52,7 @@
     "pre-commit": "^0.0.9",
     "tape": "^3.0.3",
     "tape-cluster": "2.1.0",
-    "tchannel": "^2.7.0",
+    "tchannel": "^2.5.1",
     "time-mock": "^0.1.2",
     "tryit": "^1.0.1",
     "uber-licence": "^1.1.0"

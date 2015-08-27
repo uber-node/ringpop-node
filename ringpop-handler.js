@@ -98,9 +98,8 @@ RingpopHandler.prototype.handleRequest = function handleRequest(req, buildRes) {
         return self.realHandler.handleRequest(req, buildRes);
     }
 
-    var peer = self.channel.peers.add(dest);
-    var outreq = new RelayRequest(self.channel, peer, req, buildRes);
-    outreq.createOutRequest();
+    var outreq = new RelayRequest(self.channel, req, buildRes);
+    outreq.createOutRequest(dest);
 };
 
 RingpopHandler.prototype.resolveHost =
