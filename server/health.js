@@ -19,10 +19,9 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function handleProxyReq(opts, callback) {
-    var ringpop = opts.ringpop;
-    var header = opts.header;
-    var body = opts.body;
-
-    ringpop.requestProxy.handleRequest(header, body, callback);
+module.exports = function createHealthHandler(/*ringpop*/) {
+    return function handleHealth(arg1, arg2, hostInfo, callback) {
+        callback(null, null, 'ok');
+    };
 };
+

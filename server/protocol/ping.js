@@ -19,43 +19,33 @@
 // THE SOFTWARE.
 'use strict';
 
-var errors = require('../lib/errors.js');
-var TypedError = require('error/typed');
+var safeParse = require('../../lib/util').safeParse;
 
-var RedundantLeaveError = TypedError({
-    type: 'ringpop.invalid-leave.redundant',
-    message: 'A node cannot leave its cluster when it has already left.'
-});
+module.exports = function createPingHandler(ringpop) {
+    return function handlePing(arg1, arg2, hostInfo, callback) {
+        var body = safeParse(arg2);
 
-module.exports = function handleAdminLeave(opts, callback) {
-    var ringpop = opts.ringpop;
+        // NOTE sourceIncarnationNumber is an optional argument. It was not present
+        // until after the v9.8.12 release.
+        if (body === null || !body.source || !body.changes || !body.checksum) {
+            return callback(new Error('need req body with source, changes, and checksum'));
+        }
 
-    if (typeof callback !== 'function') {
-        callback = function noop() {};
-    }
+        var source = body.source;
+        var sourceIncarnationNumber = body.sourceIncarnationNumber;
+        var changes = body.changes;
+        var checksum = body.checksum;
 
-    if (!ringpop.membership.localMember) {
-        process.nextTick(function() {
-            callback(errors.InvalidLocalMemberError());
-        });
-        return;
-    }
+        ringpop.stat('increment', 'ping.recv');
 
-    if (ringpop.membership.localMember.status === 'leave') {
-        process.nextTick(function() {
-            callback(RedundantLeaveError());
-        });
-        return;
-    }
+        ringpop.serverRate.mark();
+        ringpop.totalRate.mark();
 
-    // TODO Explicitly infect other members (like admin join)?
-    ringpop.membership.makeLeave(ringpop.whoami(),
-        ringpop.membership.localMember.incarnationNumber);
+        ringpop.membership.update(changes);
 
-    ringpop.gossip.stop();
-    ringpop.suspicion.stopAll();
-
-    process.nextTick(function() {
-        callback(null, null, 'ok');
-    });
+        callback(null, null, JSON.stringify({
+            changes: ringpop.dissemination.issueAsReceiver(source,
+                sourceIncarnationNumber, checksum),
+        }));
+    };
 };

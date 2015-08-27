@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
+var safeParse = require('../../lib/util').safeParse;
 var TypedError = require('error/typed');
 
 var DenyJoinError = TypedError({
@@ -73,26 +74,38 @@ function validateJoinerApp(ringpop, app, callback) {
     return true;
 }
 
-module.exports = function handleJoin(opts, callback) {
-    var ringpop = opts.ringpop;
+module.exports = function createJoinHandler(ringpop) {
+    return function handleJoin(arg1, arg2, hostInfo, callback) {
+        var body = safeParse(arg2.toString());
+        if (body === null) {
+            return callback(new Error('need JSON req body with source and incarnationNumber'));
+        }
 
-    ringpop.stat('increment', 'join.recv');
+        var app = body.app;
+        var source = body.source;
+        var incarnationNumber = body.incarnationNumber;
+        if (app === undefined || source === undefined || incarnationNumber === undefined) {
+            return callback(new Error('need req body with app, source and incarnationNumber'));
+        }
 
-    if (!validateDenyingJoins(ringpop, callback) ||
-        !validateJoinerAddress(ringpop, opts.source, callback) ||
-        !validateJoinerApp(ringpop, opts.app, callback)) {
-        return;
-    }
+        ringpop.stat('increment', 'join.recv');
 
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
+        if (!validateDenyingJoins(ringpop, callback) ||
+            !validateJoinerAddress(ringpop, source, callback) ||
+            !validateJoinerApp(ringpop, app, callback)) {
+            return;
+        }
 
-    ringpop.membership.makeAlive(opts.source, opts.incarnationNumber);
+        ringpop.serverRate.mark();
+        ringpop.totalRate.mark();
 
-    callback(null, {
-        app: ringpop.app,
-        coordinator: ringpop.whoami(),
-        membership: ringpop.dissemination.fullSync(),
-        membershipChecksum: ringpop.membership.checksum
-    });
+        ringpop.membership.makeAlive(source, incarnationNumber);
+
+        callback(null, null, JSON.stringify({
+            app: ringpop.app,
+            coordinator: ringpop.whoami(),
+            membership: ringpop.dissemination.fullSync(),
+            membershipChecksum: ringpop.membership.checksum
+        }));
+    };
 };

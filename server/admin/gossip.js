@@ -19,8 +19,9 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function handleAdminLookup(opts, callback) {
-    callback(null, null, {
-        dest: opts.ringpop.lookup(opts.key)
-    });
+module.exports = function createGossipHandler(ringpop) {
+    return function handleGossip(arg1, arg2, hostInfo, callback) {
+        ringpop.gossip.start();
+        callback(null, null, 'ok');
+    };
 };

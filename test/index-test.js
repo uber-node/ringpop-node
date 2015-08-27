@@ -18,9 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 var _ = require('underscore');
-var handleAdminJoin = require('../server/admin-join-handler.js');
-var handleAdminLeave = require('../server/admin-leave-handler.js');
-var handleJoin = require('../server/join-handler.js');
+var createAdminJoinHandler = require('../server/admin/join.js');
+var createAdminLeaveHandler = require('../server/admin/leave.js');
+var createJoinHandler = require('../server/protocol/join.js');
 var mock = require('./mock');
 var Ringpop = require('../index.js');
 var test = require('tape');
@@ -73,16 +73,14 @@ test('admin join rejoins if member has previously left', function t(assert) {
 
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
 
-    handleAdminLeave({
-        ringpop: ringpop
-    }, function(err, res1, res2) {
+    var handleAdminLeave = createAdminLeaveHandler(ringpop);
+    handleAdminLeave(null, null, null, function(err, res1, res2) {
         assert.equals(res2, 'ok', 'node left cluster');
 
         ringpop.membership.localMember.incarnationNumber = 2;
 
-        handleAdminJoin({
-            ringpop: ringpop
-        }, function onAdminJoin(err, res1, res2) {
+        var handleAdminJoin = createAdminJoinHandler(ringpop);
+        handleAdminJoin(null, null, null, function onAdminJoin(err, res1, res2) {
             assert.equals(res2, 'rejoined', 'node rejoined cluster');
             assert.equals(ringpop.membership.localMember.status, 'alive', 'local member is alive');
 
@@ -97,9 +95,8 @@ test('admin join cannot be performed before local member is added to membership'
 
     var ringpop = createRingpop();
 
-    handleAdminJoin({
-        ringpop: ringpop
-    }, function onAdminJoin(err) {
+    var handleAdminJoin = createAdminJoinHandler(ringpop);
+    handleAdminJoin(null, null, null, function onAdminJoin(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'invalid local member error');
         ringpop.destroy();
@@ -113,9 +110,9 @@ test('admin leave prevents redundant leave', function t(assert) {
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.membership.makeLeave(ringpop.whoami(), 1);
-    handleAdminLeave({
-        ringpop: ringpop
-    }, function(err) {
+
+    var handleAdminLeave = createAdminLeaveHandler(ringpop);
+    handleAdminLeave(null, null, null, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-leave.redundant', 'cannot leave cluster twice');
         ringpop.destroy();
@@ -128,9 +125,9 @@ test('admin leave makes local member leave', function t(assert) {
 
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
-    handleAdminLeave({
-        ringpop: ringpop
-    }, function(err, _, res2) {
+
+    var handleAdminLeave = createAdminLeaveHandler(ringpop);
+    handleAdminLeave(null, null, null, function(err, _, res2) {
         assert.notok(err, 'an error did not occur');
         assert.ok('leave', ringpop.membership.localMember.status, 'local member has correct status');
         assert.equals('ok', res2, 'admin leave was successful');
@@ -145,9 +142,9 @@ test('admin leave stops gossip', function t(assert) {
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.gossip.start();
-    handleAdminLeave({
-        ringpop: ringpop
-    }, function(err) {
+
+    var handleAdminLeave = createAdminLeaveHandler(ringpop);
+    handleAdminLeave(null, null, null, function(err) {
         assert.notok(err, 'an error did not occur');
         assert.equals(true, ringpop.gossip.isStopped, 'gossip is stopped');
         ringpop.destroy();
@@ -166,9 +163,8 @@ test('admin leave stops suspicion subprotocol', function t(assert) {
     ringpop.membership.makeAlive(ringpopRemote.whoami(), Date.now());
     ringpop.suspicion.start(ringpopRemote.hostPort);
 
-    handleAdminLeave({
-        ringpop: ringpop
-    }, function(err) {
+    var handleAdminLeave = createAdminLeaveHandler(ringpop);
+    handleAdminLeave(null, null, null, function(err) {
         assert.notok(err, 'an error did not occur');
         assert.equals(true, ringpop.suspicion.isStoppedAll, 'suspicion subprotocol is stopped');
         ringpop.destroy();
@@ -181,9 +177,9 @@ test('admin leave cannot be attempted before local member is added', function t(
     assert.plan(2);
 
     var ringpop = createRingpop();
-    handleAdminLeave({
-        ringpop: ringpop
-    }, function(err) {
+
+    var handleAdminLeave = createAdminLeaveHandler(ringpop);
+    handleAdminLeave(null, null, null, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-local-member', 'an invalid leave occurred');
         ringpop.destroy();
@@ -195,10 +191,12 @@ test('protocol join disallows joining itself', function t(assert) {
     assert.plan(2);
 
     var ringpop = createRingpop();
-    handleJoin({
-        ringpop: ringpop,
-        source: ringpop.hostPort
-    }, function(err) {
+    var handleJoin = createJoinHandler(ringpop);
+    handleJoin(null, JSON.stringify({
+        app: ringpop.app,
+        source: ringpop.hostPort,
+        incarnationNumber: 1
+    }), null, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.source', 'a node cannot join itself');
         ringpop.destroy();
@@ -214,11 +212,12 @@ test('protocol join disallows joining different app clusters', function t(assert
         hostPort: '127.0.0.1:3000'
     });
 
-    handleJoin({
-        ringpop: ringpop,
+    var handleJoin = createJoinHandler(ringpop);
+    handleJoin(null, JSON.stringify({
         app: 'jupiter',
-        source: '127.0.0.1:3001'
-    }, function(err) {
+        source: '127.0.0.1:3001',
+        incarnationNumber: 1
+    }), null, function(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.app', 'a node cannot join a different app cluster');
         ringpop.destroy();

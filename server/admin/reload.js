@@ -19,22 +19,15 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function handlePing(opts, callback) {
-    var ringpop = opts.ringpop;
-    var source = opts.source;
-    var sourceIncarnationNumber = opts.sourceIncarnationNumber;
-    var changes = opts.changes;
-    var checksum = opts.checksum;
+var safeParse = require('../../lib/util.js').safeParse;
 
-    ringpop.stat('increment', 'ping.recv');
-
-    ringpop.serverRate.mark();
-    ringpop.totalRate.mark();
-
-    ringpop.membership.update(changes);
-
-    callback(null, {
-        changes: ringpop.dissemination.issueAsReceiver(source,
-            sourceIncarnationNumber, checksum),
-    });
+module.exports = function createReloadHandler(ringpop) {
+    return function handleReload(arg1, arg2, hostInfo, callback) {
+        var body = safeParse(arg2.toString());
+        if (body && body.file) {
+            ringpop.reload(body.file, function(err) {
+                callback(err);
+            });
+        }
+    };
 };
