@@ -10,7 +10,7 @@
     "Jake Verbaten <raynos2@gmail.com>",
     "Mark Yen <mark@uber.com>"
   ],
-  "version": "10.4.0",
+  "version": "10.5.0",
   "repository": "git://github.com/uber/ringpop.git",
   "bin": {
     "ringpop": "./main.js"
