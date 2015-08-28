@@ -113,5 +113,3 @@ test('request proxy passes down skipLookupOnRetry correctly', function t(assert)
         skipLookupOnRetry: true
     });
 });
-
-
