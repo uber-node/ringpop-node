@@ -78,3 +78,34 @@ test('request proxy emits head', function t(assert) {
     });
     proxy.handleRequest(headExpected, null, mocks.noop);
 });
+
+test('request proxy passes down skipLookupOnRetry correctly', function t(assert) {
+    assert.plan(2);
+
+    var key = 'donaldduck';
+    var dest = 'disneyworld';
+
+    var proxy = createRequestProxy();
+    var ringpop = proxy.ringpop;
+    ringpop.requestProxy = proxy;
+    ringpop.channel.request = function(/* options */) {
+        return {
+            send: function() {
+                process.nextTick(function () {
+                    assert.equals(proxy.sends.length, 1, '1 send');
+                    assert.equals(proxy.sends[0].skipLookupOnRetry, true, 'skipLookupOnRetry passed down');
+
+                    ringpop.destroy();
+                    assert.end();
+                });
+            }
+        };
+    };
+    ringpop.proxyReq({
+        keys: [key],
+        req: allocRequest({}),
+        dest: dest,
+        res: {},
+        skipLookupOnRetry: true
+    });
+});
