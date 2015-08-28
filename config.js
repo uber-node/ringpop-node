@@ -40,8 +40,8 @@ Config.prototype.get = function get(key) {
 Config.prototype.set = function set(key, value) {
     var oldValue = this.store[key];
     this.store[key] = value;
-    this.emit('changed', key, value, oldValue);
-    this.emit('changed.' + key, value, oldValue);
+    this.emit('set', key, value, oldValue);
+    this.emit('set.' + key, value, oldValue);
 };
 
 Config.prototype._seed = function _seed(seed) {

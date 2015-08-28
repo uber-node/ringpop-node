@@ -37,21 +37,17 @@ test('changed events', function t(assert) {
     assert.plan(2);
 
     var config = new Config();
-    config.on('changed', onConfigChanged);
+    config.on('set', function onSet() {
+        assert.pass('set');
+    });
     var configKey = 'somekey';
-    config.on('changed.' + configKey, onConfigKeyChanged);
+    config.on('set.' + configKey, function onKeySet() {
+        assert.pass('key set');
+    });
     var configVal = 'someval';
     config.set(configKey, configVal); // this triggers change events *fingers crossed*
 
     assert.end();
-
-    function onConfigChanged() {
-        assert.pass('changed');
-    }
-
-    function onConfigKeyChanged() {
-        assert.pass('key changed');
-    }
 });
 
 test('seeds known config', function t(assert) {
