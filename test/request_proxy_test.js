@@ -88,18 +88,14 @@ test('request proxy passes down skipLookupOnRetry correctly', function t(assert)
     var proxy = createRequestProxy();
     var ringpop = proxy.ringpop;
     ringpop.requestProxy = proxy;
-    ringpop.channel.request = function(/* options */) {
-        return {
-            send: function() {
-                process.nextTick(function () {
-                    assert.equals(proxy.sends.length, 1, '1 send');
-                    assert.equals(proxy.sends[0].skipLookupOnRetry, true, 'skipLookupOnRetry passed down');
+    ringpop.channel.send = function(/* options */) {
+        process.nextTick(function () {
+            assert.equals(proxy.sends.length, 1, '1 send');
+            assert.equals(proxy.sends[0].skipLookupOnRetry, true, 'skipLookupOnRetry passed down');
 
-                    ringpop.destroy();
-                    assert.end();
-                });
-            }
-        };
+            ringpop.destroy();
+            assert.end();
+        });
     };
     ringpop.proxyReq({
         keys: [key],
