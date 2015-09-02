@@ -17,14 +17,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-
 'use strict';
 
-// Test dependencies
-var Member = require('../lib/membership/member.js');
-
-// Test helpers
-var testRingpop = require('./lib/test-ringpop.js');
+var Member = require('../../lib/membership/member.js');
+var testRingpop = require('../lib/test-ringpop.js');
 
 function assertIncarnationNumber(deps, assert, memberStatus) {
     var membership = deps.membership;
@@ -284,5 +280,67 @@ testRingpop('set does not shuffle member positions', function t(deps, assert) {
         }
 
         return addresses;
+    }
+});
+
+testRingpop('starts decayer on init', function t(deps, assert) {
+    assert.ok(deps.membership.decayTimer, 'timer is set');
+});
+
+testRingpop('unsets decayer timer on stop', function t(deps, assert) {
+    deps.membership.stopDampScoreDecayer();
+    assert.notok(deps.membership.decayTimer, 'timer is unset');
+});
+
+testRingpop('respects decayer enabled config', function t(deps, assert) {
+    var membership = deps.membership;
+    membership.stopDampScoreDecayer();
+    var config = deps.config;
+    config.set('dampScoringDecayEnabled', false);
+    membership.startDampScoreDecayer();
+    assert.notok(membership.decayTimer, 'time is not set');
+});
+
+testRingpop('decayer decays all damp scores', function t(deps, assert) {
+    var membership = deps.membership;
+    membership.setTimeout = createTickOnce();
+    // Stop decayer and schedule manually below
+    membership.stopDampScoreDecayer();
+
+    // Setup membership with 2 members
+    var memberAddr3001 = '127.0.0.1:3001';
+    var memberAddr3002 = '127.0.0.1:3002';
+    membership.update([{
+        address: memberAddr3001,
+        status: Member.Status.suspect,
+        incarnationNumber: Date.now() + 1
+    }, {
+        address: memberAddr3002,
+        status: Member.Status.faulty,
+        incarnationNumber: Date.now() + 1
+    }]);
+
+    // Make sure the two members have their damp scores
+    // decayed when the decayer runs.
+    assert.plan(2);
+    assertOnDecayed(memberAddr3001);
+    assertOnDecayed(memberAddr3002);
+    membership.startDampScoreDecayer();
+
+    function assertOnDecayed(addr) {
+        var member = membership.findMemberByAddress(addr);
+        member.on('dampScoreDecayed', function onDecayed() {
+            assert.pass('damp score decayed');
+        });
+    }
+
+    function createTickOnce() {
+        var ticked = false;
+        return function tick(onTimeout) {
+            if (!ticked) {
+                ticked = true;
+                onTimeout();
+            }
+        };
     }
 });

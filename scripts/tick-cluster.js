@@ -23,7 +23,6 @@
 
 var childProc = require('child_process');
 var color = require('cli-color');
-var farmhash = require('farmhash').hash32;
 var generateHosts = require('./generate-hosts');
 var program = require('commander');
 var TChannel = require('tchannel');
@@ -127,12 +126,12 @@ function statsAll() {
             if (err) {
                 console.log(color.red('err: ' + err.message + ' [' + host + ']'));
             } else {
-                var membership = JSON.stringify(safeParse(arg3).membership.members);
-                
-                var csum = farmhash(membership);
+                var membership = safeParse(arg3).membership;
+                var csum = membership.checksum;
+
                 if (csums[csum] === undefined) {
                     csums[csum] = [];
-                    memberships[csum] = membership;
+                    memberships[csum] = JSON.stringify(membership.members);
                 }
 
                 var port = host.replace(localIP + ':', '');

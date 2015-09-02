@@ -19,6 +19,19 @@
 // THE SOFTWARE.
 'use strict';
 
+// WARNING! This file is big and bloated. We are trying to make every attempt
+// at carving out a really nice, trim public interface for Ringpop. Make
+// every effort to refrain from adding more code to this file and every effort
+// to extract code out of it.
+//
+// Ideally, the only functions that should hang off the Ringpop prototype are:
+//   - bootstrap()
+//   - lookup()
+//   - whoami()
+//
+// Everything else has been a mere convenience, entirely separate concern or leaky
+// abstraction.
+
 var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
@@ -32,6 +45,7 @@ var sendPing = require('./lib/swim/ping-sender.js');
 var sendPingReq = require('./lib/swim/ping-req-sender.js');
 var Suspicion = require('./lib/swim/suspicion');
 
+var Config = require('./config.js');
 var createEventForwarder = require('./lib/event-forwarder.js');
 var createMembershipSetListener = require('./lib/membership-set-listener.js');
 var createMembershipUpdateListener = require('./lib/membership-update-listener.js');
@@ -40,7 +54,7 @@ var Dissemination = require('./lib/dissemination.js');
 var errors = require('./lib/errors.js');
 var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
 var HashRing = require('./lib/ring');
-var Membership = require('./lib/membership/index.js');
+var initMembership = require('./lib/membership/index.js');
 var MembershipIterator = require('./lib/membership/iterator.js');
 var MembershipUpdateRollup = require('./lib/membership/rollup.js');
 var nulls = require('./lib/nulls');
@@ -105,6 +119,10 @@ function RingPop(options) {
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
 
+    // Initialize Config before all other gossip, membership, forwarding,
+    // and hash ring dependencies.
+    this.config = new Config(options);
+
     this.requestProxy = new RequestProxy({
         ringpop: this,
         maxRetries: options.requestProxyMaxRetries,
@@ -115,7 +133,8 @@ function RingPop(options) {
     this.ring = new HashRing();
 
     this.dissemination = new Dissemination(this);
-    this.membership = new Membership(this);
+
+    this.membership = initMembership(this);
     this.membership.on('set', createMembershipSetListener(this));
     this.membership.on('updated', createMembershipUpdateListener(this));
     this.memberIterator = new MembershipIterator(this);
@@ -185,6 +204,8 @@ RingPop.prototype.destroy = function destroy() {
     ) {
         this.channel.topChannel.close();
     }
+
+    this.emit('destroyed');
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
