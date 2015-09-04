@@ -1,5 +1,5 @@
 # ringpop-node
-[![Build Status](https://travis-ci.org/uber/ringpop-node.svg?branch=master)] (https://travis-ci.org/uber/ringpop) [![Docs Status](https://readthedocs.org/projects/ringpop/badge/?version=latest)] (https://ringpop.readthedocs.org)
+[![Build Status](https://travis-ci.org/uber/ringpop-node.svg?branch=master)] (https://travis-ci.org/uber/ringpop-node) [![Docs Status](https://readthedocs.org/projects/ringpop/badge/?version=latest)] (https://ringpop.readthedocs.org)
 
 Ringpop is a library that brings cooperation and coordination to distributed applications.
 
