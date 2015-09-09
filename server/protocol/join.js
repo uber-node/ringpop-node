@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
+var _ = require('underscore');
 var safeParse = require('../../lib/util').safeParse;
 var TypedError = require('error/typed');
 
@@ -33,6 +34,14 @@ var InvalidJoinAppError = TypedError({
         ' ({expected}) did not match the actual app ({actual}).',
     expected: null,
     actual: null
+});
+
+var InvalidJoinBlacklistError = TypedError({
+    type: 'ringpop.invalid-join.blacklist',
+    message: '{joiner} tried joining a cluster, but its host is part of the' +
+        ' blacklist: {blacklist}',
+    blacklist: null,
+    joiner: null
 });
 
 var InvalidJoinSourceError = TypedError({
@@ -59,7 +68,22 @@ function validateJoinerAddress(ringpop, joiner, callback) {
         return false;
     }
 
+    var blacklist = ringpop.config.get('joinBlacklist');
+    if (Array.isArray(blacklist) && anyBlacklisted()) {
+        callback(InvalidJoinBlacklistError({
+            joiner: joiner,
+            blacklist: blacklist
+        }));
+        return false;
+    }
+
     return true;
+
+    function anyBlacklisted() {
+        return _.any(blacklist, function any(pattern) {
+            return pattern.test(joiner);
+        });
+    }
 }
 
 function validateJoinerApp(ringpop, app, callback) {

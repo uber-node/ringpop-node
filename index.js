@@ -121,7 +121,7 @@ function RingPop(options) {
 
     // Initialize Config before all other gossip, membership, forwarding,
     // and hash ring dependencies.
-    this.config = new Config(options);
+    this.config = new Config(this, options);
 
     this.requestProxy = new RequestProxy({
         ringpop: this,
@@ -249,8 +249,8 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         return;
     }
 
-    this.checkForMissingBootstrapHost();
-    this.checkForHostnameIpMismatch();
+    checkForMissingBootstrapHost();
+    checkForHostnameIpMismatch();
 
     // Add local member to membership.
     this.membership.makeAlive(this.whoami(), Date.now());
@@ -310,33 +310,14 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
 
         if (callback) callback(null, nodesJoined);
     });
-};
 
-RingPop.prototype.checkForMissingBootstrapHost = function checkForMissingBootstrapHost() {
-    if (this.bootstrapHosts.indexOf(this.hostPort) === -1) {
-        this.logger.warn('bootstrap hosts does not include the host/port of' +
-            ' the local node. this may be fine because your hosts file may' +
-            ' just be slightly out of date, but it may also be an indication' +
-            ' that your node is identifying itself incorrectly.', {
-            address: this.hostPort
-        });
-
-        return false;
-    }
-
-    return true;
-};
-
-RingPop.prototype.checkForHostnameIpMismatch = function checkForHostnameIpMismatch() {
-    var self = this;
-
-    function testMismatch(msg, filter) {
-        var filteredHosts = self.bootstrapHosts.filter(filter);
-
-        if (filteredHosts.length > 0) {
-            self.logger.warn(msg, {
-                address: self.hostPort,
-                mismatchedBootstrapHosts: filteredHosts
+    function checkForMissingBootstrapHost() {
+        if (self.bootstrapHosts.indexOf(self.hostPort) === -1) {
+            self.logger.warn('bootstrap hosts does not include the host/port of' +
+                ' the local node. this may be fine because your hosts file may' +
+                ' just be slightly out of date, but it may also be an indication' +
+                ' that your node is identifying itself incorrectly.', {
+                address: self.hostPort
             });
 
             return false;
@@ -345,25 +326,42 @@ RingPop.prototype.checkForHostnameIpMismatch = function checkForHostnameIpMismat
         return true;
     }
 
-    if (HOST_PORT_PATTERN.test(this.hostPort)) {
-        var ipMsg = 'your ringpop host identifier looks like an IP address and there are' +
-            ' bootstrap hosts that appear to be specified with hostnames. these inconsistencies' +
-            ' may lead to subtle node communication issues';
+    function checkForHostnameIpMismatch() {
+        function testMismatch(msg, filter) {
+            var filteredHosts = self.bootstrapHosts.filter(filter);
 
-        return testMismatch(ipMsg, function(host) {
-            return !HOST_PORT_PATTERN.test(host);
-        });
-    } else {
-        var hostMsg = 'your ringpop host identifier looks like a hostname and there are' +
-            ' bootstrap hosts that appear to be specified with IP addresses. these inconsistencies' +
-            ' may lead to subtle node communication issues';
+            if (filteredHosts.length > 0) {
+                self.logger.warn(msg, {
+                    address: self.hostPort,
+                    mismatchedBootstrapHosts: filteredHosts
+                });
 
-        return testMismatch(hostMsg, function(host) {
-            return HOST_PORT_PATTERN.test(host);
-        });
+                return false;
+            }
+
+            return true;
+        }
+
+        if (HOST_PORT_PATTERN.test(self.hostPort)) {
+            var ipMsg = 'your ringpop host identifier looks like an IP address and there are' +
+                ' bootstrap hosts that appear to be specified with hostnames. these inconsistencies' +
+                ' may lead to subtle node communication issues';
+
+            return testMismatch(ipMsg, function(host) {
+                return !HOST_PORT_PATTERN.test(host);
+            });
+        } else {
+            var hostMsg = 'your ringpop host identifier looks like a hostname and there are' +
+                ' bootstrap hosts that appear to be specified with IP addresses. these inconsistencies' +
+                ' may lead to subtle node communication issues';
+
+            return testMismatch(hostMsg, function(host) {
+                return HOST_PORT_PATTERN.test(host);
+            });
+        }
+
+        return true;
     }
-
-    return true;
 };
 
 RingPop.prototype.clearDebugFlags = function clearDebugFlags() {
