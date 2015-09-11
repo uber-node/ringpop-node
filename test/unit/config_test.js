@@ -75,18 +75,18 @@ test('no seed is OK', function t(assert) {
     assert.end();
 });
 
-test('validates joinBlacklist seed', function t(assert) {
+test('validates memberBlacklist seed', function t(assert) {
     var config = new Config(null, {
-        'joinBlacklist': ['127.0.0.1:3000']
+        'memberBlacklist': ['127.0.0.1:3000']
     });
-    assert.deepEquals([], config.get('joinBlacklist'),
+    assert.deepEquals([], config.get('memberBlacklist'),
         'uses default blacklist');
 
     var regexList = [/127.0.0.1:*/];
     config = new Config(null, {
-        'joinBlacklist': regexList
+        'memberBlacklist': regexList
     });
-    assert.deepEquals(regexList, config.get('joinBlacklist'),
+    assert.deepEquals(regexList, config.get('memberBlacklist'),
         'uses seed blacklist');
     assert.end();
 });

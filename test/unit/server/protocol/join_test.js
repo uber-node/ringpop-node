@@ -27,7 +27,7 @@ test('join fails with blacklist error', function t(assert) {
     var ringpop = new Ringpop({
         app: 'ringpop',
         hostPort: '127.0.0.1:3000',
-        joinBlacklist: [/127.0.0.1:*/]
+        memberBlacklist: [/127.0.0.1:*/]
     });
     var handleProtocolJoin = createProtocolJoinHandler(ringpop);
     handleProtocolJoin(null, JSON.stringify({

@@ -154,7 +154,7 @@ testRingpopCluster({
     tap: function tap(cluster) {
         // This'll make Node 0's join fail faster
         cluster[0].config.set('maxJoinAttempts', 1);
-        cluster[1].config.set('joinBlacklist', [/127.0.0.1:10000/]);
+        cluster[1].config.set('memberBlacklist', [/127.0.0.1:10000/]);
     }
 }, 'join blacklist', function t(bootRes, cluster, assert) {
     assert.notok(cluster[0].isReady, 'node one is not ready');

@@ -64,7 +64,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampScoringReuseLimit', 2500);
     seedOrDefault('dampScoringSuppressDuration', 60 * 60 * 1000); // 1 hr in ms
     seedOrDefault('dampScoringSuppressLimit', 5000);
-    seedOrDefault('joinBlacklist', [], function validator(vals) {
+    seedOrDefault('memberBlacklist', [], function validator(vals) {
         return _.all(vals, function all(val) {
             return val instanceof RegExp;
         });
