@@ -69,6 +69,7 @@ Config.prototype._seed = function _seed(seed) {
             return val instanceof RegExp;
         });
     }, 'expected to be array of RegExp objects');
+    seedOrDefault('maxJoinAttempts', 50, numValidator);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
@@ -90,5 +91,9 @@ Config.prototype._seed = function _seed(seed) {
         }
     }
 };
+
+function numValidator(maybeNum) {
+    return typeof maybeNum === 'number' && !isNaN(maybeNum);
+}
 
 module.exports = Config;

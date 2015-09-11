@@ -90,3 +90,12 @@ test('validates joinBlacklist seed', function t(assert) {
         'uses seed blacklist');
     assert.end();
 });
+
+test('validates num', function t(assert) {
+    var config = new Config(null, {
+        'maxJoinAttempts': 'notanum'
+    });
+    assert.equals(50, config.get('maxJoinAttempts'),
+        'uses default');
+    assert.end();
+});

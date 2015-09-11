@@ -121,7 +121,7 @@ testRingpopCluster({
 testRingpopCluster({
     size: 2,
     tap: function tap(cluster) {
-        cluster[1].channel.register('/protocol/join', function protocolJoin(req, res, head, body) {
+        cluster[1].channel.register('/protocol/join', function protocolJoin(req, res) {
             setTimeout(function onTimeout() {
                 cluster[0].destroy();
 
@@ -143,5 +143,22 @@ testRingpopCluster({
         'join aborted error');
 
     assert.ok(cluster[1].isReady, 'node two is ready');
+    assert.end();
+});
+
+// This is a 3-node test. All nodes need to join a minimum of 2 other nodes.
+// Node 0 has been blacklisted by Node 1 so it can't possibly join 2 others.
+// Node 0's bootstrap is expected to fail.
+testRingpopCluster({
+    size: 3,
+    tap: function tap(cluster) {
+        // This'll make Node 0's join fail faster
+        cluster[0].config.set('maxJoinAttempts', 1);
+        cluster[1].config.set('joinBlacklist', [/127.0.0.1:10000/]);
+    }
+}, 'join blacklist', function t(bootRes, cluster, assert) {
+    assert.notok(cluster[0].isReady, 'node one is not ready');
+    assert.ok(cluster[1].isReady, 'node two is ready');
+    assert.ok(cluster[2].isReady, 'node three is ready');
     assert.end();
 });
