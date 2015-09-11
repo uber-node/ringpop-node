@@ -37,6 +37,10 @@ Config.prototype.get = function get(key) {
     return this.store[key];
 };
 
+Config.prototype.getAll = function getAll() {
+    return this.store;
+};
+
 Config.prototype.set = function set(key, value) {
     var oldValue = this.store[key];
     this.store[key] = value;

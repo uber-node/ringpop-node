@@ -19,7 +19,9 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = {
+var _ = require('underscore');
+
+var baseEndpointHandlers = {
     debugClear: {
         endpoint: '/admin/debugClear',
         handler: require('./debug-clear.js')
@@ -57,3 +59,5 @@ module.exports = {
         handler: require('./tick.js')
     }
 };
+
+module.exports = _.extend({}, baseEndpointHandlers, require('./config.js'));
