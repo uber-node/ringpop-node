@@ -22,13 +22,8 @@
 var safeParse = require('./lib/util.js').safeParse;
 var TChannel = require('tchannel');
 
-function RingpopClient(host, port) {
-    this.host = host || '127.0.0.1';
-    this.port = port || 2999;
-    this.tchannel = new TChannel({
-        host: this.host,
-        port: this.port
-    });
+function RingpopClient() {
+    this.tchannel = new TChannel();
     this.subChannel = this.tchannel.makeSubChannel({
         serviceName: 'ringpop'
     });
