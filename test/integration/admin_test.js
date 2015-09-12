@@ -19,9 +19,35 @@
 // THE SOFTWARE.
 'use strict';
 
-require('./admin_test.js');
-require('./join-test.js');
-require('./proxy-test.js');
-require('./ring-test.js');
-require('./swim-test.js');
-require('./tchannel-proxy-test.js');
+var async = require('async');
+var RingpopClient = require('../../client.js');
+var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
+
+testRingpopCluster({
+    size: 1
+}, 'config endpoints', function t(bootRes, cluster, assert) {
+    assert.plan(4);
+
+    var client = new RingpopClient();
+    async.series([
+        function configSetPart(callback) {
+            client.adminConfigSet(cluster[0].whoami(), {
+                testconfig1: 1
+            }, function onSet(err) {
+                assert.notok(err, 'no error occurred');
+                callback();
+            });
+        },
+        function configGetPart(callback) {
+            client.adminConfigGet(cluster[0].whoami(), null,
+                function onGet(err, config) {
+                    assert.notok(err, 'no error occurred');
+                    assert.equals(config.testconfig1, 1, 'config was set and get');
+                    callback();
+                });
+        }
+    ], function onSeries(err) {
+        assert.notok(err, 'no error occurred');
+        client.destroy();
+    });
+});
