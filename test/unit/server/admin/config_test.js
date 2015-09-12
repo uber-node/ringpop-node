@@ -36,6 +36,10 @@ test('config set handler validation', function t(assert) {
     handleConfigSet(null, JSON.stringify(null), null, function onHandle(err) {
         assert.ok(err, 'an error occurred');
     });
+    // Invalid body
+    handleConfigSet(null, JSON.stringify(1), null, function onHandle(err) {
+        assert.ok(err, 'an error occurred');
+    });
     assert.end();
     ringpop.destroy();
 });
