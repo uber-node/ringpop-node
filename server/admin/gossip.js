@@ -35,8 +35,15 @@ function createGossipStopHandler(ringpop) {
 
 function createGossipTickHandler(ringpop) {
     return function handleGossipTick(arg1, arg2, hostInfo, callback) {
-        ringpop.handleTick(function onTick(err, resp) {
-            callback(err, null, JSON.stringify(resp));
+        ringpop.pingMemberNow(function onPing(err) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            callback(null, null, JSON.stringify({
+                checksum: ringpop.membership.checksum
+            }));
         });
     };
 }
