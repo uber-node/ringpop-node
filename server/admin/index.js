@@ -30,9 +30,10 @@ var baseEndpointHandlers = {
         endpoint: '/admin/debugSet',
         handler: require('./debug-set.js')
     },
+    // Deprecated! Use /admin/gossip/start
     gossip: {
         endpoint: '/admin/gossip',
-        handler: require('./gossip.js')
+        handler: require('./gossip.js').gossipStart.handler
     },
     join: {
         endpoint: '/admin/join',
@@ -54,10 +55,12 @@ var baseEndpointHandlers = {
         endpoint: '/admin/stats',
         handler: require('./stats.js')
     },
+    // Deprecated! Use /admin/gossip/tick.
     tick: {
         endpoint: '/admin/tick',
-        handler: require('./tick.js')
+        handler: require('./gossip.js').gossipTick.handler
     }
 };
 
-module.exports = _.extend({}, baseEndpointHandlers, require('./config.js'));
+module.exports = _.extend({}, baseEndpointHandlers, require('./config.js'),
+    require('./gossip.js'));
