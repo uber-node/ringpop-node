@@ -56,6 +56,7 @@ Config.prototype._seed = function _seed(seed) {
 
     // All config names should be camel-cased.
     seedOrDefault('TEST_KEY', 100); // never remove, tests and lives depend on it
+    seedOrDefault('autoGossip', true);
     seedOrDefault('dampScoringEnabled', true);
     seedOrDefault('dampScoringDecayEnabled', true);
     seedOrDefault('dampScoringDecayInternval', 1000);

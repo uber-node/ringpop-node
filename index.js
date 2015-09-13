@@ -303,7 +303,6 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         self.membership.set();
         setTime = Date.now() - setTime;
 
-        self.gossip.start();
         self.isReady = true;
 
         bootstrapTime = Date.now() - bootstrapTime;
