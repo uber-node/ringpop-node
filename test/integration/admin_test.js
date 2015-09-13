@@ -51,3 +51,30 @@ testRingpopCluster({
         client.destroy();
     });
 });
+
+// Test to make sure these endpoints are available. Find tests that test
+// behavior of handlers under unit tests.
+testRingpopCluster({
+    size: 1
+}, 'gossip endpoints', function t(bootRes, cluster, assert) {
+    assert.plan(4);
+
+    var client = new RingpopClient();
+    async.series([
+        adminGossip('adminGossipStart'),
+        adminGossip('adminGossipStop'),
+        adminGossip('adminGossipTick')
+    ], function onSeries(err) {
+        assert.notok(err, 'no error occurred');
+        client.destroy();
+    });
+
+    function adminGossip(method) {
+        return function doIt(callback) {
+            client[method](cluster[0].whoami(), function onMethod(err) {
+                assert.notok(err, 'no error occurred');
+                callback();
+            });
+        };
+    }
+});

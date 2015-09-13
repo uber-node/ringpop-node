@@ -37,6 +37,18 @@ RingpopClient.prototype.adminConfigSet = function adminConfigSet(host, body, cal
     this._request(host, '/admin/config/set', null, body, callback);
 };
 
+RingpopClient.prototype.adminGossipStart = function adminGossipStart(host, callback) {
+    this._request(host, '/admin/gossip/start', null, null, callback);
+};
+
+RingpopClient.prototype.adminGossipStop = function adminGossipStop(host, callback) {
+    this._request(host, '/admin/gossip/stop', null, null, callback);
+};
+
+RingpopClient.prototype.adminGossipTick= function adminGossipTick(host, callback) {
+    this._request(host, '/admin/gossip/tick', null, null, callback);
+};
+
 RingpopClient.prototype.destroy = function destroy(callback) {
     this.tchannel.close(callback);
 };
