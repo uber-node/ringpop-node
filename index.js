@@ -423,13 +423,6 @@ RingPop.prototype.getStats = function getStats() {
     return stats;
 };
 
-RingPop.prototype.handleTick = function handleTick(cb) {
-    var self = this;
-    this.pingMemberNow(function () {
-        cb(null, JSON.stringify({ checksum: self.membership.checksum }));
-    });
-};
-
 RingPop.prototype.isStatsHookRegistered = function isStatsHookRegistered(name) {
     return !!this.statsHooks[name];
 };
