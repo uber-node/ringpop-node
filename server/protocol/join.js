@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 'use strict';
 
-var _ = require('underscore');
 var safeParse = require('../../lib/util').safeParse;
 var TypedError = require('error/typed');
 
