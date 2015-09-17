@@ -59,7 +59,7 @@ test('seeds known config', function t(assert) {
     seed[knownKey] = knownVal;
     seed[unknownKey] = unknownVal;
 
-    var config = new Config(seed);
+    var config = new Config(null, seed);
 
     assert.equals(knownVal, config.get(knownKey), 'known config is seeded');
     assert.equals(undefined, config.get(unknownKey),
@@ -72,5 +72,30 @@ test('no seed is OK', function t(assert) {
         /* jshint nonew: false */
         new Config(null);
     });
+    assert.end();
+});
+
+test('validates memberBlacklist seed', function t(assert) {
+    var config = new Config(null, {
+        'memberBlacklist': ['127.0.0.1:3000']
+    });
+    assert.deepEquals([], config.get('memberBlacklist'),
+        'uses default blacklist');
+
+    var regexList = [/127.0.0.1:*/];
+    config = new Config(null, {
+        'memberBlacklist': regexList
+    });
+    assert.deepEquals(regexList, config.get('memberBlacklist'),
+        'uses seed blacklist');
+    assert.end();
+});
+
+test('validates num', function t(assert) {
+    var config = new Config(null, {
+        'maxJoinAttempts': 'notanum'
+    });
+    assert.equals(50, config.get('maxJoinAttempts'),
+        'uses default');
     assert.end();
 });

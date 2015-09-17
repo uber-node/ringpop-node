@@ -22,6 +22,14 @@
 var safeParse = require('../../lib/util').safeParse;
 var TypedError = require('error/typed');
 
+var BlacklistedError = TypedError({
+    type: 'ringpop.invalid-join.blacklist',
+    message: '{joiner} tried joining a cluster, but its host is part of the' +
+        ' blacklist: {blacklist}',
+    blacklist: null,
+    joiner: null
+});
+
 var DenyJoinError = TypedError({
     type: 'ringpop.deny-join',
     message: 'Node is currently configured to deny joins'
@@ -59,7 +67,23 @@ function validateJoinerAddress(ringpop, joiner, callback) {
         return false;
     }
 
+    var blacklist = ringpop.config.get('memberBlacklist');
+    if (anyBlacklisted()) {
+        callback(BlacklistedError({
+            joiner: joiner,
+            blacklist: blacklist
+        }));
+        return false;
+    }
+
     return true;
+
+    function anyBlacklisted() {
+        return Array.isArray(blacklist) && blacklist.some(
+                function some(pattern) {
+            return pattern.test(joiner);
+        });
+    }
 }
 
 function validateJoinerApp(ringpop, app, callback) {

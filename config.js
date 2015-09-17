@@ -19,14 +19,16 @@
 // THE SOFTWARE.
 'use strict';
 
+var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
 // This Config class is meant to be a central store
 // for configurable parameters in Ringpop. Parameters
 // are meant to be initialized in the constructor.
-function Config(seedConfig) {
+function Config(ringpop, seedConfig) {
     seedConfig = seedConfig || {};
+    this.ringpop = ringpop;
     this.store = {};
     this._seed(seedConfig);
 }
@@ -38,6 +40,7 @@ Config.prototype.get = function get(key) {
 };
 
 Config.prototype.set = function set(key, value) {
+    // TODO Use same validation in _seed() here.
     var oldValue = this.store[key];
     this.store[key] = value;
     this.emit('set', key, value, oldValue);
@@ -61,15 +64,36 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampScoringReuseLimit', 2500);
     seedOrDefault('dampScoringSuppressDuration', 60 * 60 * 1000); // 1 hr in ms
     seedOrDefault('dampScoringSuppressLimit', 5000);
+    seedOrDefault('memberBlacklist', [], function validator(vals) {
+        return _.all(vals, function all(val) {
+            return val instanceof RegExp;
+        });
+    }, 'expected to be array of RegExp objects');
+    seedOrDefault('maxJoinAttempts', 50, numValidator);
 
-    function seedOrDefault(name, defaultVal) {
+    function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
         if (typeof seedVal === 'undefined') {
+            self.set(name, defaultVal);
+        } else if (typeof validator === 'function' && !validator(seedVal)) {
+            if (self.ringpop) {
+                self.ringpop.logger.warn('ringpop using default value for config after' +
+                        ' being passed invalid seed value', {
+                    config: name,
+                    seedVal: seedVal,
+                    defaultVal: defaultVal,
+                    reason: reason
+                });
+            }
             self.set(name, defaultVal);
         } else {
             self.set(name, seedVal);
         }
     }
 };
+
+function numValidator(maybeNum) {
+    return typeof maybeNum === 'number' && !isNaN(maybeNum);
+}
 
 module.exports = Config;

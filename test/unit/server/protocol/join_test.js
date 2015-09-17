@@ -17,14 +17,28 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-
-// You might ask, what belongs in this unit test directory? The answer:
-// anything test that strictly depends one and only one module. It does
-// not test the interactions of many modules nor does it require you
-// to stand up and bootstrap a single node or multi-node Ringpop cluster.
 'use strict';
 
-require('./config_test.js');
-require('./member_test.js');
-require('./membership_test.js');
-require('./server/protocol/join_test.js');
+var createProtocolJoinHandler = require('../../../../server/protocol/join.js');
+var Ringpop = require('../../../../index.js');
+var test = require('tape');
+
+test('join fails with blacklist error', function t(assert) {
+    var ringpop = new Ringpop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000',
+        memberBlacklist: [/127.0.0.1:*/]
+    });
+    var handleProtocolJoin = createProtocolJoinHandler(ringpop);
+    handleProtocolJoin(null, JSON.stringify({
+        app: 'ringpop',
+        source: '127.0.0.1:3001',
+        incarnationNumber: 1
+    }), null, function onHandled(err) {
+        assert.ok(err, 'an error occurred');
+        assert.equals(err.type, 'ringpop.invalid-join.blacklist',
+            'blacklist error occurred');
+        assert.end();
+        ringpop.destroy();
+    });
+});
