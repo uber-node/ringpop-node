@@ -69,7 +69,7 @@ function validateJoinerAddress(ringpop, joiner, callback) {
     }
 
     var blacklist = ringpop.config.get('memberBlacklist');
-    if (Array.isArray(blacklist) && anyBlacklisted()) {
+    if (anyBlacklisted()) {
         callback(BlacklistedError({
             joiner: joiner,
             blacklist: blacklist
@@ -80,7 +80,8 @@ function validateJoinerAddress(ringpop, joiner, callback) {
     return true;
 
     function anyBlacklisted() {
-        return _.any(blacklist, function any(pattern) {
+        return Array.isArray(blacklist) && blacklist.some(
+                function some(pattern) {
             return pattern.test(joiner);
         });
     }
