@@ -39,6 +39,10 @@ Config.prototype.get = function get(key) {
     return this.store[key];
 };
 
+Config.prototype.getAll = function getAll() {
+    return this.store;
+};
+
 Config.prototype.set = function set(key, value) {
     // TODO Use same validation in _seed() here.
     var oldValue = this.store[key];

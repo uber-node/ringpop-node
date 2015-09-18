@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
+require('./admin_test.js');
 require('./join-test.js');
 require('./proxy-test.js');
 require('./ring-test.js');

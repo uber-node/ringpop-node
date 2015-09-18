@@ -19,45 +19,35 @@
 // THE SOFTWARE.
 'use strict';
 
-var _ = require('underscore');
+var async = require('async');
+var RingpopClient = require('../../client.js');
+var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 
-var baseEndpointHandlers = {
-    debugClear: {
-        endpoint: '/admin/debugClear',
-        handler: require('./debug-clear.js')
-    },
-    debugSet: {
-        endpoint: '/admin/debugSet',
-        handler: require('./debug-set.js')
-    },
-    gossip: {
-        endpoint: '/admin/gossip',
-        handler: require('./gossip.js')
-    },
-    join: {
-        endpoint: '/admin/join',
-        handler: require('./join.js')
-    },
-    leave: {
-        endpoint: '/admin/leave',
-        handler: require('./leave.js')
-    },
-    lookup: {
-        endpoint: '/admin/lookup',
-        handler: require('./lookup.js')
-    },
-    reload: {
-        endpoint: '/admin/reload',
-        handler: require('./reload.js')
-    },
-    stats: {
-        endpoint: '/admin/stats',
-        handler: require('./stats.js')
-    },
-    tick: {
-        endpoint: '/admin/tick',
-        handler: require('./tick.js')
-    }
-};
+testRingpopCluster({
+    size: 1
+}, 'config endpoints', function t(bootRes, cluster, assert) {
+    assert.plan(4);
 
-module.exports = _.extend({}, baseEndpointHandlers, require('./config.js'));
+    var client = new RingpopClient();
+    async.series([
+        function configSetPart(callback) {
+            client.adminConfigSet(cluster[0].whoami(), {
+                testconfig1: 1
+            }, function onSet(err) {
+                assert.notok(err, 'no error occurred');
+                callback();
+            });
+        },
+        function configGetPart(callback) {
+            client.adminConfigGet(cluster[0].whoami(), null,
+                function onGet(err, config) {
+                    assert.notok(err, 'no error occurred');
+                    assert.equals(config.testconfig1, 1, 'config was set and get');
+                    callback();
+                });
+        }
+    ], function onSeries(err) {
+        assert.notok(err, 'no error occurred');
+        client.destroy();
+    });
+});
