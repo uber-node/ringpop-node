@@ -19,10 +19,29 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function createTickHandler(ringpop) {
-    return function handleTick(arg1, arg2, hostInfo, callback) {
-        ringpop.handleTick(function onTick(err, resp) {
-            callback(err, null, JSON.stringify(resp));
-        });
-    };
-};
+var gossipHandlers = require('../../../../server/admin/gossip.js');
+var Ringpop = require('../../../../index.js');
+var test = require('tape');
+
+var createGossipStartHandler = gossipHandlers.gossipStart.handler;
+var createGossipStopHandler= gossipHandlers.gossipStop.handler;
+
+test('start/stop gossip', function t(assert) {
+    var ringpop = new Ringpop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000',
+        autoGossip: false
+    });
+    var handleGossipStart = createGossipStartHandler(ringpop);
+    handleGossipStart(null, null, null, function onHandle(err) {
+        assert.notok(err, 'no error occurred');
+        assert.false(ringpop.gossip.isStopped, 'gossip is started');
+    });
+    var handleGossipStop = createGossipStopHandler(ringpop);
+    handleGossipStop(null, null, null, function onHandle(err) {
+        assert.notok(err, 'no error occurred');
+        assert.true(ringpop.gossip.isStopped, 'gossip is started');
+    });
+    assert.end();
+    ringpop.destroy();
+});

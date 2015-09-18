@@ -19,9 +19,46 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = function createGossipHandler(ringpop) {
-    return function handleGossip(arg1, arg2, hostInfo, callback) {
+function createGossipStartHandler(ringpop) {
+    return function handleGossipStart(arg1, arg2, hostInfo, callback) {
         ringpop.gossip.start();
         callback(null, null, 'ok');
     };
+}
+
+function createGossipStopHandler(ringpop) {
+    return function handleGossipStop(arg1, arg2, hostInfo, callback) {
+        ringpop.gossip.stop();
+        callback(null, null, 'ok');
+    };
+}
+
+function createGossipTickHandler(ringpop) {
+    return function handleGossipTick(arg1, arg2, hostInfo, callback) {
+        ringpop.pingMemberNow(function onPing(err) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            callback(null, null, JSON.stringify({
+                checksum: ringpop.membership.checksum
+            }));
+        });
+    };
+}
+
+module.exports = {
+    gossipStart: {
+        endpoint: '/admin/gossip/start',
+        handler: createGossipStartHandler
+    },
+    gossipStop: {
+        endpoint: '/admin/gossip/stop',
+        handler: createGossipStopHandler
+    },
+    gossipTick: {
+        endpoint: '/admin/gossip/tick',
+        handler: createGossipTickHandler
+    }
 };
