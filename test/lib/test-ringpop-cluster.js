@@ -57,8 +57,8 @@ function bootstrapClusterOf(opts, onBootstrap) {
 
     cluster.forEach(function each(ringpop, i) {
         var parts = ringpop.hostPort.split(':');
-        ringpop.channel.on('listening', function listened() {
-            ringpop.channel.removeListener('listening', listened);
+        ringpop.__channel.listen(Number(parts[1]), parts[0], function listened() {
+            ringpop.__channel.removeListener('listening', listened);
 
             var cb = Array.isArray(onBootstrap) ?
                 onBootstrap[i] : bootstrapHandler(ringpop.hostPort);
@@ -66,7 +66,6 @@ function bootstrapClusterOf(opts, onBootstrap) {
                 bootstrapFile: bootstrapHosts
             }, cb);
         });
-        ringpop.channel.listen(Number(parts[1]), parts[0]);
     });
 
     return cluster;
