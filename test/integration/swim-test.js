@@ -146,8 +146,9 @@ testRingpopCluster({
         unreachableMember: unreachableMember,
         pingReqSize: pingReqSize
     }, function onPingReq(err, res) {
-        assert.ok(err, 'error occurred');
-        assert.equals(err.type, 'ringpop.ping-req.no-members', 'No members error');
+        assert.ifErr(err, 'no error occurred');
+        assertNumBadStatuses(assert, res, 0);
+        assertSuspect(assert, ringpop, unreachableMember.address);
         assert.end();
     });
 });
