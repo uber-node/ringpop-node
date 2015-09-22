@@ -19,16 +19,19 @@
 // THE SOFTWARE.
 'use strict';
 
+
 function RingPopTChannel(ringpop, tchannel) {
-    this.ringpop = ringpop;
-    this.tchannel = tchannel;
+    var self = this;
+    self.ringpop = ringpop;
+    self.tchannel = tchannel;
 
     registerEndpointHandlers(require('./admin'));
     registerEndpointHandlers(require('./protocol'));
+    registerEndpointHandlers(require('./trace'));
 
     // Register stragglers ;)
     var createProxyReqHandler = require('./proxy-req.js');
-    registerEndpoint('/proxy/req', createProxyReqHandler(this.ringpop));
+    registerEndpoint('/proxy/req', createProxyReqHandler(self.ringpop));
 
     var createHealthHandler = require('./health.js');
     registerEndpoint('/health', createHealthHandler());
@@ -50,6 +53,7 @@ function RingPopTChannel(ringpop, tchannel) {
             function onResponse(err, res1, res2) {
                 res.headers.as = 'raw';
                 if (err) {
+                    self.ringpop.logger.warn(err.message, err);
                     res.sendNotOk(null, err.message);
                 } else {
                     res.sendOk(res1, res2);

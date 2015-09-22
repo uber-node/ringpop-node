@@ -2,6 +2,7 @@
   "name": "ringpop",
   "description": "Scalable, fault-tolerant application-layer sharding",
   "contributors": [
+    "ben fleis <ben.fleis@gmail.com>",
     "Alex Hauser <ahauser@uber.com>",
     "Rui Hu <ruihu.pvt@gmail.com>",
     "Bob Nugmanov <bob.nugmanov@gmail.com>",
@@ -16,12 +17,13 @@
     "ringpop": "./main.js"
   },
   "scripts": {
-    "test": "npm run jshint && node test/index.js",
-    "test-integration": "node test/integration/index.js",
-    "test-unit": "node test/unit/index.js",
+    "test": "npm run jshint && node test/index.js | faucet",
+    "test-debug": "node debug test/index.js",
+    "test-integration": "node test/integration/index.js | faucet",
+    "test-unit": "node test/unit/index.js | faucet",
     "add-licence": "uber-licence",
     "check-licence": "uber-licence --dry",
-    "cover": "istanbul cover --print detail --report html test/index.js",
+    "cover": "istanbul cover --print detail --report html test/index.js | faucet",
     "jshint": "jshint --verbose *.js lib/**/*.js scripts/*.js server/**/*.js",
     "travis": "npm run cover -s && istanbul report lcov && ((cat coverage/lcov.info | coveralls) || exit 0)",
     "view-cover": "opn coverage/index.html"
@@ -44,6 +46,7 @@
     "commander": "^2.6.0",
     "coveralls": "^2.11.2",
     "debug-logtron": "^2.1.0",
+    "faucet": "^0.0.1",
     "format-stack": "4.1.0",
     "glob": "^4.3.1",
     "istanbul": "^0.3.5",

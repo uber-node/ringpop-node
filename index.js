@@ -62,6 +62,7 @@ var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
 var safeParse = require('./lib/util').safeParse;
 var sendJoin = require('./lib/swim/join-sender.js').joinCluster;
+var TracerStore = require('./lib/trace/store.js');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
@@ -153,6 +154,8 @@ function RingPop(options) {
 
     createEventForwarder(this);
 
+    this.tracers = new TracerStore(this);
+
     this.clientRate = new metrics.Meter();
     this.serverRate = new metrics.Meter();
     this.totalRate = new metrics.Meter();
@@ -180,6 +183,7 @@ RingPop.prototype.destroy = function destroy() {
     this.suspicion.stopAll();
     this.membershipUpdateRollup.destroy();
     this.requestProxy.destroy();
+    this.tracers.destroy();
 
     this.clientRate.m1Rate.stop();
     this.clientRate.m5Rate.stop();
