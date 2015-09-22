@@ -21,18 +21,18 @@ var program = require('commander');
 var RingPop = require('./index');
 var TChannel = require('tchannel');
 
-function main() {
+function main(args) {
     program
         .version(require('./package.json').version)
         .usage('[options]')
         .option('-l, --listen <listen>', 'Host and port on which server listens (also node\'s identity in cluster)')
         .option('-h, --hosts <hosts>', 'Seed file of list of hosts to join')
-        .parse(process.argv);
+        .parse(args);
 
     var listen = program.listen;
-
     if (!listen) {
         console.error('Error: listen arg is required');
+        program.outputHelp();
         process.exit(1);
     }
 
@@ -60,12 +60,9 @@ function main() {
     ringpop.channel.listen(Number(listenParts[1]), listenParts[0]);
 }
 
-if (require.main === module) {
-    main();
-}
-
 function createLogger(name) {
     return {
+        trace: function noop() {},
         debug: function noop() {},
         info: enrich('info', 'log'),
         warn: enrich('warn', 'error'),
@@ -80,3 +77,8 @@ function createLogger(name) {
         };
     }
 }
+
+if (require.main === module) {
+    main(process.argv);
+}
+module.exports = main;

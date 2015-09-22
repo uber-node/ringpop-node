@@ -54,6 +54,7 @@ RingpopClient.prototype._request = function _request(host, endpoint, head, body,
 
         self.subChannel.request({
             host: host,
+            serviceName: 'ringpop',
             hasNoParent: true,
             retryLimit: 1,
             trace: false,
