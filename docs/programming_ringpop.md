@@ -13,7 +13,7 @@ var TChannel = require('TChannel');
 
 var tchannel = new TChannel();
 var subChannel = tchannel.makeSubChannel({
-    serviceName: 'ringpop
+    serviceName: 'ringpop'
 });
 ```
 
@@ -33,7 +33,7 @@ will be available:
 
 **Node.js**
 ```js
-var bootstrapNodes = ['172.18.27.228:3000', 172.18.27.228:3001',
+var bootstrapNodes = ['172.18.27.228:3000', '172.18.27.228:3001',
     '172.18.27.228:3002'];
 ```
 
