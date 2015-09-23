@@ -8,7 +8,7 @@ The first thing you'll want is a handle on a Ringpop instance. You'll first need
 an instance of TChannel, the underlying transport for Ringpop:
 
 **Node.js**
-```
+```js
 var TChannel = require('TChannel');
 
 var tchannel = new TChannel();
@@ -21,7 +21,7 @@ Then decide on a listening address for TChannel. We'll leave that exercise
 for the reader. For the purposes of this exercise, let's assume we're using:
 
 **Node.js**
-```
+```js
 var host = '172.18.27.228';
 var port = 3000;
 ```
@@ -32,7 +32,7 @@ nodes. Let's assume that there are other Ringpop nodes that are or
 will be available:
 
 **Node.js**
-```
+```js
 var bootstrapNodes = ['172.18.27.228:3000', 172.18.27.228:3001',
     '172.18.27.228:3002'];
 ```
@@ -40,7 +40,7 @@ var bootstrapNodes = ['172.18.27.228:3000', 172.18.27.228:3001',
 We're there! Instantiate Ringpop:
 
 **Node.js**
-```
+```js
 var ringpop = new Ringpop({
     app: 'yourapp',
     hostPort: host + ':' + port,
@@ -75,7 +75,7 @@ may be handled locally, otherwise it'll need to be forwarded to the correct Ring
 The typical pattern you'll see looks similar to:
 
 **Node.js**
-```
+```js
 var destination = ringpop.lookup(key);
 
 if (destination === ringpop.whoami()) {
@@ -90,7 +90,7 @@ convenience and can be used to forward HTTP traffic over TChannel. If the
 request should not be handled locally, `handleOrProxy` will return `false`:
 
 **Node.js**
-```
+```js
 if (ringpop.handleOrProxy(key, req, res, opts)) {
     // Handle the request
 }
@@ -178,12 +178,12 @@ less than 100 lines of code.
 To run:
 
 1. Paste this code into a file named `example.js`
-2. `npm install ringpop tchannel express`
+2. `npm install ringpop@10.8.0 tchannel@2.8.0 express`
 3. `node example.js`
 4. curl to your heart's content: `curl 127.0.0.1:6000/objects/abc`
 
 **Node.js**
-```
+```js
 var express = require('express');
 var Ringpop = require('ringpop');
 var TChannel = require('TChannel');
