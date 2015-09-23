@@ -216,6 +216,8 @@ cluster.forEach(function each(ringpop, index) {
         console.log('TChannel is listening on ' + ports[index]);
         ringpop.bootstrap(bootstrapNodes,
             bootstrapCallback(ringpop, index));
+
+        // This is how you wire up a handler for forwarded requests
         ringpop.on('request', forwardedCallback());
     });
 });
@@ -239,7 +241,8 @@ function bootstrapCallback(ringpop, i) {
     };
 }
 
-// How to handle forwarded requests
+// In this example, forwarded requests are immediately ended. Fill in with
+// your own application logic.
 function forwardedCallback() {
     return function onRequest(req, res) {
         res.end();
