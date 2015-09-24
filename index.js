@@ -178,7 +178,13 @@ function RingPop(options) {
 require('util').inherits(RingPop, EventEmitter);
 
 RingPop.prototype.destroy = function destroy() {
+    if (this.destroyed) {
+        return;
+    }
+
     this.destroyed = true;
+    this.emit('destroying');
+
     this.gossip.stop();
     this.suspicion.stopAll();
     this.membershipUpdateRollup.destroy();
