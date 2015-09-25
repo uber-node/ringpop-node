@@ -182,7 +182,6 @@ RingPop.prototype.destroy = function destroy() {
         return;
     }
 
-    this.destroyed = true;
     this.emit('destroying');
 
     this.gossip.stop();
@@ -215,6 +214,7 @@ RingPop.prototype.destroy = function destroy() {
         this.channel.topChannel.close();
     }
 
+    this.destroyed = true;
     this.emit('destroyed');
 };
 
