@@ -303,7 +303,6 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         self.membership.set();
         setTime = Date.now() - setTime;
 
-        self.gossip.start();
         self.isReady = true;
 
         bootstrapTime = Date.now() - bootstrapTime;
@@ -422,13 +421,6 @@ RingPop.prototype.getStats = function getStats() {
     }
 
     return stats;
-};
-
-RingPop.prototype.handleTick = function handleTick(cb) {
-    var self = this;
-    this.pingMemberNow(function () {
-        cb(null, JSON.stringify({ checksum: self.membership.checksum }));
-    });
 };
 
 RingPop.prototype.isStatsHookRegistered = function isStatsHookRegistered(name) {
