@@ -199,3 +199,11 @@ testRingpop('never decays below min', function t(deps, assert) {
     assert.true(member2.dampScore === config.get('dampScoringMin'),
         'damp score decayed to min');
 });
+
+testRingpop('member ID is its address', function t(deps, assert) {
+    var address = '127.0.0.1:3000';
+    var member = new Member(deps.ringpop, {
+        address: address
+    });
+    assert.equals(member.getId(), address, 'ID is address');
+});
