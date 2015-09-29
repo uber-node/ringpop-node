@@ -104,6 +104,7 @@ function RingPop(options) {
     this.statsd = options.statsd || nulls.statsd;
     this.bootstrapFile = options.bootstrapFile;
     this.setTimeout = options.setTimeout || globalSetTimeout;
+    this.Ring = options.Ring || HashRing;
 
     this.isReady = false;
 
@@ -129,7 +130,7 @@ function RingPop(options) {
         enforceConsistency: options.enforceConsistency
     });
 
-    this.ring = new HashRing();
+    this.ring = new this.Ring();
 
     this.dissemination = new Dissemination(this);
 
