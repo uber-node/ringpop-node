@@ -22,11 +22,16 @@
 var safeParse = require('./lib/util.js').safeParse;
 var TChannel = require('tchannel');
 
-function RingpopClient() {
-    this.tchannel = new TChannel();
-    this.subChannel = this.tchannel.makeSubChannel({
-        serviceName: 'ringpop'
-    });
+function RingpopClient(subChannel) {
+    this.subChannel = subChannel;
+    this.isChannelOwner = false;
+    if (!this.subChannel) {
+        this.tchannel = new TChannel();
+        this.subChannel = this.tchannel.makeSubChannel({
+            serviceName: 'ringpop'
+        });
+        this.isChannelOwner = true;
+    }
 }
 
 RingpopClient.prototype.adminConfigGet = function adminConfigGet(host, body, callback) {
@@ -50,7 +55,9 @@ RingpopClient.prototype.adminGossipTick= function adminGossipTick(host, callback
 };
 
 RingpopClient.prototype.destroy = function destroy(callback) {
-    this.tchannel.close(callback);
+    if (this.isChannelOwner) {
+        this.tchannel.close(callback);
+    }
 };
 
 /* jshint maxparams: 5 */
