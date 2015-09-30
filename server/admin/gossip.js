@@ -48,6 +48,14 @@ function createGossipTickHandler(ringpop) {
     };
 }
 
+function createGossipStatusHandler(ringpop) {
+    return function handleGossipStatus(arg1, arg2, hostInfo, callback) {
+        callback(null, null, JSON.stringify({
+            status: ringpop.gossip.getStatus()
+        }));
+    };
+}
+
 module.exports = {
     gossipStart: {
         endpoint: '/admin/gossip/start',
@@ -60,5 +68,9 @@ module.exports = {
     gossipTick: {
         endpoint: '/admin/gossip/tick',
         handler: createGossipTickHandler
+    },
+    gossipStatus: {
+        endpoint: '/admin/gossip/status',
+        handler: createGossipStatusHandler
     }
 };
