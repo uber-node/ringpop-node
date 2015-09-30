@@ -67,7 +67,6 @@ var TracerStore = require('./lib/trace/store.js');
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MAX_JOIN_DURATION = 300000;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
-var PROXY_REQ_PROPS = ['keys', 'dest', 'req', 'res'];
 
 function RingPop(options) {
     if (!(this instanceof RingPop)) {
@@ -600,7 +599,14 @@ RingPop.prototype.proxyReq = function proxyReq(opts) {
         throw errors.OptionsRequiredError({ method: 'proxyReq' });
     }
 
-    this.validateProps(opts, PROXY_REQ_PROPS);
+    var props = ['keys', 'dest', 'req', 'res'];
+    for (var i = 0; i < props.length; i++) {
+        var prop = props[i];
+
+        if (!opts[prop]) {
+            throw errors.PropertyRequiredError({ property: prop });
+        }
+    }
 
     this.requestProxy.proxyReq(opts);
 };
@@ -722,16 +728,6 @@ RingPop.prototype.allowJoins = function allowJoins() {
 // This function is defined for testing purposes only.
 RingPop.prototype.denyJoins = function denyJoins() {
     this.isDenyingJoins = true;
-};
-
-RingPop.prototype.validateProps = function validateProps(opts, props) {
-    for (var i = 0; i < props.length; i++) {
-        var prop = props[i];
-
-        if (!opts[prop]) {
-            throw errors.PropertyRequiredError({ property: prop });
-        }
-    }
 };
 
 module.exports = RingPop;
