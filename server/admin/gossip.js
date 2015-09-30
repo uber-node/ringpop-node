@@ -35,7 +35,7 @@ function createGossipStopHandler(ringpop) {
 
 function createGossipTickHandler(ringpop) {
     return function handleGossipTick(arg1, arg2, hostInfo, callback) {
-        ringpop.pingMemberNow(function onPing(err) {
+        ringpop.gossip.tick(function onPing(err) {
             if (err) {
                 callback(err);
                 return;

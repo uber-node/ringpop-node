@@ -41,8 +41,6 @@ var metrics = require('metrics');
 var packageJSON = require('./package.json');
 
 var Gossip = require('./lib/swim/gossip');
-var sendPing = require('./lib/swim/ping-sender.js');
-var sendPingReq = require('./lib/swim/ping-req-sender.js');
 var Suspicion = require('./lib/swim/suspicion');
 
 var Config = require('./config.js');
@@ -473,65 +471,6 @@ RingPop.prototype.reload = function reload(file, callback) {
 
 RingPop.prototype.whoami = function whoami() {
     return this.hostPort;
-};
-
-RingPop.prototype.pingMemberNow = function pingMemberNow(callback) {
-    callback = callback || function() {};
-
-    if (this.isPinging) {
-        this.logger.warn('aborting ping because one is in progress');
-        return callback();
-    }
-
-    if (!this.isReady) {
-        this.logger.warn('ping started before ring initialized');
-        return callback();
-    }
-
-    var member = this.memberIterator.next();
-
-    if (! member) {
-        this.logger.warn('no usable nodes at protocol period');
-        return callback();
-    }
-
-    var self = this;
-    this.isPinging = true;
-    var start = new Date();
-    sendPing({
-        ringpop: self,
-        target: member
-    }, function(isOk, body) {
-        self.stat('timing', 'ping', start);
-        if (isOk) {
-            self.isPinging = false;
-            self.membership.update(body.changes);
-            return callback();
-        }
-
-        if (self.destroyed) {
-            return callback(new Error('destroyed whilst pinging'));
-        }
-
-        var pingReqStartTime = new Date();
-        // TODO The pinged member's status could have changed to
-        // faulty by the time we received and processed the ping
-        // response. There are no ill effects to membership state
-        // by sending a ping-req to the faulty member (and processing
-        // the response), though it does delay the protocol period
-        // unnecessarily. We may want to bypass the ping-req here
-        // if the member's status is faulty.
-        sendPingReq({
-            ringpop: self,
-            unreachableMember: member,
-            pingReqSize: self.pingReqSize
-        }, function onPingReq() {
-            self.stat('timing', 'ping-req', pingReqStartTime);
-            self.isPinging = false;
-
-            callback.apply(null, Array.prototype.splice.call(arguments, 0));
-        });
-    });
 };
 
 RingPop.prototype.readHostsFile = function readHostsFile(file) {
