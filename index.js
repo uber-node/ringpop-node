@@ -49,7 +49,6 @@ var Config = require('./config.js');
 var createEventForwarder = require('./lib/event-forwarder.js');
 var createMembershipSetListener = require('./lib/membership-set-listener.js');
 var createMembershipUpdateListener = require('./lib/membership-update-listener.js');
-var createServer = require('./server');
 var Dissemination = require('./lib/dissemination.js');
 var errors = require('./lib/errors.js');
 var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
@@ -60,6 +59,7 @@ var MembershipUpdateRollup = require('./lib/membership/rollup.js');
 var nulls = require('./lib/nulls');
 var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
+var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
 var sendJoin = require('./lib/swim/join-sender.js').joinCluster;
 var TracerStore = require('./lib/trace/store.js');
@@ -218,7 +218,7 @@ RingPop.prototype.destroy = function destroy() {
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
-    createServer(this, this.channel);
+    this.server = new RingpopServer(this, this.channel);
 };
 
 /*
