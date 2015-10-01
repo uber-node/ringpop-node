@@ -45,7 +45,7 @@ RingpopClient.prototype.adminGossipStop = function adminGossipStop(host, callbac
     this._request(host, '/admin/gossip/stop', null, null, callback);
 };
 
-RingpopClient.prototype.adminGossipTick= function adminGossipTick(host, callback) {
+RingpopClient.prototype.adminGossipTick = function adminGossipTick(host, callback) {
     this._request(host, '/admin/gossip/tick', null, null, callback);
 };
 
