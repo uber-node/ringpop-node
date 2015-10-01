@@ -21,8 +21,14 @@
 
 var errors = require('../../lib/errors.js');
 var sendJoin = require('../../lib/swim/join-sender.js').joinCluster;
+var TypedError = require('error/typed');
 
-module.exports = function createJoinHandler(ringpop) {
+var RedundantLeaveError = TypedError({
+    type: 'ringpop.invalid-leave.redundant',
+    message: 'A node cannot leave its cluster when it has already left.'
+});
+
+function createJoinHandler(ringpop) {
     return function handleJoin(arg1, arg2, hostInfo, callback) {
         if (!ringpop.membership.localMember) {
             process.nextTick(function() {
@@ -58,4 +64,48 @@ module.exports = function createJoinHandler(ringpop) {
             }));
         });
     };
+}
+
+function createLeaveHandler(ringpop) {
+    return function handleLeave(arg1, arg2, hostInfo, callback) {
+        if (typeof callback !== 'function') {
+            callback = function noop() {};
+        }
+
+        if (!ringpop.membership.localMember) {
+            process.nextTick(function() {
+                callback(errors.InvalidLocalMemberError());
+            });
+            return;
+        }
+
+        if (ringpop.membership.localMember.status === 'leave') {
+            process.nextTick(function() {
+                callback(RedundantLeaveError());
+            });
+            return;
+        }
+
+        // TODO Explicitly infect other members (like admin join)?
+        ringpop.membership.makeLeave(ringpop.whoami(),
+            ringpop.membership.localMember.incarnationNumber);
+
+        ringpop.gossip.stop();
+        ringpop.suspicion.stopAll();
+
+        process.nextTick(function() {
+            callback(null, null, 'ok');
+        });
+    };
+}
+
+module.exports = {
+    memberJoin: {
+        endpoint: '/admin/member/join',
+        handler: createJoinHandler
+    },
+    memberLeave: {
+        endpoint: '/admin/member/leave',
+        handler: createLeaveHandler
+    }
 };
