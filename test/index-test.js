@@ -18,13 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 var _ = require('underscore');
-var createAdminJoinHandler = require('../server/admin/join.js');
-var createAdminLeaveHandler = require('../server/admin/leave.js');
+var AdminMember = require('../server/admin/member.js');
 var createJoinHandler = require('../server/protocol/join.js');
 var mock = require('./mock');
 var Ringpop = require('../index.js');
 var test = require('tape');
 var testRingpop = require('./lib/test-ringpop.js');
+
+var createAdminJoinHandler = AdminMember.memberJoin.handler;
+var createAdminLeaveHandler = AdminMember.memberLeave.handler;
 
 function createRingpop(opts) {
     var ringpop = new Ringpop(_.extend({
