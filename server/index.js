@@ -20,7 +20,7 @@
 'use strict';
 
 
-function RingPopTChannel(ringpop, tchannel) {
+function RingpopServer(ringpop, tchannel) {
     var self = this;
     self.ringpop = ringpop;
     self.tchannel = tchannel;
@@ -63,8 +63,4 @@ function RingPopTChannel(ringpop, tchannel) {
     }
 }
 
-function createServer(ringpop, tchannel) {
-    return new RingPopTChannel(ringpop, tchannel);
-}
-
-module.exports = createServer;
+module.exports = RingpopServer;
