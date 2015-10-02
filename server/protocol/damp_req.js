@@ -19,21 +19,33 @@
 // THE SOFTWARE.
 'use strict';
 
-module.exports = {
-    dampReq: {
-        endpoint: '/protocol/damp-req',
-        handler: require('./damp_req.js')
-    },
-    join: {
-        endpoint: '/protocol/join',
-        handler: require('./join.js')
-    },
-    ping: {
-        endpoint: '/protocol/ping',
-        handler: require('./ping.js')
-    },
-    pingReq: {
-        endpoint: '/protocol/ping-req',
-        handler: require('./ping-req.js')
-    }
+var RequestResponse = require('../../request_response.js');
+var safeParse = require('../../lib/util.js').safeParse;
+
+var DampReqResponse = RequestResponse.DampReqResponse;
+var validateRequest = RequestResponse.validateRequest;
+
+module.exports = function createDampReqHandler(ringpop) {
+    return function handleDampReq(arg2, arg3, hostInfo, callback) {
+        ringpop.stat('increment', 'damp-req.recv');
+
+        var body = safeParse(arg3.toString());
+        if (!validateRequest(body, ['flappyMemberAddr'], callback)) {
+            return;
+        }
+
+        var member = ringpop.membership.findMemberByAddress(body.flappyMemberAddr);
+        if (!member) {
+            callback(new Error('Bad request: no flappy member found'));
+            return;
+        }
+
+        if (Array.isArray(body.changes)) {
+            ringpop.membership.update(body.changes);
+        }
+
+        callback(null, null, JSON.stringify(new DampReqResponse(ringpop, body, {
+            dampScore: member.dampScore
+        })));
+    };
 };
