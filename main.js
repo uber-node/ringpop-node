@@ -51,13 +51,14 @@ function main(args) {
 
     ringpop.setupChannel();
 
-    ringpop.channel.on('listening', function onListening() {
-        ringpop.channel.removeListener('listening', onListening);
-        ringpop.bootstrap(program.hosts);
-    });
-
     var listenParts = listen.split(':');
-    ringpop.channel.listen(Number(listenParts[1]), listenParts[0]);
+    var port = Number(listenParts[1]);
+    var host = listenParts[0];
+    tchannel.listen(port, host, onListening);
+
+    function onListening() {
+        ringpop.bootstrap(program.hosts);
+    }
 }
 
 function createLogger(name) {
