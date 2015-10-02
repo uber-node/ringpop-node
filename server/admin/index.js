@@ -35,13 +35,15 @@ var baseEndpointHandlers = {
         endpoint: '/admin/gossip',
         handler: require('./gossip.js').gossipStart.handler
     },
+    // Deprecated! Use /admin/member/join
     join: {
         endpoint: '/admin/join',
-        handler: require('./join.js')
+        handler: require('./member.js').memberJoin.handler
     },
+    // Deprecated! Use /admin/member/leave
     leave: {
         endpoint: '/admin/leave',
-        handler: require('./leave.js')
+        handler: require('./member.js').memberLeave.handler
     },
     lookup: {
         endpoint: '/admin/lookup',
@@ -63,4 +65,4 @@ var baseEndpointHandlers = {
 };
 
 module.exports = _.extend({}, baseEndpointHandlers, require('./config.js'),
-    require('./gossip.js'));
+    require('./gossip.js'), require('./member.js'));
