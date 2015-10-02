@@ -57,6 +57,7 @@ var MembershipUpdateRollup = require('./lib/membership/rollup.js');
 var nulls = require('./lib/nulls');
 var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
+var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
 var sendJoin = require('./lib/swim/join-sender.js').joinCluster;
@@ -211,11 +212,16 @@ RingPop.prototype.destroy = function destroy() {
         this.channel.topChannel.close();
     }
 
+    if (this.client) {
+        this.client.destroy();
+    }
+
     this.destroyed = true;
     this.emit('destroyed');
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
+    this.client = new RingpopClient(this.channel);
     this.server = new RingpopServer(this, this.channel);
 };
 
