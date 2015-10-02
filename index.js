@@ -214,6 +214,10 @@ RingPop.prototype.destroy = function destroy() {
         this.channel.topChannel.close();
     }
 
+    if (this.client) {
+        this.client.destroy();
+    }
+
     this.destroyed = true;
     this.emit('destroyed');
 };
