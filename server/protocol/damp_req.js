@@ -19,36 +19,33 @@
 // THE SOFTWARE.
 'use strict';
 
-function LocalMemberAliveEvent(member, oldStatus) {
-    this.member = member;
-    this.oldStatus = oldStatus;
-}
+var RequestResponse = require('../../request_response.js');
+var safeParse = require('../../lib/util.js').safeParse;
 
-LocalMemberAliveEvent.name = 'localMemberAlive';
+var DampReqResponse = RequestResponse.DampReqResponse;
+var validateRequest = RequestResponse.validateRequest;
 
-function LocalMemberDampedEvent(opts) {
-    this.member = opts.member;
-    this.oldStatus = opts.oldStatus;
-}
+module.exports = function createDampReqHandler(ringpop) {
+    return function handleDampReq(arg2, arg3, hostInfo, callback) {
+        ringpop.stat('increment', 'damp-req.recv');
 
-LocalMemberDampedEvent.name = 'localMemberDamped';
+        var body = safeParse(arg3.toString());
+        if (!validateRequest(body, ['flappyMemberAddr'], callback)) {
+            return;
+        }
 
-function LocalMemberLeaveEvent(opts) {
-    this.member = opts.member;
-    this.oldStatus = opts.oldStatus;
-}
+        var member = ringpop.membership.findMemberByAddress(body.flappyMemberAddr);
+        if (!member) {
+            callback(new Error('Bad request: no flappy member found'));
+            return;
+        }
 
-LocalMemberLeaveEvent.name = 'localMemberLeave';
+        if (Array.isArray(body.changes)) {
+            ringpop.membership.update(body.changes);
+        }
 
-function LocalMemberReusedEvent(opts) {
-    this.member = opts.member;
-}
-
-LocalMemberReusedEvent.name = 'localMemberReused';
-
-module.exports = {
-    LocalMemberAliveEvent: LocalMemberAliveEvent,
-    LocalMemberDampedEvent: LocalMemberDampedEvent,
-    LocalMemberLeaveEvent: LocalMemberLeaveEvent,
-    LocalMemberReusedEvent: LocalMemberReusedEvent
+        callback(null, null, JSON.stringify(new DampReqResponse(ringpop, body, {
+            dampScore: member.dampScore
+        })));
+    };
 };

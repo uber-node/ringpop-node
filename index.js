@@ -133,12 +133,11 @@ function RingPop(options) {
 
     this.ring = new HashRing();
 
-    this.dissemination = new Dissemination(this);
-
     this.membership = initMembership(this);
     this.membership.on('set', createMembershipSetListener(this));
     this.membership.on('updated', createMembershipUpdateListener(this));
     this.memberIterator = new MembershipIterator(this);
+    this.dissemination = new Dissemination(this);
     this.gossip = new Gossip({
         ringpop: this,
         minProtocolPeriod: options.minProtocolPeriod

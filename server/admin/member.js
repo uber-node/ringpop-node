@@ -20,6 +20,7 @@
 'use strict';
 
 var errors = require('../../lib/errors.js');
+var safeParse = require('../../lib/util.js').safeParse;
 var sendJoin = require('../../lib/swim/join-sender.js').joinCluster;
 var TypedError = require('error/typed');
 
@@ -41,11 +42,7 @@ function createJoinHandler(ringpop) {
         if (ringpop.membership.localMember.status === 'leave') {
             // Assert local member is alive.
             ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
-
-            ringpop.gossip.start();
-            ringpop.suspicion.reenable();
-
-            callback(null, null, 'rejoined');
+            callback();
             return;
         }
 
@@ -96,6 +93,15 @@ function createLeaveHandler(ringpop) {
     };
 }
 
+function createReuseHandler(ringpop) {
+    return function handleReuse(arg2, arg3, hostInfo, callback) {
+        var body = safeParse(arg3.toString());
+        var memberAddr = body && body.memberAddr ? body.memberAddr : ringpop.whoami();
+        ringpop.membership.reuseMember(memberAddr);
+        callback(null, null, JSON.stringify(null));
+    };
+}
+
 module.exports = {
     memberJoin: {
         endpoint: '/admin/member/join',
@@ -104,5 +110,9 @@ module.exports = {
     memberLeave: {
         endpoint: '/admin/member/leave',
         handler: createLeaveHandler
+    },
+    memberReuse: {
+        endpoint: '/admin/member/reuse',
+        handler: createReuseHandler
     }
 };
