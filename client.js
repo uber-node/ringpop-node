@@ -54,6 +54,10 @@ RingpopClient.prototype.adminGossipTick = function adminGossipTick(host, callbac
     this._request(host, '/admin/gossip/tick', null, null, callback);
 };
 
+RingpopClient.prototype.protocolDampReq = function protocolDampReq(host, body, callback) {
+    this._request(host, '/protocol/damp-req', null, body, callback);
+};
+
 RingpopClient.prototype.destroy = function destroy(callback) {
     if (this.isChannelOwner) {
         this.tchannel.close(callback);
