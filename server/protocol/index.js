@@ -20,6 +20,10 @@
 'use strict';
 
 module.exports = {
+    dampReq: {
+        endpoint: '/protocol/damp-req',
+        handler: require('./damp_req.js')
+    },
     join: {
         endpoint: '/protocol/join',
         handler: require('./join.js')

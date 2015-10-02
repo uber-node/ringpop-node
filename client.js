@@ -85,6 +85,10 @@ RingpopClient.prototype.protocolPingReq = function protocolPingReq(opts, body, c
     this._request(opts, '/protocol/ping-req', null, body, callback);
 };
 
+RingpopClient.prototype.protocolDampReq = function protocolDampReq(host, body, callback) {
+    this._request(host, '/protocol/damp-req', null, body, callback);
+};
+
 RingpopClient.prototype.destroy = function destroy(callback) {
     if (this.isChannelOwner) {
         this.tchannel.close(callback);

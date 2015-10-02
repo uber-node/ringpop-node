@@ -38,7 +38,6 @@ function main(args) {
     }
 
     var tchannel = new TChannel({
-        logger: createLogger('tchannel'),
     });
 
     var ringpop = new RingPop({
@@ -67,7 +66,7 @@ function main(args) {
 function createLogger(name) {
     return {
         trace: function noop() {},
-        debug: function noop() {},
+        debug: enrich('debug', 'log'),
         info: enrich('info', 'log'),
         warn: enrich('warn', 'error'),
         error: enrich('error', 'error')

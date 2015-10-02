@@ -68,15 +68,21 @@ Config.prototype._seed = function _seed(seed) {
 
     // Logger configs
     seedOrDefault('defaultLogLevel', LoggingLevels.info);
-    seedOrDefault('dampingLogLevel', LoggingLevels.warn);
+    seedOrDefault('dampingLogLevel', LoggingLevels.debug);
+    seedOrDefault('disseminationLogLevel', LoggingLevels.error);
     seedOrDefault('gossipLogLevel', LoggingLevels.off);
     seedOrDefault('joinLogLevel', LoggingLevels.warn);
-    seedOrDefault('disseminationLogLevel', LoggingLevels.off);
+    seedOrDefault('suspicionLogLevel', LoggingLevels.error);
 
     // Gossip configs
     seedOrDefault('autoGossip', true);
 
     seedOrDefault('isCrossPlatform', false);
+    seedOrDefault('dampedErrorLoggingEnabled', false);
+    seedOrDefault('dampedMaxPercentage', 10);
+    seedOrDefault('dampedMemberExpirationInterval', 60000);
+    seedOrDefault('dampReqNVal', 6);
+    seedOrDefault('dampReqRVal', 3);
     seedOrDefault('dampScoringEnabled', true);
     seedOrDefault('dampScoringDecayEnabled', true);
     seedOrDefault('dampScoringDecayInterval', 1000);
@@ -89,6 +95,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampScoringReuseLimit', 2500);
     seedOrDefault('dampScoringSuppressDuration', 60 * 60 * 1000); // 1 hr in ms
     seedOrDefault('dampScoringSuppressLimit', 5000);
+    seedOrDefault('dampTimerInterval', 60 * 1000); // 1min in ms
 
     // Joiner config
     seedOrDefault('joinDelayMin', 100, numValidator); // ms

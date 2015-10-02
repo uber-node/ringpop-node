@@ -19,33 +19,29 @@
 // THE SOFTWARE.
 'use strict';
 
-function createDestroyedHandler(ringpop) {
-    return function onDestroyed() {
-        ringpop.lagSampler.stop();
-        ringpop.membership.stopDampScoreDecayer();
-        ringpop.damper.destroy();
-    };
+var Member = require('../lib/membership/member.js');
+
+function member1(ringpop, opts) {
+    opts = opts || {};
+    return new Member(ringpop, {
+        address: opts.address || '127.0.0.1:3001',
+        incarnationNumber: opts.incarnationNumber || Date.now(),
+        status: Member.Status.alive
+    });
 }
 
-function createReadyHandler(ringpop) {
-    return function onReady() {
-        if (ringpop.config.get('autoGossip')) {
-            ringpop.gossip.start();
-        }
-
-        if (ringpop.config.get('backpressureEnabled')) {
-            ringpop.lagSampler.start();
-        }
+function memberGenerator(ringpop) {
+    var basePort = 3001; // assums member with port 3000 is already in membership
+    var counter = 0;
+    return function genMember() {
+        return new Member(ringpop, {
+            address: '127.0.0.1:' + (basePort + counter++),
+            incarnationNumber: Date.now()
+        });
     };
-}
-
-function register(ringpop) {
-    ringpop.on('destroyed', createDestroyedHandler(ringpop));
-    ringpop.on('ready', createReadyHandler(ringpop));
 }
 
 module.exports = {
-    createDestroyedHandler: createDestroyedHandler,
-    createReadyHandler: createReadyHandler,
-    register: register
+    member1: member1,
+    memberGenerator: memberGenerator
 };

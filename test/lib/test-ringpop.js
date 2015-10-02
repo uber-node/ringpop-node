@@ -43,6 +43,7 @@ function testRingpop(opts, name, test) {
         // convenience to users of the test suite.
         var deps = {
             config: ringpop.config,
+            damper: ringpop.damper,
             dissemination: ringpop.dissemination,
             gossip: ringpop.gossip,
             iterator: ringpop.memberIterator,
