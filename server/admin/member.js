@@ -90,9 +90,6 @@ function createLeaveHandler(ringpop) {
         ringpop.membership.makeLeave(ringpop.whoami(),
             ringpop.membership.localMember.incarnationNumber);
 
-        ringpop.gossip.stop();
-        ringpop.suspicion.stopAll();
-
         process.nextTick(function() {
             callback(null, null, 'ok');
         });
