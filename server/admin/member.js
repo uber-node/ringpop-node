@@ -20,6 +20,7 @@
 'use strict';
 
 var errors = require('../../lib/errors.js');
+var safeParse = require('../../lib/util.js').safeParse;
 var sendJoin = require('../../lib/gossip/join-sender.js').joinCluster;
 var TypedError = require('error/typed');
 
@@ -86,9 +87,11 @@ function createLeaveHandler(ringpop) {
             return;
         }
 
-        // TODO Explicitly infect other members (like admin join)?
-        ringpop.membership.makeLeave(ringpop.whoami(),
-            ringpop.membership.localMember.incarnationNumber);
+        var body = safeParse(arg2.toString());
+        ringpop.leave({
+            membershipOnly: body.membershipOnly,
+            ttl: body.ttl
+        });
 
         process.nextTick(function() {
             callback(null, null, 'ok');
