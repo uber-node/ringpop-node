@@ -25,8 +25,8 @@ var EventEmitter = require('events').EventEmitter;
 var test = require('tape');
 var Timer = require('time-mock');
 
-var core = require('../lib/trace/core');
-var TracerStore = require('../lib/trace/store');
+var core = require('../../lib/trace/core');
+var TracerStore = require('../../lib/trace/store');
 
 var timer = Timer(1000);
 // workaround timer id 0 by setting a throwaway, increments to 1
