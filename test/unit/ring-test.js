@@ -20,7 +20,7 @@
 'use strict';
 
 var _ = require('underscore');
-var HashRing = require('../../lib/ring.js');
+var HashRing = require('../../lib/ring');
 var test = require('tape');
 
 function createServers(size) {

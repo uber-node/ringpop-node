@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 var HashRing = require('../../lib/ring');
-var RBTree = require('../../lib/rbtree').RBTree;
+var RBTree = require('../../lib/ring/rbtree').RBTree;
 
 var test = require('tape');
 
