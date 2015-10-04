@@ -17,7 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-var RingNode = require('../../lib/rbtree').RingNode;
+var RingNode = require('../../lib/ring/rbtree').RingNode;
 var test = require('tape');
 
 test('construct a new red node with supplied values', function t(assert) {
