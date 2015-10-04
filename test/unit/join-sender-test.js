@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-var createJoiner = require('../../lib/swim/join-sender.js').createJoiner;
+var createJoiner = require('../../lib/gossip/join-sender.js').createJoiner;
 var Ringpop = require('../../index.js');
 var test = require('tape');
 

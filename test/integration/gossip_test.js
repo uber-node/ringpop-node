@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-var sendPingReq = require('../../lib/swim/ping-req-sender.js');
+var sendPingReq = require('../../lib/gossip/ping-req-sender.js');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 
 // Avoid depending upon mutation of member and find

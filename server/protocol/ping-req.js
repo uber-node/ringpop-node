@@ -20,7 +20,7 @@
 'use strict';
 
 var safeParse = require('../../lib/util').safeParse;
-var sendPing = require('../../lib/swim/ping-sender.js');
+var sendPing = require('../../lib/gossip/ping-sender.js');
 
 module.exports = function createPingReqHandler(ringpop) {
     return function handlePingReq(arg1, arg2, hostInfo, callback) {

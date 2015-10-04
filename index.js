@@ -40,14 +40,14 @@ var hammock = require('uber-hammock');
 var metrics = require('metrics');
 var packageJSON = require('./package.json');
 
-var Gossip = require('./lib/swim/gossip');
-var Suspicion = require('./lib/swim/suspicion');
+var Gossip = require('./lib/gossip');
+var Suspicion = require('./lib/gossip/suspicion');
 
 var Config = require('./config.js');
 var createEventForwarder = require('./lib/event-forwarder.js');
 var createMembershipSetListener = require('./lib/membership-set-listener.js');
 var createMembershipUpdateListener = require('./lib/membership-update-listener.js');
-var Dissemination = require('./lib/dissemination.js');
+var Dissemination = require('./lib/gossip/dissemination.js');
 var errors = require('./lib/errors.js');
 var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
 var HashRing = require('./lib/ring');
@@ -60,7 +60,7 @@ var RequestProxy = require('./lib/request-proxy/index.js');
 var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
-var sendJoin = require('./lib/swim/join-sender.js').joinCluster;
+var sendJoin = require('./lib/gossip/join-sender.js').joinCluster;
 var TracerStore = require('./lib/trace/store.js');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;

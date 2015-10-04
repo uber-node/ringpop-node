@@ -20,7 +20,7 @@
 'use strict';
 
 var Member = require('../../lib/membership/member.js');
-var mergeJoinResponses = require('../../lib/swim/join-response-merge.js');
+var mergeJoinResponses = require('../../lib/gossip/join-response-merge.js');
 var testRingpop = require('../lib/test-ringpop.js');
 
 testRingpop('no responses results in empty array', function t(deps, assert) {
