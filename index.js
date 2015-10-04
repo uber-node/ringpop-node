@@ -665,6 +665,13 @@ RingPop.prototype.handleOrProxyAll =
         }
     };
 
+// Valid opts for this function are those that are compatible with the
+// LeaveUpdate class defined in lib/membership/update.js.
+RingPop.prototype.leave = function leave(opts) {
+    this.membership.makeLeave(this.whoami(),
+        this.membership.getIncarnationNumber(), opts);
+};
+
 // This function is defined for testing purposes only.
 RingPop.prototype.allowJoins = function allowJoins() {
     this.isDenyingJoins = false;
