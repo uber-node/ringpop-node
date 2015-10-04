@@ -20,7 +20,7 @@
 'use strict';
 
 var errors = require('../../lib/errors.js');
-var sendJoin = require('../../lib/swim/join-sender.js').joinCluster;
+var sendJoin = require('../../lib/gossip/join-sender.js').joinCluster;
 var TypedError = require('error/typed');
 
 var RedundantLeaveError = TypedError({
