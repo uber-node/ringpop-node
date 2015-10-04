@@ -17,10 +17,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-var allocRequest = require('./lib/alloc-request.js');
-var mocks = require('./mock');
-var RequestProxy = require('../lib/request-proxy/index.js');
-var Ringpop = require('../index.js');
+var allocRequest = require('../lib/alloc-request.js');
+var mocks = require('../mock');
+var RequestProxy = require('../../lib/request-proxy/index.js');
+var Ringpop = require('../../index.js');
 var test = require('tape');
 
 function createRingpop() {

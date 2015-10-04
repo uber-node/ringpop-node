@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-var testRingpop = require('./lib/test-ringpop');
+var testRingpop = require('../lib/test-ringpop');
 
 testRingpop('full sync includes all members', function t(deps, assert) {
     var membership = deps.membership;

@@ -22,7 +22,7 @@
 
 var test = require('tape');
 
-var Ringpop = require('../index.js');
+var Ringpop = require('../../index.js');
 
 test('ringpop without app throws', function t(assert) {
     assert.throws(function throwIt() {

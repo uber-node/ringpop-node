@@ -19,8 +19,8 @@
 // THE SOFTWARE.
 'use strict';
 
-var createMembershipSetListener = require('../lib/membership-set-listener.js');
-var testRingpop = require('./lib/test-ringpop.js');
+var createMembershipSetListener = require('../../lib/membership-set-listener.js');
+var testRingpop = require('../lib/test-ringpop.js');
 
 testRingpop('starts suspicion period for suspect', function t(deps, assert) {
     var ringpop = deps.ringpop;
