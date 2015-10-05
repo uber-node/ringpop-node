@@ -20,6 +20,7 @@
 'use strict';
 
 var errors = require('../../lib/errors.js');
+var Member = require('../../lib/membership/member.js');
 var sendJoin = require('../../lib/gossip/join-sender.js').joinCluster;
 var TypedError = require('error/typed');
 
@@ -38,7 +39,8 @@ function createJoinHandler(ringpop) {
         }
 
         // Handle rejoin for member that left.
-        if (ringpop.membership.localMember.status === 'leave') {
+        var localStatus = ringpop.membership.localMember.status;
+        if (localStatus === Member.Status.leave) {
             // Assert local member is alive.
             ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
 
