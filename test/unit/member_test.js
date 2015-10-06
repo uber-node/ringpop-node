@@ -207,3 +207,32 @@ testRingpop('member ID is its address', function t(deps, assert) {
     });
     assert.equals(member.getId(), address, 'ID is address');
 });
+
+testRingpop('update happens synchronously or not at all', function t(deps, assert) {
+    var address = '127.0.0.1:3001';
+    var incarnationNumber = Date.now();
+    var member = new Member(deps.ringpop, {
+        address: address,
+        incarnationNumber: incarnationNumber,
+        status: Member.Status.alive
+    });
+    var emitted = false;
+    member.on('updated', function onUpdated() {
+        emitted = true;
+    });
+    makeUpdate();
+    assert.true(emitted, 'event is emitted');
+
+    // Reset and try the same (redundant) update again
+    emitted = false;
+    makeUpdate();
+    assert.false(emitted, 'event is not emitted');
+
+    function makeUpdate() {
+        member.evaluateUpdate({
+            address: address,
+            status: Member.Status.suspect,
+            incarnationNumber: incarnationNumber + 1
+        });
+    }
+});
