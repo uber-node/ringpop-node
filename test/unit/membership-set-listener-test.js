@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-var createMembershipSetListener = require('../../lib/membership-set-listener.js');
+var membershipEventListeners = require('../../lib/on_membership_event.js');
 var testRingpop = require('../lib/test-ringpop.js');
 
 testRingpop('starts suspicion period for suspect', function t(deps, assert) {
@@ -31,7 +31,8 @@ testRingpop('starts suspicion period for suspect', function t(deps, assert) {
         incarnationNumber: Date.now()
     };
 
-    var listener = createMembershipSetListener(ringpop);
+    var createSetHandler = membershipEventListeners.createSetHandler;
+    var listener = createSetHandler(ringpop);
     listener([suspect]);
     assert.ok(suspicion.timers[suspect.address], 'suspicion period started');
 

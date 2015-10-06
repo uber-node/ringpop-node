@@ -44,9 +44,6 @@ var Gossip = require('./lib/gossip');
 var Suspicion = require('./lib/gossip/suspicion');
 
 var Config = require('./config.js');
-var createEventForwarder = require('./lib/event-forwarder.js');
-var createMembershipSetListener = require('./lib/membership-set-listener.js');
-var createMembershipUpdateListener = require('./lib/membership-update-listener.js');
 var Dissemination = require('./lib/gossip/dissemination.js');
 var errors = require('./lib/errors.js');
 var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
@@ -57,6 +54,9 @@ var MembershipUpdateRollup = require('./lib/membership/rollup.js');
 var nulls = require('./lib/nulls');
 var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
+var registerMembershipListeners = require('./lib/on_membership_event.js').register;
+var registerRingListeners = require('./lib/on_ring_event.js').register;
+var registerRingpopListeners = require('./lib/on_ringpop_event.js').register;
 var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
@@ -135,8 +135,6 @@ function RingPop(options) {
     this.dissemination = new Dissemination(this);
 
     this.membership = initMembership(this);
-    this.membership.on('set', createMembershipSetListener(this));
-    this.membership.on('updated', createMembershipUpdateListener(this));
     this.memberIterator = new MembershipIterator(this);
     this.gossip = new Gossip({
         ringpop: this,
@@ -151,9 +149,11 @@ function RingPop(options) {
         flushInterval: this.membershipUpdateFlushInterval
     });
 
-    createEventForwarder(this);
-
     this.tracers = new TracerStore(this);
+
+    registerMembershipListeners(this);
+    registerRingListeners(this);
+    registerRingpopListeners(this);
 
     this.clientRate = new metrics.Meter();
     this.serverRate = new metrics.Meter();
