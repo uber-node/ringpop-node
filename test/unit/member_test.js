@@ -205,7 +205,7 @@ testRingpop('member ID is its address', function t(deps, assert) {
     var member = new Member(deps.ringpop, {
         address: address
     });
-    assert.equals(member.getId(), address, 'ID is address');
+    assert.equals(member.id, address, 'ID is address');
 });
 
 testRingpop('update happens synchronously or not at all', function t(deps, assert) {
