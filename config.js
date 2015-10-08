@@ -23,6 +23,8 @@ var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
+var positiveIntValidator = makeIntValidator(0, Number.MAX_SAFE_INTEGER);
+
 // This Config class is meant to be a central store
 // for configurable parameters in Ringpop. Parameters
 // are meant to be initialized in the constructor.
@@ -74,7 +76,14 @@ Config.prototype._seed = function _seed(seed) {
             return val instanceof RegExp;
         });
     }, 'expected to be array of RegExp objects');
-    seedOrDefault('maxJoinAttempts', 50, numValidator);
+
+    seedOrDefault('joinAutoStart', false, boolValidator);
+    seedOrDefault('joinRequestParallelFactor', 3, positiveIntValidator);
+    seedOrDefault('joinRequestPeriodInitial', 10, positiveIntValidator);
+    seedOrDefault('joinRequestPeriodMax', 5000, positiveIntValidator);
+    seedOrDefault('joinRequestTimeout', 1000, positiveIntValidator);
+
+    seedOrDefault('membershipUpdateBatchDelay', 100, positiveIntValidator);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
@@ -97,8 +106,25 @@ Config.prototype._seed = function _seed(seed) {
     }
 };
 
-function numValidator(maybeNum) {
-    return typeof maybeNum === 'number' && !isNaN(maybeNum);
+function boolValidator(b) {
+    return typeof b === 'boolean';
+}
+
+function makeIntValidator(min, max) {
+    if (min === undefined) {
+        min = null;
+    }
+    if (max === undefined) {
+        max = null;
+    }
+
+    return function(n) {
+        return typeof n === 'number' &&
+            !isNaN(n) &&
+            Math.floor(n) === n &&
+            (min === null ? true : min <= n) &&
+            (max === null ? true : n <= max);
+    };
 }
 
 module.exports = Config;

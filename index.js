@@ -52,6 +52,7 @@ var errors = require('./lib/errors.js');
 var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
 var HashRing = require('./lib/ring');
 var initMembership = require('./lib/membership/index.js');
+var Joiner = require('./lib/join');
 var MembershipIterator = require('./lib/membership/iterator.js');
 var MembershipUpdateRollup = require('./lib/membership/rollup.js');
 var nulls = require('./lib/nulls');
@@ -60,7 +61,6 @@ var RequestProxy = require('./lib/request-proxy/index.js');
 var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
-var sendJoin = require('./lib/gossip/join-sender.js').joinCluster;
 var TracerStore = require('./lib/trace/store.js');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
@@ -165,7 +165,7 @@ function RingPop(options) {
     this.statsHooks = {};
 
     this.destroyed = false;
-    this.joiner = null;
+    this.joiner = new Joiner({ ringpop: this });
 
     this.startTime = Date.now(); //used for calculating uptime
 
@@ -232,6 +232,9 @@ RingPop.prototype.setupChannel = function setupChannel() {
  *   will be sent
  */
 RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
+    var self = this;
+
+    opts = opts || {};
     var bootstrapFile = opts && opts.bootstrapFile || opts || {};
 
     if (typeof bootstrapFile === 'function') {
@@ -239,25 +242,21 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         bootstrapFile = null;
     }
 
-    var self = this;
-
-    if (this.isReady) {
+    if (self.isReady) {
         var alreadyReadyMsg = 'ringpop is already ready';
-        this.logger.warn(alreadyReadyMsg, { address: this.hostPort });
+        self.logger.warn(alreadyReadyMsg, { address: self.hostPort });
         if (callback) callback(new Error(alreadyReadyMsg));
         return;
     }
 
-    var bootstrapTime = Date.now();
+    self.seedBootstrapHosts(bootstrapFile);
 
-    this.seedBootstrapHosts(bootstrapFile);
-
-    if (!Array.isArray(this.bootstrapHosts) || this.bootstrapHosts.length === 0) {
+    if (!Array.isArray(self.bootstrapHosts) || self.bootstrapHosts.length === 0) {
         var noBootstrapMsg = 'ringpop cannot be bootstrapped without bootstrap hosts.' +
             ' make sure you specify a valid bootstrap hosts file to the ringpop' +
             ' constructor or have a valid hosts.json file in the current working' +
             ' directory.';
-        this.logger.warn(noBootstrapMsg);
+        self.logger.warn(noBootstrapMsg);
         if (callback) callback(new Error(noBootstrapMsg));
         return;
     }
@@ -266,62 +265,19 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     checkForHostnameIpMismatch();
 
     // Add local member to membership.
-    this.membership.makeAlive(this.whoami(), Date.now());
+    self.membership.makeAlive(self.whoami(), Date.now());
 
-    var joinTime = Date.now();
+    self.joiner.addTargets(self.bootstrapHosts);
+    self.joiner.start(handleJoin);
 
-    sendJoin({
-        ringpop: self,
-        maxJoinDuration: self.maxJoinDuration,
-        joinSize: self.joinSize,
-        parallelismFactor: opts.joinParallelismFactor,
-        joinTimeout: self.joinTimeout
-    }, function onJoin(err, nodesJoined) {
-        joinTime = Date.now() - joinTime;
-
-        if (err) {
-            self.logger.error('ringpop bootstrap failed', {
-                error: err,
-                address: self.hostPort
-            });
-            if (callback) callback(err);
-            return;
+    function handleJoin(err) {
+        if (!err) {
+            self.isReady = true; // XXX can be already set?
+            if (self.gossip.isStopped /* && config.gossip... */) {
+                self.gossip.start();
+            }
         }
-
-        if (self.destroyed) {
-            var destroyedMsg = 'ringpop was destroyed ' +
-                'during bootstrap';
-            self.logger.error(destroyedMsg, {
-                address: self.hostPort
-            });
-            if (callback) callback(new Error(destroyedMsg));
-            return;
-        }
-
-        // Membership stashes all changes that have been applied since the
-        // beginning of the bootstrap process. It will then efficiently apply
-        // all changes as an 'atomic' update to membership. set() must be
-        // called before `isReady` is set to true.
-        var setTime = Date.now();
-        self.membership.set();
-        setTime = Date.now() - setTime;
-
-        self.isReady = true;
-
-        bootstrapTime = Date.now() - bootstrapTime;
-
-        self.logger.debug('ringpop is ready', {
-            address: self.hostPort,
-            memberCount: self.membership.getMemberCount(),
-            bootstrapTime: bootstrapTime,
-            joinTime: joinTime,
-            membershipSetTime: setTime
-        });
-
-        self.emit('ready');
-
-        if (callback) callback(null, nodesJoined);
-    });
+    }
 
     function checkForMissingBootstrapHost() {
         if (self.bootstrapHosts.indexOf(self.hostPort) === -1) {
