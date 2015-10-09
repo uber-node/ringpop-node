@@ -46,7 +46,8 @@ function main(args) {
         logger: createLogger('ringpop'),
         channel: tchannel.makeSubChannel({
             serviceName: 'ringpop'
-        })
+        }),
+        isCrossPlatform: true
     });
 
     ringpop.setupChannel();

@@ -35,6 +35,7 @@
 var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
+var farmhash = require('farmhash');
 var globalSetTimeout = require('timers').setTimeout;
 var hammock = require('uber-hammock');
 var metrics = require('metrics');
@@ -123,6 +124,13 @@ function RingPop(options) {
     // and hash ring dependencies.
     this.config = new Config(this, options);
 
+    // use fingerprint if ringpop needs to function cross different platforms
+    if (this.config.get('isCrossPlatform')) {
+        this.hashFunc = farmhash.fingerprint32;
+    } else {
+        this.hashFunc = farmhash.hash32;
+    }
+
     this.requestProxy = new RequestProxy({
         ringpop: this,
         maxRetries: options.requestProxyMaxRetries,
@@ -130,7 +138,9 @@ function RingPop(options) {
         enforceConsistency: options.enforceConsistency
     });
 
-    this.ring = new this.Ring();
+    this.ring = new this.Ring({
+        hashFunc: this.hashFunc
+    });
 
     this.dissemination = new Dissemination(this);
 
