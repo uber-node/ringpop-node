@@ -385,10 +385,10 @@ test('emits ring changed event', function t(assert) {
             assert.pass('membership changed');
         });
 
-        ringpop.once('ringChanged', function onRingChanged(added, removed) {
+        ringpop.once('ringChanged', function onRingChanged(event) {
             assert.pass('ring changed');
-            assert.deepEquals(added, intent.adding, 'expected servers added');
-            assert.deepEquals(removed, intent.removing, 'expected servers removed');
+            assert.deepEquals(event.added, intent.adding, 'expected servers added');
+            assert.deepEquals(event.removed, intent.removing, 'expected servers removed');
         });
 
         changer();
