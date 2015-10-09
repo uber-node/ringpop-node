@@ -19,11 +19,18 @@
 // THE SOFTWARE.
 'use strict';
 
+var safeParse = require('../../lib/util.js').safeParse;
+var errors = require('../../lib/errors.js');
+
 module.exports = function createLookupHandler(ringpop) {
     return function handleLookup(arg1, arg2, hostInfo, callback) {
-        var key = arg2.toString();
-        callback(null, null, JSON.stringify({
-            dest: ringpop.lookup(key)
-        }));
+        var body = safeParse(arg2);
+        if (body && body.key) {
+            return callback(null, null, JSON.stringify({
+                dest: ringpop.lookup(body.key)
+            }));
+        } else {
+            return callback(errors.ArgumentRequiredError({ argument: 'key' }));
+        }
     };
 };
