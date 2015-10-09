@@ -20,9 +20,12 @@
 'use strict';
 
 var after = require('after');
-var bufferEqual = require('buffer-equal')
+var bufferEqual = require('buffer-equal');
+var express = require('express');
+var http = require('http');
 var jsonBody = require('body/json');
 var test = require('tape');
+var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 var TimeMock = require('time-mock');
 var tryIt = require('tryit');
 
@@ -1085,5 +1088,58 @@ test('proxies big json', function t(assert) {
             cluster.destroy();
             assert.end();
         });
+    });
+});
+
+testRingpopCluster({
+    size: 2
+}, 'stuck requests', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    // Create HTTP server through which request for payload
+    // will be sent.
+    var httpPort = 4001;
+    var app = express();
+    app.get('/payload', function onReq(req, res) {
+        cluster[0].requestProxy.proxyReq({
+            keys: ['abc'],
+            dest: cluster[1].whoami(),
+            req: req,
+            res: res
+        });
+    });
+
+    // The request will be forwarded to this node and the
+    // node will respond with the full payload.
+    cluster[1].on('request', function onRequest(req, res) {
+        var payload = JSON.stringify(require('./payload.json'));
+        res.setHeader('Content-Length', new Buffer(payload).length);
+        res.end(payload);
+    });
+
+    // Make the request to the HTTP server. The HTTP server
+    // will forward the request.
+    var server = app.listen(httpPort, function onListen() {
+        var payload = '';
+        var request = http.request({
+            path: '/payload',
+            port: httpPort
+        }, function onRequest(res) {
+            res.setEncoding('utf8');
+            res.on('data', function onData(chunk) {
+                payload += chunk;
+            });
+            res.on('end', function onEnd() {
+                assert.pass('got full response');
+                assert.end();
+                server.close();
+            });
+        });
+
+        request.on('error', function onError(err) {
+            assert.fail(err.message);
+        });
+
+        request.end();
     });
 });

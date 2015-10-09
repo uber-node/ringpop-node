@@ -56,6 +56,7 @@ function RingpopServer(ringpop, tchannel) {
                     self.ringpop.logger.warn(err.message, err);
                     res.sendNotOk(null, err.message);
                 } else {
+                    res2 = Buffer.isBuffer(res2) ? res2 : new Buffer(res2);
                     res.sendOk(res1, res2);
                 }
             }
