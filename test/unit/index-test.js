@@ -370,7 +370,7 @@ test('emits membership changed event', function t(assert) {
 });
 
 test('emits ring changed event', function t(assert) {
-    assert.plan(8);
+    assert.plan(16);
 
     var node1Addr = '127.0.0.1:3001';
     var node2Addr = '127.0.0.1:3002';
@@ -380,13 +380,15 @@ test('emits ring changed event', function t(assert) {
     ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
     ringpop.membership.makeAlive(node1Addr, Date.now());
 
-    function assertChanged(changer) {
+    function assertChanged(changer, intent) {
         ringpop.once('membershipChanged', function onMembershipChanged() {
             assert.pass('membership changed');
         });
 
-        ringpop.once('ringChanged', function onRingChanged() {
+        ringpop.once('ringChanged', function onRingChanged(added, removed) {
             assert.pass('ring changed');
+            assert.deepEquals(added, intent.adding, 'expected servers added');
+            assert.deepEquals(removed, intent.removing, 'expected servers removed');
         });
 
         changer();
@@ -394,18 +396,30 @@ test('emits ring changed event', function t(assert) {
 
     assertChanged(function assertIt() {
         ringpop.membership.makeFaulty(node1Addr);
+    }, {
+        adding: [],
+        removing: [node1Addr]
     });
 
     assertChanged(function assertIt() {
         ringpop.membership.makeAlive(node1Addr, magicIncNo);
+    }, {
+        adding: [],
+        removing: [node1Addr]
     });
 
     assertChanged(function assertIt() {
         ringpop.membership.makeLeave(node1Addr, magicIncNo);
+    }, {
+        adding: [],
+        removing: [node1Addr]
     });
 
     assertChanged(function assertIt() {
         ringpop.membership.makeAlive(node2Addr, Date.now());
+    }, {
+        adding: [node2Addr],
+        removing: []
     });
 
     ringpop.destroy();
