@@ -31,5 +31,9 @@ module.exports = {
     pingReq: {
         endpoint: '/protocol/ping-req',
         handler: require('./ping-req.js')
+    },
+    sync: {
+        endpoint: '/protocol/sync',
+        handler: require('./sync.js')
     }
 };

@@ -19,35 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-function MembershipIterator(ringpop) {
-    this.ringpop = ringpop;
-    this.currentIndex = -1;
-    this.currentRound = 0;
-}
-
-MembershipIterator.prototype.next = function next() {
-    var membersVisited = {};
-    var maxMembersToVisit = this.ringpop.membership.getMemberCount();
-
-    while (Object.keys(membersVisited).length < maxMembersToVisit) {
-        this.currentIndex++;
-
-        if (this.currentIndex >= this.ringpop.membership.getMemberCount()) {
-            this.currentIndex = 0;
-            this.currentRound++;
-            this.ringpop.membership.shuffle();
-        }
-
-        var member = this.ringpop.membership.getMemberAt(this.currentIndex);
-
-        membersVisited[member.address] = true;
-
-        if (this.ringpop.membership.isPingable(member)) {
-            return member;
-        }
-    }
-
-    return null;
+module.exports = function createSyncHandler(ringpop) {
+    return function handleSync(arg1, arg2, hostInfo, callback) {
+    };
 };
-
-module.exports = MembershipIterator;
