@@ -1109,10 +1109,20 @@ testRingpopCluster({
         });
     });
 
+    // Make a big string that has proven to choke applications.
+    var bigStr = '';
+    for (var i = 0; i < 65000; i++) {
+        bigStr += '东';
+    }
+
     // The request will be forwarded to this node and the
     // node will respond with the full payload.
     cluster[1].on('request', function onRequest(req, res) {
-        var payload = JSON.stringify(require('./payload.json'));
+        var payload = JSON.stringify({
+            userTags: {
+                name: bigStr
+            }
+        });
         res.setHeader('Content-Length', new Buffer(payload).length);
         res.end(payload);
     });
