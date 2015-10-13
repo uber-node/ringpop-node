@@ -62,6 +62,7 @@ var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
 var sendJoin = require('./lib/gossip/joiner.js').joinCluster;
+var Syncer = require('./lib/gossip/syncer.js');
 var TracerStore = require('./lib/trace/store.js');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
@@ -147,6 +148,9 @@ function RingPop(options) {
         ringpop: this,
         minProtocolPeriod: options.minProtocolPeriod
     });
+    this.syncer = new Syncer({
+        ringpop: this
+    });
     this.suspicion = new Suspicion({
         ringpop: this,
         suspicionTimeout: options.suspicionTimeout
@@ -190,7 +194,6 @@ RingPop.prototype.destroy = function destroy() {
 
     this.emit('destroying');
 
-    this.gossip.stop();
     this.suspicion.stopAll();
     this.membershipUpdateRollup.destroy();
     this.requestProxy.destroy();

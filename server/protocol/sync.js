@@ -19,7 +19,22 @@
 // THE SOFTWARE.
 'use strict';
 
+var safeParse = require('../../lib/util.js').safeParse;
+
 module.exports = function createSyncHandler(ringpop) {
-    return function handleSync(arg1, arg2, hostInfo, callback) {
+    return function handleSync(arg2, arg3, hostInfo, callback) {
+        ringpop.stat('increment', 'sync.recv');
+
+        var body = safeParse(arg3.toString());
+        if (!body || !body.membershipChecksum) {
+            callback(new Error('Bad request: membershipChecksum is required'));
+            return;
+        }
+
+        callback(null, null, JSON.stringify({
+            membershipChecksum: ringpop.membership.checksum,
+            membershipChanges: ringpop.dissemination.maybeFullSync(
+                body.membershipChecksum)
+        }));
     };
 };

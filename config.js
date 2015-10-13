@@ -95,6 +95,8 @@ Config.prototype._seed = function _seed(seed) {
         });
     }, 'expected to be array of RegExp objects');
     seedOrDefault('membershipUpdateRollupEnabled', false);
+    seedOrDefault('maxJoinAttempts', 50, numValidator);
+    seedOrDefault('syncInterval', 10000, numValidator);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
