@@ -96,6 +96,7 @@ Config.prototype._seed = function _seed(seed) {
     }, 'expected to be array of RegExp objects');
     seedOrDefault('membershipUpdateRollupEnabled', false);
     seedOrDefault('maxJoinAttempts', 50, numValidator);
+    seedOrDefault('syncGzipEnabled', true);
     seedOrDefault('syncInterval', 10000, numValidator);
 
     function seedOrDefault(name, defaultVal, validator, reason) {

@@ -21,6 +21,7 @@
 
 var safeParse = require('./lib/util.js').safeParse;
 var TChannel = require('tchannel');
+var zlib = require('zlib');
 
 function RingpopClient(subChannel) {
     this.subChannel = subChannel;
@@ -35,27 +36,45 @@ function RingpopClient(subChannel) {
 }
 
 RingpopClient.prototype.adminConfigGet = function adminConfigGet(host, body, callback) {
-    this._request(host, '/admin/config/get', null, body, callback);
+    this._request(host, '/admin/config/get', null, body, null, callback);
 };
 
 RingpopClient.prototype.adminConfigSet = function adminConfigSet(host, body, callback) {
-    this._request(host, '/admin/config/set', null, body, callback);
+    this._request(host, '/admin/config/set', null, body, null, callback);
 };
 
 RingpopClient.prototype.adminGossipStart = function adminGossipStart(host, callback) {
-    this._request(host, '/admin/gossip/start', null, null, callback);
+    this._request(host, '/admin/gossip/start', null, null, null, callback);
 };
 
 RingpopClient.prototype.adminGossipStop = function adminGossipStop(host, callback) {
-    this._request(host, '/admin/gossip/stop', null, null, callback);
+    this._request(host, '/admin/gossip/stop', null, null, null, callback);
 };
 
 RingpopClient.prototype.adminGossipTick = function adminGossipTick(host, callback) {
-    this._request(host, '/admin/gossip/tick', null, null, callback);
+    this._request(host, '/admin/gossip/tick', null, null, null, callback);
 };
 
-RingpopClient.prototype.protocolSync = function protocolSync(host, body, callback) {
-    this._request(host, '/protocol/sync', null, body, callback);
+RingpopClient.prototype.protocolSync = function protocolSync(opts, callback) {
+    opts = opts || {};
+    var host = opts.host;
+    var body = opts.body;
+
+    if (!host) {
+        process.nextTick(function onTick() {
+            callback(new Error('Bad request: host is required'));
+        });
+        return;
+    }
+
+    if (!body) {
+        process.nextTick(function onTick() {
+            callback(new Error('Bad request: body is required'));
+        });
+        return;
+    }
+
+    this._request(host, '/protocol/sync', null, body, opts, callback);
 };
 
 RingpopClient.prototype.destroy = function destroy(callback) {
@@ -64,8 +83,11 @@ RingpopClient.prototype.destroy = function destroy(callback) {
     }
 };
 
-/* jshint maxparams: 5 */
-RingpopClient.prototype._request = function _request(host, endpoint, head, body, callback) {
+/* jshint maxparams: 6 */
+// Valid opts are: gzip
+RingpopClient.prototype._request = function _request(host, endpoint, head, body, opts, callback) {
+    opts = opts || {};
+
     var self = this;
     this.subChannel.waitForIdentified({
         host: host
@@ -91,6 +113,18 @@ RingpopClient.prototype._request = function _request(host, endpoint, head, body,
     function onSend(err, res, arg2, arg3) {
         if (err) {
             callback(err);
+            return;
+        }
+
+        if (opts.gzip === true) {
+            zlib.gunzip(arg3, function onGunzip(err, data) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+
+                callback(null, safeParse(data));
+            });
             return;
         }
 

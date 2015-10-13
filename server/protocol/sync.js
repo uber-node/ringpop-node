@@ -20,6 +20,7 @@
 'use strict';
 
 var safeParse = require('../../lib/util.js').safeParse;
+var zlib = require('zlib');
 
 module.exports = function createSyncHandler(ringpop) {
     return function handleSync(arg2, arg3, hostInfo, callback) {
@@ -31,10 +32,30 @@ module.exports = function createSyncHandler(ringpop) {
             return;
         }
 
-        callback(null, null, JSON.stringify({
+        var payload = JSON.stringify({
             membershipChecksum: ringpop.membership.checksum,
             membershipChanges: ringpop.dissemination.maybeFullSync(
                 body.membershipChecksum)
-        }));
+        });
+
+        if (ringpop.config.get('syncGzipEnabled')) {
+            var start = Date.now();
+            zlib.gzip(new Buffer(payload), function onZip(err, buffer) {
+                ringpop.stat('timing', 'sync.gzip', Date.now() - start);
+                if (err) {
+                    ringpop.logger.warn('ringpop sync gzip error', {
+                        local: ringpop.whoami(),
+                        err: err
+                    });
+                    callback(err);
+                    return;
+                }
+
+                callback(null, null, buffer);
+            });
+            return;
+        }
+
+        callback(null, null, payload);
     };
 };
