@@ -36,45 +36,27 @@ function RingpopClient(subChannel) {
 }
 
 RingpopClient.prototype.adminConfigGet = function adminConfigGet(host, body, callback) {
-    this._request(host, '/admin/config/get', null, body, null, callback);
+    this._request(host, '/admin/config/get', null, body, callback);
 };
 
 RingpopClient.prototype.adminConfigSet = function adminConfigSet(host, body, callback) {
-    this._request(host, '/admin/config/set', null, body, null, callback);
+    this._request(host, '/admin/config/set', null, body, callback);
 };
 
 RingpopClient.prototype.adminGossipStart = function adminGossipStart(host, callback) {
-    this._request(host, '/admin/gossip/start', null, null, null, callback);
+    this._request(host, '/admin/gossip/start', null, null, callback);
 };
 
 RingpopClient.prototype.adminGossipStop = function adminGossipStop(host, callback) {
-    this._request(host, '/admin/gossip/stop', null, null, null, callback);
+    this._request(host, '/admin/gossip/stop', null, null, callback);
 };
 
 RingpopClient.prototype.adminGossipTick = function adminGossipTick(host, callback) {
-    this._request(host, '/admin/gossip/tick', null, null, null, callback);
+    this._request(host, '/admin/gossip/tick', null, null, callback);
 };
 
-RingpopClient.prototype.protocolSync = function protocolSync(opts, callback) {
-    opts = opts || {};
-    var host = opts.host;
-    var body = opts.body;
-
-    if (!host) {
-        process.nextTick(function onTick() {
-            callback(new Error('Bad request: host is required'));
-        });
-        return;
-    }
-
-    if (!body) {
-        process.nextTick(function onTick() {
-            callback(new Error('Bad request: body is required'));
-        });
-        return;
-    }
-
-    this._request(host, '/protocol/sync', null, body, opts, callback);
+RingpopClient.prototype.protocolSync = function protocolSync(host, head, body, callback) {
+    this._request(host, '/protocol/sync', head, body, callback);
 };
 
 RingpopClient.prototype.destroy = function destroy(callback) {
@@ -85,9 +67,7 @@ RingpopClient.prototype.destroy = function destroy(callback) {
 
 /* jshint maxparams: 6 */
 // Valid opts are: gzip
-RingpopClient.prototype._request = function _request(host, endpoint, head, body, opts, callback) {
-    opts = opts || {};
-
+RingpopClient.prototype._request = function _request(host, endpoint, head, body, callback) {
     var self = this;
     this.subChannel.waitForIdentified({
         host: host
@@ -116,7 +96,7 @@ RingpopClient.prototype._request = function _request(host, endpoint, head, body,
             return;
         }
 
-        if (opts.gzip === true) {
+        if (head.gzip === true) {
             zlib.gunzip(arg3, function onGunzip(err, data) {
                 if (err) {
                     callback(err);

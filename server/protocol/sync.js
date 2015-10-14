@@ -26,6 +26,7 @@ module.exports = function createSyncHandler(ringpop) {
     return function handleSync(arg2, arg3, hostInfo, callback) {
         ringpop.stat('increment', 'sync.recv');
 
+        var head = safeParse(arg2.toString());
         var body = safeParse(arg3.toString());
         if (!body || !body.membershipChecksum) {
             callback(new Error('Bad request: membershipChecksum is required'));
@@ -38,7 +39,7 @@ module.exports = function createSyncHandler(ringpop) {
                 body.membershipChecksum)
         });
 
-        if (ringpop.config.get('syncGzipEnabled')) {
+        if (head && head.gzip === true) {
             var start = Date.now();
             zlib.gzip(new Buffer(payload), function onZip(err, buffer) {
                 ringpop.stat('timing', 'sync.gzip', Date.now() - start);
