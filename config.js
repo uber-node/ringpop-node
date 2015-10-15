@@ -70,12 +70,13 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampScoringReuseLimit', 2500);
     seedOrDefault('dampScoringSuppressDuration', 60 * 60 * 1000); // 1 hr in ms
     seedOrDefault('dampScoringSuppressLimit', 5000);
+    seedOrDefault('maxJoinAttempts', 50, numValidator);
     seedOrDefault('memberBlacklist', [], function validator(vals) {
         return _.all(vals, function all(val) {
             return val instanceof RegExp;
         });
     }, 'expected to be array of RegExp objects');
-    seedOrDefault('maxJoinAttempts', 50, numValidator);
+    seedOrDefault('membershipUpdateRollupEnabled', false);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
