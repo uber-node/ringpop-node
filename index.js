@@ -61,11 +61,10 @@ var registerRingpopListeners = require('./lib/on_ringpop_event.js').register;
 var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
-var sendJoin = require('./lib/gossip/join-sender.js').joinCluster;
+var sendJoin = require('./lib/gossip/joiner.js').joinCluster;
 var TracerStore = require('./lib/trace/store.js');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
-var MAX_JOIN_DURATION = 300000;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
 
 function RingPop(options) {
@@ -115,7 +114,6 @@ function RingPop(options) {
     this.pingTimeout = options.pingTimeout || 1500;
     this.joinTimeout = options.joinTimeout || 1000;
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
-    this.maxJoinDuration = options.maxJoinDuration || MAX_JOIN_DURATION;
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
 
@@ -282,7 +280,6 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
 
     sendJoin({
         ringpop: self,
-        maxJoinDuration: self.maxJoinDuration,
         joinSize: self.joinSize,
         parallelismFactor: opts.joinParallelismFactor,
         joinTimeout: self.joinTimeout
