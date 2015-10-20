@@ -245,7 +245,7 @@ function debugClear() {
 var state = 'top';
 var func = null;
 var numArgRe = /^[1-9]$/;
-var debugRe = /^[ph]$/;
+var debugRe = /^[p]$/;
 function onData(char) {
     if (state === 'top') {
         switch (char) {
@@ -272,7 +272,7 @@ function onData(char) {
             case 'd':
                 func = debugSet;
                 state = 'readchar';
-                process.stdout.write('set debug (ph): ');
+                process.stdout.write('set debug (p): ');
                 break;
             case 'D':
                 debugClear();
