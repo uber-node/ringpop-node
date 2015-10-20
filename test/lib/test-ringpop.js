@@ -47,6 +47,7 @@ function testRingpop(opts, name, test) {
             gossip: ringpop.gossip,
             iterator: ringpop.memberIterator,
             localMember: ringpop.membership.localMember,
+            loggerFactory: ringpop.loggerFactory,
             membership: ringpop.membership,
             ringpop: ringpop,
             rollup: ringpop.membershipUpdateRollup,

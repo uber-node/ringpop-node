@@ -50,6 +50,7 @@ var errors = require('./lib/errors.js');
 var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
 var HashRing = require('./lib/ring');
 var initMembership = require('./lib/membership/index.js');
+var LoggerFactory = require('./lib/logging/logger_factory.js');
 var MembershipIterator = require('./lib/membership/iterator.js');
 var MembershipUpdateRollup = require('./lib/membership/rollup.js');
 var nulls = require('./lib/nulls');
@@ -120,6 +121,9 @@ function RingPop(options) {
     // Initialize Config before all other gossip, membership, forwarding,
     // and hash ring dependencies.
     this.config = new Config(this, options);
+    this.loggerFactory = new LoggerFactory({
+        ringpop: this
+    });
 
     // use fingerprint if ringpop needs to function cross different platforms
     if (this.config.get('isCrossPlatform')) {

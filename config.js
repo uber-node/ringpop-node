@@ -21,6 +21,7 @@
 
 var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
+var LoggingLevels = require('./lib/logging/levels.js');
 var util = require('util');
 
 // This Config class is meant to be a central store
@@ -65,9 +66,13 @@ Config.prototype._seed = function _seed(seed) {
     // All config names should be camel-cased.
     seedOrDefault('TEST_KEY', 100, numValidator); // never remove, tests and lives depend on it
 
+    // Logger configs
+    seedOrDefault('defaultLogLevel', LoggingLevels.info);
+    seedOrDefault('gossipLogLevel', LoggingLevels.off);
+    seedOrDefault('joinerLogLevel', LoggingLevels.warn);
+
     // Gossip configs
     seedOrDefault('autoGossip', true);
-    seedOrDefault('gossipLogLevel', Config.Defaults.gossipLogLevel);
 
     seedOrDefault('isCrossPlatform', false);
     seedOrDefault('dampScoringEnabled', true);
