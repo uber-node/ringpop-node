@@ -98,6 +98,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('maxJoinAttempts', 50, numValidator);
     seedOrDefault('syncGzipEnabled', true);
     seedOrDefault('syncInterval', 10000, numValidator);
+    seedOrDefault('syncerEnabled', true);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
