@@ -109,7 +109,6 @@ function RingPop(options) {
 
     this.isReady = false;
 
-    this.debugFlags = {};
     this.joinSize = options.joinSize;
     this.pingReqSize = 3;           // ping-req fanout
     this.pingReqTimeout = options.pingReqTimeout || 5000;
@@ -387,10 +386,6 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
     }
 };
 
-RingPop.prototype.clearDebugFlags = function clearDebugFlags() {
-    this.debugFlags = {};
-};
-
 RingPop.prototype.getStatsHooksStats = function getStatsHooksStats() {
     if (Object.keys(this.statsHooks).length === 0) {
         return null;
@@ -517,16 +512,6 @@ RingPop.prototype.seedBootstrapHosts = function seedBootstrapHosts(file) {
         this.bootstrapHosts = this.readHostsFile(file) ||
             this.readHostsFile(this.bootstrapFile) ||
             this.readHostsFile('./hosts.json');
-    }
-};
-
-RingPop.prototype.setDebugFlag = function setDebugFlag(flag) {
-    this.debugFlags[flag] = true;
-};
-
-RingPop.prototype.debugLog = function debugLog(msg, flag) {
-    if (this.debugFlags && this.debugFlags[flag]) {
-        this.logger.info(msg);
     }
 };
 
