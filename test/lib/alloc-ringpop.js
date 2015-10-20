@@ -45,7 +45,7 @@ function allocRingpop(name, options) {
     });
 
     var timers = TimeMock(Date.now());
-    var ringpop = RingPop({
+    var ringpop = new RingPop({
         app: 'test.ringpop.proxy_req_test',
         hostPort: host + ':' + String(port),
         channel: tchannel.makeSubChannel({
