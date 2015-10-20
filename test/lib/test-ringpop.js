@@ -50,7 +50,8 @@ function testRingpop(opts, name, test) {
             membership: ringpop.membership,
             ringpop: ringpop,
             rollup: ringpop.membershipUpdateRollup,
-            suspicion: ringpop.suspicion
+            suspicion: ringpop.suspicion,
+            syncer: ringpop.syncer
         };
 
         if (opts.async) {
