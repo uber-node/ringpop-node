@@ -96,7 +96,7 @@ RingpopClient.prototype._request = function _request(host, endpoint, head, body,
             return;
         }
 
-        if (head.gzip === true) {
+        if (head && head.gzip === true) {
             zlib.gunzip(arg3, function onGunzip(err, data) {
                 if (err) {
                     callback(err);
