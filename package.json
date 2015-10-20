@@ -59,9 +59,11 @@
     "tape": "^3.0.3",
     "tape-cluster": "2.1.0",
     "tchannel": "^2.10.1",
+    "tcurl": "^4.11.1",
     "time-mock": "^0.1.2",
     "tryit": "^1.0.1",
-    "uber-licence": "^1.1.0"
+    "uber-licence": "^1.1.0",
+    "winston": "^1.0.1"
   },
   "pre-commit": [
     "check-licence",
