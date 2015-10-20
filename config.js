@@ -87,6 +87,7 @@ Config.prototype._seed = function _seed(seed) {
     // Joiner config
     seedOrDefault('joinDelayMin', 100, numValidator); // ms
     seedOrDefault('joinDelayMax', 2 * 60 * 1000, numValidator); // 2 min in ms
+    seedOrDefault('joinTroubleErrorEnabled', true);
     seedOrDefault('maxJoinDuration', 20 * 60 * 1000, numValidator); // 20 mins in ms
 
     seedOrDefault('memberBlacklist', [], function validator(vals) {
