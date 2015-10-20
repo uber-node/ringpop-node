@@ -63,7 +63,7 @@ Config.prototype._seed = function _seed(seed) {
     var self = this;
 
     // All config names should be camel-cased.
-    seedOrDefault('TEST_KEY', 100); // never remove, tests and lives depend on it
+    seedOrDefault('TEST_KEY', 100, numValidator); // never remove, tests and lives depend on it
 
     // Gossip configs
     seedOrDefault('autoGossip', true);
@@ -82,7 +82,13 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampScoringReuseLimit', 2500);
     seedOrDefault('dampScoringSuppressDuration', 60 * 60 * 1000); // 1 hr in ms
     seedOrDefault('dampScoringSuppressLimit', 5000);
-    seedOrDefault('maxJoinAttempts', 50, numValidator);
+
+    // Joiner config
+    seedOrDefault('joinDelayMin', 100, numValidator); // ms
+    seedOrDefault('joinDelayMax', 2 * 60 * 1000, numValidator); // 2 min in ms
+    seedOrDefault('joinTroubleErrorEnabled', true);
+    seedOrDefault('maxJoinDuration', 20 * 60 * 1000, numValidator); // 20 mins in ms
+
     seedOrDefault('memberBlacklist', [], function validator(vals) {
         return _.all(vals, function all(val) {
             return val instanceof RegExp;

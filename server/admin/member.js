@@ -21,7 +21,7 @@
 
 var errors = require('../../lib/errors.js');
 var Member = require('../../lib/membership/member.js');
-var sendJoin = require('../../lib/gossip/join-sender.js').joinCluster;
+var sendJoin = require('../../lib/gossip/joiner.js').joinCluster;
 var TypedError = require('error/typed');
 
 var RedundantLeaveError = TypedError({

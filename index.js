@@ -61,11 +61,10 @@ var registerRingpopListeners = require('./lib/on_ringpop_event.js').register;
 var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
-var sendJoin = require('./lib/gossip/join-sender.js').joinCluster;
+var sendJoin = require('./lib/gossip/joiner.js').joinCluster;
 var TracerStore = require('./lib/trace/store.js');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
-var MAX_JOIN_DURATION = 300000;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
 
 function RingPop(options) {
@@ -115,7 +114,6 @@ function RingPop(options) {
     this.pingTimeout = options.pingTimeout || 1500;
     this.joinTimeout = options.joinTimeout || 1000;
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
-    this.maxJoinDuration = options.maxJoinDuration || MAX_JOIN_DURATION;
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
 
@@ -282,7 +280,6 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
 
     sendJoin({
         ringpop: self,
-        maxJoinDuration: self.maxJoinDuration,
         joinSize: self.joinSize,
         parallelismFactor: opts.joinParallelismFactor,
         joinTimeout: self.joinTimeout
@@ -290,6 +287,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         joinTime = Date.now() - joinTime;
 
         if (err) {
+            self.stat('increment', 'join.failed.err');
             self.logger.error('ringpop bootstrap failed', {
                 error: err,
                 address: self.hostPort
@@ -299,6 +297,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         }
 
         if (self.destroyed) {
+            self.stat('increment', 'join.failed.destroyed');
             var destroyedMsg = 'ringpop was destroyed ' +
                 'during bootstrap';
             self.logger.error(destroyedMsg, {
@@ -320,6 +319,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
 
         bootstrapTime = Date.now() - bootstrapTime;
 
+        self.stat('increment', 'join.succeeded');
         self.logger.debug('ringpop is ready', {
             address: self.hostPort,
             memberCount: self.membership.getMemberCount(),
