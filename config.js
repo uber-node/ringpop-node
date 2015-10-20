@@ -63,6 +63,7 @@ Config.prototype._seed = function _seed(seed) {
     var self = this;
 
     // All config names should be camel-cased.
+    seedOrDefault('TEST_KEY', 100, numValidator); // never remove, tests and lives depend on it
     seedOrDefault('TEST_KEY', 100); // never remove, tests and lives depend on it
 
     // Gossip configs

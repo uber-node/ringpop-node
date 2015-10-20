@@ -93,9 +93,9 @@ test('validates memberBlacklist seed', function t(assert) {
 
 test('validates num', function t(assert) {
     var config = new Config(null, {
-        'maxJoinAttempts': 'notanum'
+        'TEST_KEY': 'notanum'
     });
-    assert.equals(50, config.get('maxJoinAttempts'),
+    assert.equals(100, config.get('TEST_KEY'),
         'uses default');
     assert.end();
 });

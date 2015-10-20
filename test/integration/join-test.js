@@ -152,8 +152,10 @@ testRingpopCluster({
 testRingpopCluster({
     size: 3,
     tap: function tap(cluster) {
-        // This'll make Node 0's join fail faster
-        cluster[0].config.set('maxJoinAttempts', 1);
+        // Setting join config will make Node 0's join fail faster
+        cluster[0].config.set('joinDelayMax', 0);
+        cluster[0].config.set('joinDelayMin', 0);
+        cluster[0].config.set('maxJoinDuration', 1);
         cluster[1].config.set('memberBlacklist', [/127.0.0.1:10000/]);
     }
 }, 'join blacklist', function t(bootRes, cluster, assert) {

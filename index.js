@@ -287,6 +287,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         joinTime = Date.now() - joinTime;
 
         if (err) {
+            self.stat('increment', 'join.failed.err');
             self.logger.error('ringpop bootstrap failed', {
                 error: err,
                 address: self.hostPort
@@ -296,6 +297,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         }
 
         if (self.destroyed) {
+            self.stat('increment', 'join.failed.destroyed');
             var destroyedMsg = 'ringpop was destroyed ' +
                 'during bootstrap';
             self.logger.error(destroyedMsg, {
@@ -317,6 +319,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
 
         bootstrapTime = Date.now() - bootstrapTime;
 
+        self.stat('increment', 'join.succeeded');
         self.logger.debug('ringpop is ready', {
             address: self.hostPort,
             memberCount: self.membership.getMemberCount(),
