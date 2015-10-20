@@ -35,6 +35,10 @@ function Config(ringpop, seedConfig) {
 
 util.inherits(Config, EventEmitter);
 
+Config.Defaults = {
+    gossipLogLevel: 'debug'
+};
+
 Config.prototype.get = function get(key) {
     return this.store[key];
 };
@@ -51,12 +55,20 @@ Config.prototype.set = function set(key, value) {
     this.emit('set.' + key, value, oldValue);
 };
 
+Config.prototype.setDefault = function setDefault(key) {
+    this.set(key, Config.Defaults[key]);
+};
+
 Config.prototype._seed = function _seed(seed) {
     var self = this;
 
     // All config names should be camel-cased.
     seedOrDefault('TEST_KEY', 100); // never remove, tests and lives depend on it
+
+    // Gossip configs
     seedOrDefault('autoGossip', true);
+    seedOrDefault('gossipLogLevel', Config.Defaults.gossipLogLevel);
+
     seedOrDefault('isCrossPlatform', false);
     seedOrDefault('dampScoringEnabled', true);
     seedOrDefault('dampScoringDecayEnabled', true);

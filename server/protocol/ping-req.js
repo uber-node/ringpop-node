@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
+var gossipLogger = require('../../lib/loggers.js').gossipLogger;
 var safeParse = require('../../lib/util').safeParse;
 var sendPing = require('../../lib/gossip/ping-sender.js');
 
@@ -44,7 +45,11 @@ module.exports = function createPingReqHandler(ringpop) {
         ringpop.totalRate.mark();
         ringpop.membership.update(changes);
 
-        ringpop.debugLog('ping-req send ping source=' + source + ' target=' + target, 'p');
+        gossipLogger(ringpop, 'ringpop ping-req ping send', {
+            local: ringpop.whoami(),
+            source: source,
+            target: target
+        });
 
         var start = new Date();
         sendPing({
@@ -52,7 +57,12 @@ module.exports = function createPingReqHandler(ringpop) {
             target: target
         }, function (isOk, body) {
             ringpop.stat('timing', 'ping-req-ping', start);
-            ringpop.debugLog('ping-req recv ping source=' + source + ' target=' + target + ' isOk=' + isOk, 'p');
+            gossipLogger(ringpop, 'ringpop ping-req ping response', {
+                local: ringpop.whoami(),
+                source: source,
+                target: target,
+                isOk: isOk
+            });
 
             if (isOk) {
                 ringpop.membership.update(body.changes);
