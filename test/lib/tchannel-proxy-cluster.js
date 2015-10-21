@@ -77,7 +77,7 @@ TChannelProxyCluster.prototype.bootstrap = function bootstrap(cb) {
         self.setupHandler('one', self.cluster.one);
         self.setupHandler('two', self.cluster.two);
         self.setupHandler('three', self.cluster.three);
-        self.client.listen(0, '127.0.0.1', onListen);
+        self.clientRootChannel.listen(0, '127.0.0.1', onListen);
     }
 
     function onListen() {

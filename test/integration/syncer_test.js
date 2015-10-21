@@ -21,26 +21,27 @@
 
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 
-testRingpopCluster('sync fails', function t(bootRes, cluster, assert) {
+testRingpopCluster({
+    size: 2
+}, 'sync fails', function t(bootRes, cluster, assert) {
     assert.plan(1);
 
     var ringpop2 = cluster[1];
-    ringpop2.channel.close(attemptSync);
+    ringpop2.destroy();
 
-    function attemptSync() {
-        var syncer1 = cluster[0].syncer;
-        syncer1.on('event', function onEvent(event) {
-            console.dir(event);
-            if (event.name === 'SyncFailedEvent') {
-                assert.pass('sync failed');
-                assert.end();
-            }
-        });
-        syncer1.sync();
-    }
+    var syncer1 = cluster[0].syncer;
+    syncer1.on('event', function onEvent(event) {
+        if (event.name === 'SyncFailedEvent') {
+            assert.pass('sync failed');
+            assert.end();
+        }
+    });
+    syncer1.sync();
 });
 
-testRingpopCluster('sync empty', function t(bootRes, cluster, assert) {
+testRingpopCluster({
+    size: 2
+}, 'sync empty', function t(bootRes, cluster, assert) {
     assert.plan(1);
 
     var ringpop2 = cluster[1];
@@ -56,12 +57,24 @@ testRingpopCluster('sync empty', function t(bootRes, cluster, assert) {
     syncer1.sync();
 });
 
-testRingpopCluster('synced', function t(bootRes, cluster, assert) {
-    assert.plan(1);
+testRingpopCluster({
+    size: 2
+}, 'synced', function t(bootRes, cluster, assert) {
+    assert.plan(2);
+
+    // Different checksums + no changes left to disseminate
+    // induces full sync.
+    var ringpop1 = cluster[0];
+    var ringpop2 = cluster[1];
+    ringpop1.dissemination.clearChanges();
+    ringpop2.dissemination.clearChanges();
+    ringpop1.membership.checksum = ringpop2.membership.checksum + 1;
 
     var syncer1 = cluster[0].syncer;
     syncer1.on('event', function onEvent(event) {
         if (event.name === 'SyncedEvent') {
+            assert.equals(event.membershipChanges.length, 2,
+                'received membership changes')
             assert.pass('synced');
             assert.end();
         }
