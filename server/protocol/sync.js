@@ -41,7 +41,9 @@ module.exports = function createSyncHandler(ringpop) {
 
         if (head && head.gzip === true) {
             var start = Date.now();
-            zlib.gzip(new Buffer(payload), function onZip(err, buffer) {
+            var prezip = new Buffer(payload);
+            ringpop.stat('gauge', 'sync.size.prezip', prezip.length);
+            zlib.gzip(prezip, function onZip(err, postzip) {
                 ringpop.stat('timing', 'sync.gzip', Date.now() - start);
                 if (err) {
                     ringpop.logger.warn('ringpop sync gzip error', {
@@ -52,7 +54,8 @@ module.exports = function createSyncHandler(ringpop) {
                     return;
                 }
 
-                callback(null, null, buffer);
+                ringpop.stat('gauge', 'sync.size.postzip', postzip.length)
+                callback(null, null, postzip);
             });
             return;
         }
