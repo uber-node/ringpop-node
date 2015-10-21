@@ -26,8 +26,8 @@ module.exports = function createSyncHandler(ringpop) {
     return function handleSync(arg2, arg3, hostInfo, callback) {
         ringpop.stat('increment', 'sync.recv');
 
-        var head = safeParse(arg2.toString());
-        var body = safeParse(arg3.toString());
+        var head = safeParse(arg2 && arg2.toString());
+        var body = safeParse(arg3 && arg3.toString());
         if (!body || !body.membershipChecksum) {
             callback(new Error('Bad request: membershipChecksum is required'));
             return;
@@ -54,7 +54,7 @@ module.exports = function createSyncHandler(ringpop) {
                     return;
                 }
 
-                ringpop.stat('gauge', 'sync.size.postzip', postzip.length)
+                ringpop.stat('gauge', 'sync.size.postzip', postzip.length);
                 callback(null, null, postzip);
             });
             return;
