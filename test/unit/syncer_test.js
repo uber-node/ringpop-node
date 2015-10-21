@@ -36,6 +36,15 @@ testRingpop('start starts', function t(deps, assert) {
     syncer.start();
 });
 
+testRingpop('stop stops', function t(deps, assert) {
+    assert.plan(1);
+
+    var syncer = deps.syncer;
+    syncer.start();
+    expectSyncerEvent(assert, syncer, 'SyncerStoppedEvent');
+    syncer.stop();
+});
+
 testRingpop('already started', function t(deps, assert) {
     assert.plan(1);
 
@@ -43,6 +52,16 @@ testRingpop('already started', function t(deps, assert) {
     syncer.start();
     expectSyncerEvent(assert, syncer, 'SyncerAlreadyStartedEvent');
     syncer.start();
+});
+
+testRingpop('already stopped', function t(deps, assert) {
+    assert.plan(1);
+
+    var syncer = deps.syncer;
+    syncer.start();
+    syncer.stop();
+    expectSyncerEvent(assert, syncer, 'SyncerAlreadyStoppedEvent');
+    syncer.stop();
 });
 
 testRingpop('can disable', function t(deps, assert) {
