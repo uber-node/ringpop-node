@@ -19,4 +19,52 @@
 // THE SOFTWARE.
 'use strict';
 
-// Things here
+var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
+
+testRingpopCluster('sync fails', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    var ringpop2 = cluster[1];
+    ringpop2.channel.close(attemptSync);
+
+    function attemptSync() {
+        var syncer1 = cluster[0].syncer;
+        syncer1.on('event', function onEvent(event) {
+            console.dir(event);
+            if (event.name === 'SyncFailedEvent') {
+                assert.pass('sync failed');
+                assert.end();
+            }
+        });
+        syncer1.sync();
+    }
+});
+
+testRingpopCluster('sync empty', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    var ringpop2 = cluster[1];
+    ringpop2.dissemination.clearChanges();
+
+    var syncer1 = cluster[0].syncer;
+    syncer1.on('event', function onEvent(event) {
+        if (event.name === 'SyncEmptyEvent') {
+            assert.pass('sync empty');
+            assert.end();
+        }
+    });
+    syncer1.sync();
+});
+
+testRingpopCluster('synced', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    var syncer1 = cluster[0].syncer;
+    syncer1.on('event', function onEvent(event) {
+        if (event.name === 'SyncedEvent') {
+            assert.pass('synced');
+            assert.end();
+        }
+    });
+    syncer1.sync();
+});
