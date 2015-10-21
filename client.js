@@ -66,7 +66,6 @@ RingpopClient.prototype.destroy = function destroy(callback) {
 };
 
 /* jshint maxparams: 6 */
-// Valid opts are: gzip
 RingpopClient.prototype._request = function _request(host, endpoint, head, body, callback) {
     var self = this;
     this.subChannel.waitForIdentified({
