@@ -71,6 +71,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampingLogLevel', LoggingLevels.warn);
     seedOrDefault('gossipLogLevel', LoggingLevels.off);
     seedOrDefault('joinLogLevel', LoggingLevels.warn);
+    seedOrDefault('membershipLogLevel', LoggingLevels.info);
 
     // Gossip configs
     seedOrDefault('autoGossip', true);
