@@ -91,3 +91,48 @@ testRingpop('start syncs', function t(deps, assert) {
     var config = deps.config;
     timers.advance(config.get('syncInterval') + 1);
 });
+
+testRingpop('no sync target', function t(deps, assert) {
+    assert.plan(1);
+
+    var syncer = deps.syncer;
+    syncer.on('event', function onEvent(event) {
+        if (event.name === 'NoSyncTargetEvent') {
+            assert.pass('no sync target event');
+        }
+    });
+    syncer.sync();
+});
+
+testRingpop({
+    async: true
+}, 'already syncing', function t(deps, assert, done) {
+    assert.plan(1);
+
+    // Create a second member to allow syncer to have a target
+    // to sync to.
+    deps.membership.makeAlive('127.0.0.1:3001', Date.now());
+
+    // Artificially delay sync request of first sync() call below.
+    var timer;
+    deps.ringpop.client = {
+        destroy: function noop() {},
+        protocolSync: function protocolSync(host, head, body, callback) {
+            console.log('protocolSync');
+            timer = setTimeout(function onTimeout() {
+                callback();
+            }, 1000);
+        }
+    };
+
+    var syncer = deps.syncer;
+    syncer.on('event', function onEvent(event) {
+        if (event.name === 'SyncerAlreadySyncingEvent') {
+            assert.pass('syncer already syncing');
+            clearTimeout(timer);
+            done();
+        }
+    });
+    syncer.sync();
+    syncer.sync();
+});
