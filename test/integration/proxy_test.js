@@ -20,19 +20,50 @@
 'use strict';
 
 var after = require('after');
+var allocCluster = require('../lib/alloc-cluster.js');
+var allocRequest = require('../lib/alloc-request.js');
+var allocResponse = require('../lib/alloc-response.js');
 var bufferEqual = require('buffer-equal');
 var express = require('express');
 var http = require('http');
 var jsonBody = require('body/json');
+var strHead = require('../../lib/request-proxy/util.js').strHead;
 var test = require('tape');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 var TimeMock = require('time-mock');
 var tryIt = require('tryit');
 
-var allocCluster = require('../lib/alloc-cluster.js');
-var strHead = require('../../lib/request-proxy/util.js').strHead;
-
 var retrySchedule = [0, 0.01, 0.02];
+
+function routeEgress(cluster, numRequests, callback) {
+    var ringpop1 = cluster[0];
+    var ringpop2 = cluster[1];
+    var requestProxy = ringpop1.requestProxy;
+    for (var i = 0; i < numRequests; i++) {
+        var request = allocRequest({
+            json: {
+                datPayload: 100
+            }
+        });
+        var response = allocResponse({}, callback);
+        requestProxy.proxyReq({
+            dest: ringpop2.whoami(),
+            keys: ['lol'],
+            req: request,
+            res: response
+        });
+    }
+}
+
+function routeIngress(cluster, numRequests, callback) {
+    var ringpop1 = cluster[0];
+    var requestProxy = ringpop1.requestProxy;
+    for (var i = 0; i < numRequests; i++) {
+        requestProxy.handleRequest({
+            ringpopChecksum: ringpop1.ring.checksum
+        }, null, callback);
+    }
+}
 
 function scheduleTicker(ringpop, onScheduled) {
     return function tickIt() {
@@ -1152,4 +1183,112 @@ testRingpopCluster({
 
         request.end();
     });
+});
+
+testRingpopCluster({
+    size: 2
+}, 'too many requests in', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    var ringpop1 = cluster[0];
+    ringpop1.config.set('backpressureEnabled', true);
+    var tooMany = ringpop1.config.get('maxInflightRequests') + 1;
+    routeIngress(cluster, tooMany, function onHandle(err, head) {
+        var headObj = JSON.parse(head);
+        if (headObj.statusCode === 429) {
+            assert.pass('too many requests');
+            assert.end();
+        }
+    });
+});
+
+testRingpopCluster({
+    size: 2
+}, 'too many requests out', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    var ringpop1 = cluster[0];
+    ringpop1.config.set('backpressureEnabled', true);
+    var tooMany = ringpop1.config.get('maxInflightRequests') + 1;
+    routeEgress(cluster, tooMany, function onRoute(err, resp) {
+        if (assert.calledEnd) return;
+        if (resp.statusCode === 429) {
+            assert.pass('too many requests');
+            assert.end();
+        }
+    });
+});
+
+testRingpopCluster({
+    size: 2
+}, 'too many requests in+out', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    var ringpop1 = cluster[0];
+    ringpop1.config.set('backpressureEnabled', true);
+    var max = ringpop1.config.get('maxInflightRequests');
+    routeIngress(cluster, max / 2, function onRoute(err, head) {
+        var headObj = JSON.parse(head);
+        if (headObj.statusCode === 429) {
+            assert.fail('not too many requests');
+        }
+    });
+    routeEgress(cluster, max / 2 + 1, function onRoute(err, resp) {
+        if (assert.calledEnd) return;
+        if (resp.statusCode === 429) {
+            assert.pass('too many requests');
+            assert.end();
+        }
+    });
+});
+
+testRingpopCluster({
+    size: 2
+}, 'too much lag', function t(bootRes, cluster, assert) {
+    var done = after(2, assert.end.bind(assert));
+
+    var ringpop1 = cluster[0];
+    ringpop1.config.set('backpressureEnabled', true);
+    ringpop1.lagSampler.stop();
+
+    // Manually adjust current lag to exceed max
+    ringpop1.config.set('maxEventLoopLag', 99);
+    ringpop1.lagSampler.currentLag = 100;
+
+    routeIngress(cluster, 1, function onRoute(err, head) {
+        var headObj = JSON.parse(head);
+        assert.equals(headObj.statusCode, 429, 'too many requests');
+        done();
+    });
+    routeEgress(cluster, 1, function onRoute(err, resp) {
+        assert.equals(resp.statusCode, 429, 'too many requests');
+        done();
+    });
+});
+
+testRingpopCluster({
+}, 'inflight to 0', function t(bootRes, cluster, assert) {
+    assert.plan(27);
+
+    var ringpop1 = cluster[0];
+    var numInflight = 25;
+    var done = after(numInflight, function onDone() {
+        assert.equals(ringpop1.requestProxy.numInflightRequests, 0,
+            'none left');
+        assert.end();
+    });
+
+    // Make sure ringpop2 properly responds to requests
+    var ringpop2 = cluster[1];
+    ringpop2.on('request', function onRequest(req, res) {
+        res.end();
+    });
+
+    routeEgress(cluster, numInflight, function onRoute() {
+        assert.pass('request finished');
+        done();
+    });
+
+    assert.equals(ringpop1.requestProxy.numInflightRequests, numInflight,
+        'all inflight');
 });
