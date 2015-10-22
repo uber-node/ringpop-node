@@ -90,6 +90,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('maxJoinDuration', 20 * 60 * 1000, numValidator); // 20 mins in ms
 
     // Forwarding config
+    seedOrDefault('inflightSheddingEnabled', true);
     seedOrDefault('maxInflightRequests', 1000, numValidator);
 
     seedOrDefault('memberBlacklist', [], function validator(vals) {
