@@ -29,7 +29,10 @@ testRingpopCluster({
     var ringpop2 = cluster[1];
     ringpop2.destroy();
 
-    var syncer1 = cluster[0].syncer;
+    var ringpop1 = cluster[0];
+    ringpop1.dissemination.clearChanges();
+
+    var syncer1 = ringpop1.syncer;
     syncer1.on('event', function onEvent(event) {
         if (event.name === 'SyncFailedEvent') {
             assert.pass('sync failed');
