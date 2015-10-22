@@ -19,8 +19,11 @@
 // THE SOFTWARE.
 'use strict';
 
+var RequestResponse = require('../../request_response.js');
 var safeParse = require('../../lib/util.js').safeParse;
 var zlib = require('zlib');
+
+var SyncResponseHeaders = RequestResponse.SyncResponseHeaders;
 
 module.exports = function createSyncHandler(ringpop) {
     return function handleSync(arg2, arg3, hostInfo, callback) {
@@ -33,13 +36,15 @@ module.exports = function createSyncHandler(ringpop) {
             return;
         }
 
+        var respHead = new SyncResponseHeaders(head && head.gzip);
+        var respHeadStr = JSON.stringify(respHead);
         var payload = JSON.stringify({
             membershipChecksum: ringpop.membership.checksum,
             membershipChanges: ringpop.dissemination.maybeFullSync(
                 body.membershipChecksum)
         });
 
-        if (head && head.gzip === true) {
+        if (respHead.gzip === true) {
             var start = Date.now();
             var prezip = new Buffer(payload);
             ringpop.stat('gauge', 'sync.size.prezip', prezip.length);
@@ -55,11 +60,11 @@ module.exports = function createSyncHandler(ringpop) {
                 }
 
                 ringpop.stat('gauge', 'sync.size.postzip', postzip.length);
-                callback(null, null, postzip);
+                callback(null, respHeadStr, postzip);
             });
             return;
         }
 
-        callback(null, null, payload);
+        callback(null, respHeadStr, payload);
     };
 };

@@ -27,7 +27,12 @@ function SyncRequestBody(membershipChecksum) {
     this.membershipChecksum = membershipChecksum;
 }
 
+function SyncResponseHeaders(gzip) {
+    this.gzip = gzip;
+}
+
 module.exports = {
     SyncRequestHeaders: SyncRequestHeaders,
-    SyncRequestBody: SyncRequestBody
+    SyncRequestBody: SyncRequestBody,
+    SyncResponseHeaders: SyncResponseHeaders
 };
