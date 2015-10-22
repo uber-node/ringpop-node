@@ -89,6 +89,9 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('joinTroubleErrorEnabled', true);
     seedOrDefault('maxJoinDuration', 20 * 60 * 1000, numValidator); // 20 mins in ms
 
+    // Forwarding config
+    seedOrDefault('maxInflightRequests', 1000, numValidator);
+
     seedOrDefault('memberBlacklist', [], function validator(vals) {
         return _.all(vals, function all(val) {
             return val instanceof RegExp;

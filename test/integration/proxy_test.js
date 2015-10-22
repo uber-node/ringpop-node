@@ -20,17 +20,19 @@
 'use strict';
 
 var after = require('after');
+var allocCluster = require('../lib/alloc-cluster.js');
+var allocRequest = require('../lib/alloc-request.js');
+var allocResponse = require('../lib/alloc-response.js');
 var bufferEqual = require('buffer-equal');
 var express = require('express');
 var http = require('http');
 var jsonBody = require('body/json');
+var strHead = require('../../lib/request-proxy/util.js').strHead;
 var test = require('tape');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 var TimeMock = require('time-mock');
 var tryIt = require('tryit');
 
-var allocCluster = require('../lib/alloc-cluster.js');
-var strHead = require('../../lib/request-proxy/util.js').strHead;
 
 var retrySchedule = [0, 0.01, 0.02];
 
@@ -1152,4 +1154,37 @@ testRingpopCluster({
 
         request.end();
     });
+});
+
+testRingpopCluster({
+    size: 2
+}, 'too many requests', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    var ringpop1 = cluster[0];
+    var ringpop2 = cluster[1];
+    var tooMany = ringpop1.config.get('maxInflightRequests') + 1;
+
+    var requestProxy = ringpop1.requestProxy;
+    for (var i = 0; i < tooMany; i++) {
+        var request = allocRequest({
+            json: {
+                datPayload: 100
+            }
+        });
+        var response = allocResponse({}, onResponse);
+        requestProxy.proxyReq({
+            dest: ringpop2.whoami(),
+            keys: ['lol'],
+            req: request,
+            res: response
+        });
+    }
+
+    function onResponse(err, resp) {
+        if (resp.statusCode === 429) {
+            assert.pass('too many requests');
+            assert.end();
+        }
+    }
 });

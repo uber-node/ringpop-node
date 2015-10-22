@@ -23,10 +23,13 @@
 var _ = require('underscore');
 var test = require('tape');
 
+var allocRequest = require('../lib/alloc-request.js');
+var allocResponse = require('../lib/alloc-response.js');
 var allocRingpop = require('../lib/alloc-ringpop.js');
 var bootstrap = require('../lib/bootstrap.js');
 var mocks = require('../mock');
 var Ringpop = require('../../index.js');
+var testRingpop = require('../lib/test-ringpop.js');
 
 test('proxyReq() proxies the request', function t(assert) {
     var left = allocRingpop('left');

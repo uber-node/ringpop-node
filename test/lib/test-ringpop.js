@@ -48,6 +48,7 @@ function testRingpop(opts, name, test) {
             iterator: ringpop.memberIterator,
             localMember: ringpop.membership.localMember,
             membership: ringpop.membership,
+            requestProxy: ringpop.requestProxy,
             ringpop: ringpop,
             rollup: ringpop.membershipUpdateRollup,
             suspicion: ringpop.suspicion
