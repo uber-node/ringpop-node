@@ -91,7 +91,7 @@ Config.prototype._seed = function _seed(seed) {
 
     // Forwarding config
     seedOrDefault('inflightSheddingEnabled', true);
-    seedOrDefault('maxInflightRequests', 250, numValidator);
+    seedOrDefault('maxInflightRequests', 1000, numValidator);
 
     seedOrDefault('memberBlacklist', [], function validator(vals) {
         return _.all(vals, function all(val) {
