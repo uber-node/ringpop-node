@@ -19,21 +19,20 @@
 // THE SOFTWARE.
 'use strict';
 
+function SyncRequestHeaders(gzip) {
+    this.gzip = gzip;
+}
+
+function SyncRequestBody(membershipChecksum) {
+    this.membershipChecksum = membershipChecksum;
+}
+
+function SyncResponseHeaders(gzip) {
+    this.gzip = gzip;
+}
+
 module.exports = {
-    join: {
-        endpoint: '/protocol/join',
-        handler: require('./join.js')
-    },
-    ping: {
-        endpoint: '/protocol/ping',
-        handler: require('./ping.js')
-    },
-    pingReq: {
-        endpoint: '/protocol/ping-req',
-        handler: require('./ping-req.js')
-    },
-    sync: {
-        endpoint: '/protocol/sync',
-        handler: require('./sync.js')
-    }
+    SyncRequestHeaders: SyncRequestHeaders,
+    SyncRequestBody: SyncRequestBody,
+    SyncResponseHeaders: SyncResponseHeaders
 };

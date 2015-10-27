@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 'use strict';
 
-
 function RingpopServer(ringpop, tchannel) {
     var self = this;
     self.ringpop = ringpop;
@@ -53,7 +52,6 @@ function RingpopServer(ringpop, tchannel) {
             function onResponse(err, res1, res2) {
                 res.headers.as = 'raw';
                 if (err) {
-                    self.ringpop.logger.warn(err.message, err);
                     res.sendNotOk(null, err.message);
                 } else {
                     if (res2 && !Buffer.isBuffer(res2)) {

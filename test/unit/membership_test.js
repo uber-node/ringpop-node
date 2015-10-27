@@ -153,7 +153,7 @@ testRingpop('generate checksums string preserves order of members', function t(d
     }
 
     // Make sure they're out of order
-    membership.shuffle();
+    membership.members.reverse();
 
     assert.equal(membership.getMemberCount(), 100, '100 members');
 

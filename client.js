@@ -21,6 +21,7 @@
 
 var safeParse = require('./lib/util.js').safeParse;
 var TChannel = require('tchannel');
+var zlib = require('zlib');
 
 function RingpopClient(subChannel) {
     this.subChannel = subChannel;
@@ -54,13 +55,17 @@ RingpopClient.prototype.adminGossipTick = function adminGossipTick(host, callbac
     this._request(host, '/admin/gossip/tick', null, null, callback);
 };
 
+RingpopClient.prototype.protocolSync = function protocolSync(host, head, body, callback) {
+    this._request(host, '/protocol/sync', head, body, callback);
+};
+
 RingpopClient.prototype.destroy = function destroy(callback) {
     if (this.isChannelOwner) {
         this.tchannel.close(callback);
     }
 };
 
-/* jshint maxparams: 5 */
+/* jshint maxparams: 6 */
 RingpopClient.prototype._request = function _request(host, endpoint, head, body, callback) {
     var self = this;
     this.subChannel.waitForIdentified({
@@ -87,6 +92,19 @@ RingpopClient.prototype._request = function _request(host, endpoint, head, body,
     function onSend(err, res, arg2, arg3) {
         if (err) {
             callback(err);
+            return;
+        }
+
+        var respHead = safeParse(arg2 && arg2.toString());
+        if (respHead && respHead.gzip === true) {
+            zlib.gunzip(arg3, function onGunzip(err, data) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+
+                callback(null, safeParse(data));
+            });
             return;
         }
 
