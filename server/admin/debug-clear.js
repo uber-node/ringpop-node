@@ -21,7 +21,7 @@
 
 module.exports = function createDebugClearHandler(ringpop) {
     return function handleDebugClear(arg1, arg2, hostInfo, callback) {
-        ringpop.clearDebugFlags();
+        ringpop.config.set('gossipLogLevel', 'debug');
         callback(null, null, 'ok');
     };
 };

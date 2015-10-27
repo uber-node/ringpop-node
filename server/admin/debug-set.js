@@ -19,14 +19,9 @@
 // THE SOFTWARE.
 'use strict';
 
-var safeParse = require('../../lib/util.js').safeParse;
-
 module.exports = function createDebugSetHandler(ringpop) {
     return function handleDebugSet(arg1, arg2, hostInfo, callback) {
-        var body = safeParse(arg2.toString());
-        if (body && body.debugFlag) {
-            ringpop.setDebugFlag(body.debugFlag);
-        }
+        ringpop.config.set('gossipLogLevel', 'info');
         callback(null, null, 'ok');
     };
 };
