@@ -49,6 +49,7 @@ function testRingpop(opts, name, test) {
             localMember: ringpop.membership.localMember,
             loggerFactory: ringpop.loggerFactory,
             membership: ringpop.membership,
+            requestProxy: ringpop.requestProxy,
             ringpop: ringpop,
             rollup: ringpop.membershipUpdateRollup,
             suspicion: ringpop.suspicion

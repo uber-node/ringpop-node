@@ -51,11 +51,13 @@ var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
 var HashRing = require('./lib/ring');
 var initMembership = require('./lib/membership/index.js');
 var LoggerFactory = require('./lib/logging/logger_factory.js');
+var LagSampler = require('./lib/lag_sampler.js');
 var MembershipIterator = require('./lib/membership/iterator.js');
 var MembershipUpdateRollup = require('./lib/membership/rollup.js');
 var nulls = require('./lib/nulls');
 var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
+var registerConfigListeners = require('./lib/on_config_event.js').register;
 var registerMembershipListeners = require('./lib/on_membership_event.js').register;
 var registerRingListeners = require('./lib/on_ring_event.js').register;
 var registerRingpopListeners = require('./lib/on_ringpop_event.js').register;
@@ -132,6 +134,10 @@ function RingPop(options) {
         this.hashFunc = farmhash.hash32;
     }
 
+    this.lagSampler = new LagSampler({
+        ringpop: this
+    });
+
     this.requestProxy = new RequestProxy({
         ringpop: this,
         maxRetries: options.requestProxyMaxRetries,
@@ -162,6 +168,7 @@ function RingPop(options) {
 
     this.tracers = new TracerStore(this);
 
+    registerConfigListeners(this);
     registerMembershipListeners(this);
     registerRingListeners(this);
     registerRingpopListeners(this);

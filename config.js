@@ -94,6 +94,12 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('joinTroubleErrorEnabled', true);
     seedOrDefault('maxJoinDuration', 20 * 60 * 1000, numValidator); // 20 mins in ms
 
+    // Forwarding config
+    seedOrDefault('backpressureEnabled', false);
+    seedOrDefault('lagSamplerInterval', 1000, numValidator);
+    seedOrDefault('maxEventLoopLag', 1500, numValidator);
+    seedOrDefault('maxInflightRequests', 5000, numValidator);
+
     seedOrDefault('memberBlacklist', [], function validator(vals) {
         return _.all(vals, function all(val) {
             return val instanceof RegExp;

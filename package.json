@@ -34,6 +34,7 @@
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "node-uuid": "^1.4.3",
+    "toobusy": "^0.2.4",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
