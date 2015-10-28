@@ -123,7 +123,7 @@ module.exports = function createJoinHandler(ringpop) {
         ringpop.serverRate.mark();
         ringpop.totalRate.mark();
 
-        ringpop.membership.makeAlive(source, incarnationNumber);
+        //ringpop.membership.makeAlive(source, incarnationNumber);
 
         callback(null, null, JSON.stringify({
             app: ringpop.app,
