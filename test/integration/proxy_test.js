@@ -1267,7 +1267,8 @@ testRingpopCluster({
 });
 
 testRingpopCluster({
-}, 'inflight to 0', function t(bootRes, cluster, assert) {
+    size: 2
+}, 'egress inflight to 0', function t(bootRes, cluster, assert) {
     assert.plan(27);
 
     var ringpop1 = cluster[0];
@@ -1285,6 +1286,35 @@ testRingpopCluster({
     });
 
     routeEgress(cluster, numInflight, function onRoute() {
+        assert.pass('request finished');
+        done();
+    });
+
+    assert.equals(ringpop1.requestProxy.numInflightRequests, numInflight,
+        'all inflight');
+});
+
+testRingpopCluster({
+    size: 2
+}, 'ingress inflight to 0', function t(bootRes, cluster, assert) {
+    assert.plan(27);
+
+    var ringpop1 = cluster[0];
+    var numInflight = 25;
+    var done = after(numInflight, function onDone() {
+        assert.equals(ringpop1.requestProxy.numInflightRequests, 0,
+            'none left');
+        assert.end();
+    });
+
+    // Make sure ringpop1 serves its own ingress requests.
+    ringpop1.on('request', function onRequest(req, res) {
+        process.nextTick(function onTick() {
+            res.end();
+        });
+    });
+
+    routeIngress(cluster, numInflight, function onRoute() {
         assert.pass('request finished');
         done();
     });
