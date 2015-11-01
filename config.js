@@ -68,6 +68,7 @@ Config.prototype._seed = function _seed(seed) {
 
     // Logger configs
     seedOrDefault('defaultLogLevel', LoggingLevels.info);
+    seedOrDefault('dampingLogLevel', LoggingLevels.warn);
     seedOrDefault('gossipLogLevel', LoggingLevels.off);
     seedOrDefault('joinLogLevel', LoggingLevels.warn);
 
