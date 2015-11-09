@@ -452,8 +452,10 @@ RingPop.prototype.lookup = function lookup(key) {
 
     var dest = this.ring.lookup(key + '');
 
+    var timing = Date.now() - startTime;
+    this.stat('timing', 'lookup', timing);
     this.emit('lookup', {
-        timing: Date.now() - startTime
+        timing: timing
     });
 
     if (!dest) {
