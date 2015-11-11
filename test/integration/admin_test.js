@@ -24,7 +24,8 @@ var RingpopClient = require('../../client.js');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 
 testRingpopCluster({
-    size: 1
+    size: 1,
+    waitForConvergence: false
 }, 'config endpoints', function t(bootRes, cluster, assert) {
     assert.plan(4);
 
@@ -55,7 +56,8 @@ testRingpopCluster({
 // Test to make sure these endpoints are available. Find tests that test
 // behavior of handlers under unit tests.
 testRingpopCluster({
-    size: 1
+    size: 1,
+    waitForConvergence: false
 }, 'gossip endpoints', function t(bootRes, cluster, assert) {
     assert.plan(4);
 

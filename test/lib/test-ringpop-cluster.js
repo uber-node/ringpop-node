@@ -28,8 +28,7 @@ var tape = require('tape');
 var Ringpop = require('../../index.js');
 var TChannel = require('tchannel');
 
-function bootstrapClusterOf(opts, onBootstrap) {
-    var cluster = createClusterOf(opts);
+function bootstrapClusterOf(cluster, opts, onBootstrap) {
 
     var bootstrapHosts = cluster.map(function mapRingpop(ringpop) {
         return ringpop.hostPort;
@@ -120,6 +119,31 @@ function destroyCluster(cluster) {
     });
 }
 
+function assertEqualChecksums(assert, cluster) {
+    var checksums = _.chain(cluster)
+        .pluck('membership')
+        .pluck('checksum')
+        .uniq();
+    if (!(checksums.length === 1 && typeof checksums[0] === 'number')) {
+        assert.fail('not all checksums are equal');
+    }
+}
+
+function speedUpGossipProtocol(cluster) {
+    var tmpMinProtocolPeriods = [];
+    cluster.forEach(function each(ringpop, i) {
+        tmpMinProtocolPeriods[i] = ringpop.gossip.minProtocolPeriod;
+        ringpop.gossip.minProtocolPeriod = 1;
+    });
+    return tmpMinProtocolPeriods;
+}
+
+function revertGossipProtocolSpeedUp(cluster, periods) {
+    cluster.forEach(function each(ringpop, i) {
+        ringpop.gossip.minProtocolPeriod = periods[i];
+    });
+}
+
 function testRingpopCluster(opts, name, test) {
     if (typeof opts === 'string' && typeof name === 'function') {
         test = name;
@@ -128,13 +152,52 @@ function testRingpopCluster(opts, name, test) {
     }
 
     tape(name, function onTest(assert) {
-        var cluster = bootstrapClusterOf(opts, function onBootstrap(results) {
-            assert.on('end', function onEnd() {
-                destroyCluster(cluster);
-            });
+        var cluster = createClusterOf(opts);
+        var joinResults;
 
-            test(results, cluster, assert);
+        // Speed up gossip protocol; make sure to revert when after convergence
+        var periods = speedUpGossipProtocol(cluster);
+
+        if (opts.waitForConvergence !== false) {
+            var onOneExhausted = _.after(cluster.length, onSteadyState);
+            cluster.forEach(function each(ringpop) {
+                ringpop.dissemination.on('changesExhausted', onOneExhausted);
+            });
+        }
+
+        cluster = bootstrapClusterOf(cluster, opts, function onBootstrap(results) {
+            joinResults = results;
+
+            // Not all tests converge. e.g. join tests with broken nodes shouldn't.
+            // This option allows us to still run the checks
+            if (opts.waitForConvergence === false) {
+                onSteadyState();
+            }
         });
+
+        assert.on('end', function onEnd() {
+            destroyCluster(cluster);
+        });
+
+        function onSteadyState() {
+            // do not run onConverged if not all joins are succesful
+            if (joinResults === undefined) {
+                return;
+            }
+
+            revertGossipProtocolSpeedUp(cluster, periods);
+
+            if (opts.waitForConvergence !== false && opts.checkChecksums === true) {
+                assertEqualChecksums(assert, cluster);
+            }
+
+            if (typeof opts.tapAfterConvergence === 'function') {
+                opts.tapAfterConvergence(cluster);
+            }
+
+            test(joinResults, cluster, assert);
+        }
+
     });
 }
 

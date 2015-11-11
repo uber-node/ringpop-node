@@ -1103,7 +1103,7 @@ test('proxies big json', function t(assert) {
 
     var opts = {
         bodyLimit: bodyLimit,
-        requestProxyMaxRetries: 0,
+        requestProxyMaxRetries: 0
     };
 
     var cluster = allocCluster(opts, function onReady() {
