@@ -72,6 +72,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('gossipLogLevel', LoggingLevels.off);
     seedOrDefault('joinLogLevel', LoggingLevels.warn);
     seedOrDefault('membershipLogLevel', LoggingLevels.off);
+    seedOrDefault('ringLogLevel', LoggingLevels.off);
 
     // Gossip configs
     seedOrDefault('autoGossip', true);

@@ -146,6 +146,7 @@ function RingPop(options) {
     });
 
     this.ring = new this.Ring({
+        ringpop: this,
         hashFunc: this.hashFunc
     });
 
