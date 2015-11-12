@@ -62,7 +62,8 @@ module.exports = function createPingReqHandler(ringpop) {
         sendPing({
             ringpop: ringpop,
             target: target
-        }, function (err) {
+        }, function (err, res) {
+            // TODO Handle not-ready error
             var isOk = !!!err;
 
             ringpop.stat('timing', 'ping-req-ping', start);
@@ -72,6 +73,10 @@ module.exports = function createPingReqHandler(ringpop) {
                 target: target,
                 isOk: isOk
             });
+
+            if (res && res.changes) {
+                ringpop.membership.update(res.changes);
+            }
 
             callback(null, null, JSON.stringify({
                 changes: ringpop.dissemination.issueAsReceiver(source,
