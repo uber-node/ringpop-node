@@ -38,6 +38,7 @@ function main(args) {
     }
 
     var tchannel = new TChannel({
+        logger: createLogger('tchannel')
     });
 
     var ringpop = new RingPop({
