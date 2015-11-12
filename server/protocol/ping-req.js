@@ -21,7 +21,7 @@
 
 var errors = require('../../lib/errors.js');
 var safeParse = require('../../lib/util').safeParse;
-var sendPing = require('../../lib/gossip/pinger.js');
+var sendPing = require('../../lib/gossip/ping-sender.js');
 
 module.exports = function createPingReqHandler(ringpop) {
     var gossipLogger = ringpop.loggerFactory.getLogger('gossip');
