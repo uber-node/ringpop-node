@@ -26,7 +26,8 @@ var TypedError = require('error/typed');
 var ChannelDestroyedError = TypedError({
     type: 'ringpop.client.channel-destroyed',
     message: 'Channel is already destroyed',
-    endpoint: null
+    endpoint: null,
+    channelType: null
 });
 
 function RingpopClient(subChannel) {
@@ -96,7 +97,18 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
     if (this.subChannel.destroyed) {
         process.nextTick(function onTick() {
             callback(ChannelDestroyedError({
-                endpoint: endpoint
+                endpoint: endpoint,
+                channelType: 'subChannel'
+            }));
+        });
+        return;
+    }
+
+    if (this.subChannel.topChannel.destroyed) {
+        process.nextTick(function onTick() {
+            callback(ChannelDestroyedError({
+                endpoint: endpoint,
+                channelType: 'topChannel'
             }));
         });
         return;
