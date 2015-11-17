@@ -53,8 +53,7 @@ function RingpopServer(ringpop, tchannel) {
             function onResponse(err, res1, res2) {
                 res.headers.as = 'raw';
                 if (err) {
-                    self.ringpop.logger.warn(err.message, err);
-                    res.sendNotOk(null, err.message);
+                    res.sendNotOk(null, JSON.stringify(err));
                 } else {
                     if (res2 && !Buffer.isBuffer(res2)) {
                         res2 = new Buffer(res2);
