@@ -94,7 +94,7 @@ RingpopClient.prototype.destroy = function destroy(callback) {
 RingpopClient.prototype._request = function _request(opts, endpoint, head, body, callback) {
     var self = this;
 
-    if (this.subChannel.destroyed) {
+    if (this.subChannel && this.subChannel.destroyed) {
         process.nextTick(function onTick() {
             callback(ChannelDestroyedError({
                 endpoint: endpoint,
@@ -104,7 +104,9 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
         return;
     }
 
-    if (this.subChannel.topChannel.destroyed) {
+    if (this.subChannel &&
+            this.subChannel.topChannel &&
+            this.subChannel.topChannel.destroyed) {
         process.nextTick(function onTick() {
             callback(ChannelDestroyedError({
                 endpoint: endpoint,
