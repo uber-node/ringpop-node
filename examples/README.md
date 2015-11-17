@@ -4,7 +4,7 @@ do something interesting.
 * `key_value.js` - Use Ringpop to build an in-memory key-value store.
 
 # Installation
-Though each example may have their own dependencies it's safest to run the
+Though each example may have its own dependencies it's safest to run the
 below from the root directory:
 
 `npm install`
