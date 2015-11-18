@@ -487,7 +487,8 @@ function main() {
 
     tchannel = new TChannel({host: "127.0.0.1", port: 2999});
     ringPool = tchannel.makeSubChannel({
-        serviceName: 'tick-cluster'
+        serviceName: 'tick-cluster',
+        trace: false
     });
 
     var stdin = process.stdin;

@@ -49,7 +49,8 @@ function allocRingpop(name, options) {
         app: 'test.ringpop.proxy_req_test',
         hostPort: host + ':' + String(port),
         channel: tchannel.makeSubChannel({
-            serviceName: 'ringpop'
+            serviceName: 'ringpop',
+            trace: false
         }),
         logger: DebuglogLogger(name || 'ringpop'),
         requestProxyMaxRetries: options.requestProxyMaxRetries,
