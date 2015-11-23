@@ -45,7 +45,8 @@ Cluster.prototype.launch = function launch(callback) {
             app: this.name,
             hostPort: addr,
             channel: tchannel.makeSubChannel({
-                serviceName: 'ringpop'
+                serviceName: 'ringpop',
+                trace: false
             })
         });
         ringpop.setupChannel();

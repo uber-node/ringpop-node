@@ -39,7 +39,8 @@ function App(options) {
         app: 'app',
         hostPort: '127.0.0.1:' + self.port,
         channel: self.channel.makeSubChannel({
-            serviceName: 'ringpop'
+            serviceName: 'ringpop',
+            trace: false
         })
     });
 

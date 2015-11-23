@@ -36,7 +36,8 @@ function RingpopClient(subChannel) {
     if (!this.subChannel) {
         this.tchannel = new TChannel();
         this.subChannel = this.tchannel.makeSubChannel({
-            serviceName: 'ringpop'
+            serviceName: 'ringpop',
+            trace: false
         });
         this.isChannelOwner = true;
     }

@@ -99,7 +99,8 @@ function createRingpop(opts) {
         hostPort: opts.host + ':' + opts.port,
         maxJoinDuration: opts.maxJoinDuration,
         channel: channel.makeSubChannel({
-            serviceName: 'ringpop'
+            serviceName: 'ringpop',
+            trace: false
         }),
         logger: DebuglogLogger('ringpop')
     }, opts));

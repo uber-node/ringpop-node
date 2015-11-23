@@ -64,7 +64,8 @@ TChannelProxyCluster.prototype.bootstrap = function bootstrap(cb) {
                 as: 'raw'
             },
             hasNoParent: true
-        }
+        },
+        trace: false
     });
 
     function onCluster() {

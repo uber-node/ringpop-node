@@ -13,7 +13,8 @@ var TChannel = require('TChannel');
 
 var tchannel = new TChannel();
 var subChannel = tchannel.makeSubChannel({
-    serviceName: 'ringpop'
+    serviceName: 'ringpop',
+    trace: false
 });
 ```
 
@@ -199,7 +200,8 @@ var cluster = [];
 ports.forEach(function each(port) {
     var tchannel = new TChannel();
     var subChannel = tchannel.makeSubChannel({
-        serviceName: 'ringpop'
+        serviceName: 'ringpop',
+        trace: false
     });
 
     cluster.push(new Ringpop({

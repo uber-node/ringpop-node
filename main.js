@@ -46,7 +46,8 @@ function main(args) {
         hostPort: listen,
         logger: createLogger('ringpop'),
         channel: tchannel.makeSubChannel({
-            serviceName: 'ringpop'
+            serviceName: 'ringpop',
+            trace: false
         }),
         isCrossPlatform: true
     });
