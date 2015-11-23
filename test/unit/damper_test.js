@@ -91,9 +91,9 @@ testRingpop({
     var targets = setupMembership(deps, nVal + 1);
 
     // Remove member from list when a damp-req is sent to member.
-    stubClient(deps, function protocolDampReq(host, body, callback) {
+    stubClient(deps, function protocolDampReq(opts, body, callback) {
         targets = targets.filter(function filter(member) {
-            return member.address !== host;
+            return member.address !== opts.host;
         });
 
         process.nextTick(function onTick() {

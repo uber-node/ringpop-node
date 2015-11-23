@@ -68,10 +68,11 @@ Config.prototype._seed = function _seed(seed) {
 
     // Logger configs
     seedOrDefault('defaultLogLevel', LoggingLevels.info);
-    seedOrDefault('dampingLogLevel', LoggingLevels.debug);
+    seedOrDefault('dampingLogLevel', LoggingLevels.error);
     seedOrDefault('disseminationLogLevel', LoggingLevels.error);
-    seedOrDefault('gossipLogLevel', LoggingLevels.off);
+    seedOrDefault('gossipLogLevel', LoggingLevels.error);
     seedOrDefault('joinLogLevel', LoggingLevels.warn);
+    seedOrDefault('membershipLogLevel', LoggingLevels.error);
     seedOrDefault('suspicionLogLevel', LoggingLevels.error);
 
     // Gossip configs
@@ -83,6 +84,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampedMemberExpirationInterval', 60000);
     seedOrDefault('dampReqNVal', 6);
     seedOrDefault('dampReqRVal', 3);
+    seedOrDefault('dampReqTimeout', 1000);
     seedOrDefault('dampScoringEnabled', true);
     seedOrDefault('dampScoringDecayEnabled', true);
     seedOrDefault('dampScoringDecayInterval', 1000);
