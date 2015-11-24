@@ -66,7 +66,7 @@ Config.prototype._seed = function _seed(seed) {
     // All config names should be camel-cased.
     seedOrDefault('TEST_KEY', 100, numValidator); // never remove, tests and lives depend on it
 
-    // Logger configs
+    // Logger configs; should be at least error by default.
     seedOrDefault('defaultLogLevel', LoggingLevels.info);
     seedOrDefault('dampingLogLevel', LoggingLevels.error);
     seedOrDefault('disseminationLogLevel', LoggingLevels.error);
