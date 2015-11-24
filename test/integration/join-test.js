@@ -37,7 +37,8 @@ test('bootstrap with self is ok', function t(assert) {
 });
 
 testRingpopCluster({
-    size: 1
+    size: 1,
+    waitForConvergence: false
 }, 'one node can join', function t(bootRes, cluster, assert) {
     assert.ifErr(bootRes[cluster[0].hostPort].err, 'no error occurred');
     assert.end();
@@ -76,8 +77,7 @@ testRingpopCluster({
     var badNode = cluster[2].hostPort;
 
     cluster.forEach(function eachNode(node) {
-        assert.ok(node.isReady, 'node is bootstrapped');
-
+        assert.ok(node.isReady, 'node is ready');
         var nodesJoined = bootRes[node.hostPort].nodesJoined;
         assert.ok(nodesJoined.length >= 1, 'joined at least one other node');
         assert.ok(nodesJoined.indexOf(badNode) === -1, 'no one can join bad node');
@@ -92,12 +92,13 @@ testRingpopCluster({
     tap: function tap(cluster) {
         cluster[1].denyJoins();
         cluster[2].denyJoins();
-    }
+    },
+    waitForConvergence: false
 }, 'three nodes, two of them bad, join size equals two', function t(bootRes, cluster, assert) {
     assert.equal(cluster.length, 3, 'cluster of 3');
 
     cluster.forEach(function eachNode(node) {
-        assert.notok(node.isReady, 'node is not bootstrapped');
+        assert.notok(node.isReady, 'node is not ready');
         assert.equal(bootRes[node.hostPort].err.type,
             'ringpop.join-duration-exceeded',
             'join duration exceeded error');
@@ -133,7 +134,8 @@ testRingpopCluster({
                 }));
             }, 100);
         });
-    }
+    },
+    waitForConvergence: false
 }, 'slow joiner', function t(bootRes, cluster, assert) {
     assert.equal(cluster.length, 2, 'cluster of 2');
 
@@ -157,7 +159,8 @@ testRingpopCluster({
         cluster[0].config.set('joinDelayMin', 0);
         cluster[0].config.set('maxJoinDuration', 1);
         cluster[1].config.set('memberBlacklist', [/127.0.0.1:10000/]);
-    }
+    },
+    checkChecksums: false
 }, 'join blacklist', function t(bootRes, cluster, assert) {
     assert.notok(cluster[0].isReady, 'node one is not ready');
     assert.ok(cluster[1].isReady, 'node two is ready');
