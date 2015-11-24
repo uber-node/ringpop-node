@@ -27,7 +27,7 @@ var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 test('bootstrap with self is ok', function t(assert) {
     var ringpop = allocRingpop();
 
-    ringpop.bootstrap([ringpop.hostPort], onBootstrap);
+    ringpop.bootstrap([ringpop.whoami()], onBootstrap);
 
     function onBootstrap(err) {
         assert.ifError(err);
@@ -40,7 +40,7 @@ testRingpopCluster({
     size: 1,
     waitForConvergence: false
 }, 'one node can join', function t(bootRes, cluster, assert) {
-    assert.ifErr(bootRes[cluster[0].hostPort].err, 'no error occurred');
+    assert.ifErr(bootRes[cluster[0].whoami()].err, 'no error occurred');
     assert.end();
 });
 
@@ -74,11 +74,11 @@ testRingpopCluster({
 }, 'three nodes, one of them bad, join size equals one', function t(bootRes, cluster, assert) {
     assert.equal(cluster.length, 3, 'cluster of 3');
 
-    var badNode = cluster[2].hostPort;
+    var badNode = cluster[2].whoami();
 
     cluster.forEach(function eachNode(node) {
         assert.ok(node.isReady, 'node is ready');
-        var nodesJoined = bootRes[node.hostPort].nodesJoined;
+        var nodesJoined = bootRes[node.whoami()].nodesJoined;
         assert.ok(nodesJoined.length >= 1, 'joined at least one other node');
         assert.ok(nodesJoined.indexOf(badNode) === -1, 'no one can join bad node');
     });
@@ -99,11 +99,26 @@ testRingpopCluster({
 
     cluster.forEach(function eachNode(node) {
         assert.notok(node.isReady, 'node is not ready');
-        assert.equal(bootRes[node.hostPort].err.type,
+        assert.equal(bootRes[node.whoami()].err.type,
             'ringpop.join-duration-exceeded',
             'join duration exceeded error');
     });
 
+    assert.end();
+});
+
+testRingpopCluster({
+    // We disable gossip because we don't want to exhaust the changes through pings
+    autoGossip: false,
+    waitForConvergence: false
+}, 'do not disseminate join list', function t(bootRes, cluster, assert) {
+    assert.plan(9);
+    cluster.forEach(function eachNode(node) {
+        assert.equal(node.dissemination.getChangesCount(), 1, 'only one change to be disseminated');
+        var change = node.dissemination.getChangeByAddress(node.whoami());
+        assert.ok(change, 'changes should contain this node\'s address');
+        assert.equal(change.address, node.whoami(), 'address matches');
+    });
     assert.end();
 });
 
@@ -129,7 +144,7 @@ testRingpopCluster({
                 res.headers.as = 'raw';
                 res.sendOk(null, JSON.stringify({
                     app: 'test',
-                    coordinator: cluster[1].hostPort,
+                    coordinator: cluster[1].whoami(),
                     membership: cluster[1].dissemination.fullSync()
                 }));
             }, 100);
@@ -141,7 +156,7 @@ testRingpopCluster({
 
     var slowJoiner = cluster[0];
     assert.notok(slowJoiner.isReady, 'node one is not ready');
-    assert.equal(bootRes[slowJoiner.hostPort].err.type, 'ringpop.join-aborted',
+    assert.equal(bootRes[slowJoiner.whoami()].err.type, 'ringpop.join-aborted',
         'join aborted error');
 
     assert.ok(cluster[1].isReady, 'node two is ready');
