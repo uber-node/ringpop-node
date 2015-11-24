@@ -31,7 +31,7 @@ function member1(ringpop, opts) {
 }
 
 function memberGenerator(ringpop) {
-    var basePort = 3001; // assums member with port 3000 is already in membership
+    var basePort = 3001; // assumes member with port 3000 is already in membership
     var counter = 0;
     return function genMember() {
         return new Member(ringpop, {
