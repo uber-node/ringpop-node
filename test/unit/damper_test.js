@@ -58,7 +58,7 @@ testRingpop('damped max percentage', function t(deps, assert) {
     config.set('dampedMaxPercentage', 0);
 
     var damper = deps.damper;
-    damper.on('event', function onEvent(event) {
+    damper.on('dampedLimitExceeded', function onEvent(event) {
         assert.equals(event.name, 'DampedLimitExceededEvent',
             'damped limit exceeded event');
     });
@@ -69,10 +69,8 @@ testRingpop('damp-req selection unsatisfied', function t(deps, assert) {
     assert.plan(1);
 
     var damper = deps.damper;
-    damper.on('event', function onEvent(event) {
-        if (event.name === 'DampReqUnsatisfiedEvent') {
-            assert.pass('damp req selection unsatisfied');
-        }
+    damper.on('dampReqUnsatisfied', function onEvent(event) {
+        assert.pass('damp req selection unsatisfied');
     });
     damper.initiateSubprotocol(noop);
 });
@@ -108,14 +106,12 @@ testRingpop({
     damper.addFlapper(flappyMember);
     // By the time inconclusive event is emitted all members
     // should have received a damp-req.
-    damper.on('event', function onEvent(event) {
-        if (event.name === 'DampingInconclusiveEvent') {
-            assert.equals(targets.length, 1, 'all n received damp req');
-            // Only one not to be filtered out: the flappy member itself.
-            assert.equals(targets[0].address, flappyMember.address,
-                'flappy member not filtered out');
-            done();
-        }
+    damper.on('dampingInconclusive', function onEvent(event) {
+        assert.equals(targets.length, 1, 'all n received damp req');
+        // Only one not to be filtered out: the flappy member itself.
+        assert.equals(targets[0].address, flappyMember.address,
+            'flappy member not filtered out');
+        done();
     });
     damper.initiateSubprotocol(noop);
 });
@@ -219,10 +215,8 @@ testRingpop('damp timer initiates subprotocol', function t(deps, assert) {
     var timers = new TimeMock(Date.now());
     var damper = deps.damper;
     damper.timers = timers;
-    damper.on('event', function onEvent(event) {
-        if (event.name === 'DamperStartedEvent') {
-            assert.pass('damper started');
-        }
+    damper.on('started', function onEvent(event) {
+        assert.pass('damper started');
     });
 
     var member1 = fixtures.member1(deps.ringpop);
@@ -278,12 +272,10 @@ testRingpop('expires damped members', function t(deps, assert) {
     assert.true(damper.isDamped(member1), 'member is damped');
 
     // Advance fake time beyond damped member suppress duration
-    damper.on('event', function onEvent(event) {
-        if (event.name === 'DampedMemberExpirationEvent') {
-            var undampedMembers = event.undampedMembers;
-            assert.equals(undampedMembers.length, 1, 'a member has been undamped');
-            assert.false(damper.isDamped(member1), 'member is no longer damped');
-        }
+    damper.on('dampedMemberExpiration', function onEvent(event) {
+        var undampedMembers = event.undampedMembers;
+        assert.equals(undampedMembers.length, 1, 'a member has been undamped');
+        assert.false(damper.isDamped(member1), 'member is no longer damped');
     });
     timers.advance(expirationInterval + 1);
 });
@@ -321,11 +313,9 @@ testRingpop({
     var damper = deps.damper;
     var flappyMember = targets[targets.length - 1];
     damper.addFlapper(flappyMember);
-    damper.on('event', function onEvent(event) {
-        if (event.name === 'DampReqFailedEvent') {
-            assert.true(event.err, 'an error occurred');
-            done();
-        }
+    damper.on('dampReqFailed', function onEvent(event) {
+        assert.true(event.err, 'an error occurred');
+        done();
     });
     damper.initiateSubprotocol(noop);
 });
