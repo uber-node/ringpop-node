@@ -88,7 +88,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampScoringEnabled', true);
     seedOrDefault('dampScoringDecayEnabled', true);
     seedOrDefault('dampScoringDecayInterval', 1000);
-    seedOrDefault('dampScoringHalfLife', 60);
+    seedOrDefault('dampScoringHalfLife', 60 * 5); // 5 minutes in seconds
     // TODO Initial should never be below min nor above max
     seedOrDefault('dampScoringInitial', 0);
     seedOrDefault('dampScoringMax', 10000);
