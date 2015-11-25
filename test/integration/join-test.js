@@ -175,6 +175,7 @@ testRingpopCluster({
         cluster[0].config.set('maxJoinDuration', 1);
         cluster[1].config.set('memberBlacklist', [/127.0.0.1:10000/]);
     },
+    waitForConvergence: false,
     checkChecksums: false
 }, 'join blacklist', function t(bootRes, cluster, assert) {
     assert.notok(cluster[0].isReady, 'node one is not ready');
