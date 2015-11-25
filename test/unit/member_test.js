@@ -53,7 +53,7 @@ testRingpop('penalized for update', function t(deps, assert) {
 });
 
 testRingpop('flaps until exceeds suppress limit', function t(deps, assert) {
-    assert.plan(2);
+    assert.plan(1);
 
     var config= deps.config;
     config.set('dampScoringMax', 1000);
@@ -62,7 +62,7 @@ testRingpop('flaps until exceeds suppress limit', function t(deps, assert) {
 
     var membership = deps.membership;
     var member2 = addSecondMember(membership, '127.0.0.1:3001');
-    member2.on('suppressLimitExceeded', onExceeded);
+    member2.on('memberSuppressLimitExceeded', onExceeded);
     member2.evaluateUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 1

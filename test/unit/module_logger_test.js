@@ -108,3 +108,30 @@ testRingpop('turn off gossip logging', function t(deps, assert) {
     // Replace with old logger after we're done.
     ringpop.logger = oldLogger;
 });
+
+testRingpop('can log at', function t(deps, assert) {
+    var config = deps.config;
+    config.set('defaultLogLevel', LoggingLevels.error);
+
+    var loggerFactory = deps.loggerFactory;
+    var logger = loggerFactory.getLogger('default');
+    assert.true(logger.canLogAt(LoggingLevels.error), 'can log at');
+    assert.false(logger.canLogAt(LoggingLevels.warn), 'cannot log at');
+    assert.false(logger.canLogAt(LoggingLevels.info), 'cannot log at');
+    assert.false(logger.canLogAt(LoggingLevels.debug), 'cannot log at');
+    assert.false(logger.canLogAt(LoggingLevels.warn), 'cannot log at');
+
+    config.set('defaultLogLevel', LoggingLevels.debug);
+    assert.true(logger.canLogAt(LoggingLevels.error), 'can log at');
+    assert.true(logger.canLogAt(LoggingLevels.warn), 'can log at');
+    assert.true(logger.canLogAt(LoggingLevels.info), 'can log at');
+    assert.true(logger.canLogAt(LoggingLevels.debug), 'can log at');
+    assert.true(logger.canLogAt(LoggingLevels.warn), 'can log at');
+
+    config.set('defaultLogLevel', LoggingLevels.off);
+    assert.false(logger.canLogAt(LoggingLevels.error), 'cannot log at');
+    assert.false(logger.canLogAt(LoggingLevels.warn), 'cannot log at');
+    assert.false(logger.canLogAt(LoggingLevels.info), 'cannot log at');
+    assert.false(logger.canLogAt(LoggingLevels.debug), 'cannot log at');
+    assert.false(logger.canLogAt(LoggingLevels.warn), 'cannot log at');
+});

@@ -45,6 +45,7 @@ var Gossip = require('./lib/gossip');
 var Suspicion = require('./lib/gossip/suspicion');
 
 var Config = require('./config.js');
+var Damper = require('./lib/gossip/damper.js');
 var Dissemination = require('./lib/gossip/dissemination.js');
 var errors = require('./lib/errors.js');
 var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
@@ -156,6 +157,9 @@ function RingPop(options) {
     this.gossip = new Gossip({
         ringpop: this,
         minProtocolPeriod: options.minProtocolPeriod
+    });
+    this.damper = new Damper({
+        ringpop: this
     });
     this.suspicion = new Suspicion({
         ringpop: this,

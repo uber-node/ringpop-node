@@ -66,21 +66,29 @@ Config.prototype._seed = function _seed(seed) {
     // All config names should be camel-cased.
     seedOrDefault('TEST_KEY', 100, numValidator); // never remove, tests and lives depend on it
 
-    // Logger configs
+    // Logger configs; should be at least error by default.
     seedOrDefault('defaultLogLevel', LoggingLevels.info);
-    seedOrDefault('dampingLogLevel', LoggingLevels.warn);
-    seedOrDefault('gossipLogLevel', LoggingLevels.off);
+    seedOrDefault('dampingLogLevel', LoggingLevels.error);
+    seedOrDefault('disseminationLogLevel', LoggingLevels.error);
+    seedOrDefault('gossipLogLevel', LoggingLevels.error);
     seedOrDefault('joinLogLevel', LoggingLevels.warn);
-    seedOrDefault('disseminationLogLevel', LoggingLevels.off);
+    seedOrDefault('membershipLogLevel', LoggingLevels.error);
+    seedOrDefault('suspicionLogLevel', LoggingLevels.error);
 
     // Gossip configs
     seedOrDefault('autoGossip', true);
 
     seedOrDefault('isCrossPlatform', false);
+    seedOrDefault('dampedErrorLoggingEnabled', false);
+    seedOrDefault('dampedMaxPercentage', 10);
+    seedOrDefault('dampedMemberExpirationInterval', 60000);
+    seedOrDefault('dampReqNVal', 6);
+    seedOrDefault('dampReqRVal', 3);
+    seedOrDefault('dampReqTimeout', 1000);
     seedOrDefault('dampScoringEnabled', true);
     seedOrDefault('dampScoringDecayEnabled', true);
     seedOrDefault('dampScoringDecayInterval', 1000);
-    seedOrDefault('dampScoringHalfLife', 60);
+    seedOrDefault('dampScoringHalfLife', 60 * 5); // 5 minutes in seconds
     // TODO Initial should never be below min nor above max
     seedOrDefault('dampScoringInitial', 0);
     seedOrDefault('dampScoringMax', 10000);
@@ -89,6 +97,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('dampScoringReuseLimit', 2500);
     seedOrDefault('dampScoringSuppressDuration', 60 * 60 * 1000); // 1 hr in ms
     seedOrDefault('dampScoringSuppressLimit', 5000);
+    seedOrDefault('dampTimerInterval', 60 * 1000); // 1min in ms
 
     // Joiner config
     seedOrDefault('joinDelayMin', 100, numValidator); // ms
