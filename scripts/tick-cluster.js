@@ -28,7 +28,7 @@ var program = require('commander');
 var TChannel = require('tchannel');
 var fs = require('fs');
 
-var programInterpreter, programPath, procsToStart = 5;
+var programInterpreter, programPath, startingPort, bindInterface, procsToStart = 5;
 var hosts, procs, ringPool, localIP, toSuspend, toKill, tchannel; // defined later
 
 /* jshint maxparams: 6 */
@@ -470,10 +470,9 @@ function killAllProcs() {
 }
 
 function startCluster() {
-    var port = 3000;
     procs = []; // note module scope
     for (var i = 0; i < procsToStart ; i++) {
-        procs[i] = new ClusterProc(port + i);
+        procs[i] = new ClusterProc(startingPort + i);
     }
     logMsg('init', color.cyan('started ' + procsToStart + ' procs: ') + color.green(procs.map(function (p) { return p.proc.pid; }).join(', ')));
 }
@@ -481,11 +480,15 @@ function startCluster() {
 function main() {
     logMsg('init', color.cyan('tick-cluster started ') + color.red('d: debug flags, g: gossip, j: join, k: kill, K: revive all, l: sleep, p: protocol stats, q: quit, s: cluster stats, t: tick'));
 
-    findLocalIP();
-    hosts = generateHosts(localIP, 3000, procsToStart, 'hosts.json');
+    if (bindInterface) {
+        localIP = bindInterface;
+    } else {
+        findLocalIP();
+    }
+    hosts = generateHosts(localIP, startingPort, procsToStart, 'hosts.json');
     startCluster();
 
-    tchannel = new TChannel({host: "127.0.0.1", port: 2999});
+    tchannel = new TChannel({host: "127.0.0.1", port: startingPort + procsToStart + 1});
     ringPool = tchannel.makeSubChannel({
         serviceName: 'tick-cluster',
         trace: false
@@ -554,6 +557,8 @@ program
     .version(require('../package.json').version)
     .option('-n <size>', 'Size of cluster. Default is ' + procsToStart + '.')
     .option('-i, --interpreter <interpreter>', 'Interpreter that runs program.')
+    .option('--interface <address>', 'Interface to bind ringpop instances to.')
+    .option('--port <num>', 'Starting port for instances.')
     .arguments('<program>')
     .description('tick-cluster is a tool that launches a ringpop cluster of arbitrary size')
     .action(function onAction(path, options) {
@@ -566,6 +571,8 @@ program
             procsToStart = parseInt(options.N);
         }
         programInterpreter = options.interpreter;
+        bindInterface = options.interface;
+        startingPort = parseInt(options.port);
     });
 
 program.on('--help', function onHelp() {
@@ -589,6 +596,10 @@ if (!fs.existsSync(programPath)) {
 if (isNaN(procsToStart)) {
     console.log('Error: number of processes to start is not an integer');
     process.exit(1);
+}
+
+if (isNaN(startingPort)) {
+    startingPort = 3000;
 }
 
 main();
