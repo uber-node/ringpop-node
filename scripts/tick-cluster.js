@@ -479,7 +479,7 @@ function startCluster() {
 }
 
 function main() {
-    logMsg('init', color.cyan('tick-cluster started ') + color.red('d: debug flags, g: gossip, j: join, k: kill, K: revive all, l: sleep, p: protocol stats, q: quit, s: cluster stats, t: tick'));
+    logMsg('init', color.cyan('tick-cluster started '));
 
     findLocalIP();
     hosts = generateHosts(localIP, 3000, procsToStart, 'hosts.json');
@@ -491,11 +491,16 @@ function main() {
         trace: false
     });
 
-    var stdin = process.stdin;
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding('utf8');
-    stdin.on('data', onData);
+    try {
+        var stdin = process.stdin;
+        stdin.setRawMode(true);
+        stdin.resume();
+        stdin.setEncoding('utf8');
+        stdin.on('data', onData);
+        logMsg('init', color.red('d: debug flags, g: gossip, j: join, k: kill, K: revive all, l: sleep, p: protocol stats, q: quit, s: cluster stats, t: tick'));
+    } catch (e) {
+        logMsg('init', 'Unable to open stdin; interactive commands disabled');
+    }
 }
 
 function displayMenu(logFn) {
