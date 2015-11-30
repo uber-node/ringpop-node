@@ -19,7 +19,7 @@
 // THE SOFTWARE.
 'use strict';
 
-var sendPingReq = require('../../lib/gossip/ping-req-sender.js');
+var sendPingReqs = require('../../lib/gossip/ping-req-sender.js');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 
 // Avoid depending upon mutation of member and find
@@ -64,7 +64,7 @@ testRingpopCluster({
     var ringpop = cluster[0];
     var unreachableMember = ringpop.membership.findMemberByAddress(cluster[1].hostPort);
 
-    sendPingReq({
+    sendPingReqs({
         ringpop: cluster[0],
         unreachableMember: unreachableMember,
         pingReqSize: 3
@@ -89,7 +89,7 @@ testRingpopCluster({
         findMemberByAddress(cluster[1].hostPort);
     var pingReqSize = 3;
 
-    sendPingReq({
+    sendPingReqs({
         ringpop: cluster[0],
         unreachableMember: unreachableMember,
         pingReqSize: pingReqSize
@@ -117,7 +117,7 @@ testRingpopCluster({
         var unreachableMember = ringpop.membership.findMemberByAddress(badRingpop.hostPort);
         var pingReqSize = 3;
 
-        sendPingReq({
+        sendPingReqs({
             ringpop: ringpop,
             unreachableMember: unreachableMember,
             pingReqSize: pingReqSize
@@ -142,7 +142,7 @@ testRingpopCluster({
     var unreachableMember = ringpop.membership.findMemberByAddress(ringpop2Addr);
     var pingReqSize = 3;
 
-    sendPingReq({
+    sendPingReqs({
         ringpop: ringpop,
         unreachableMember: unreachableMember,
         pingReqSize: pingReqSize
@@ -170,7 +170,7 @@ testRingpopCluster({
     var unreachableMember = ringpop.membership.findMemberByAddress(badRingpop.hostPort);
     var pingReqSize = 3;
 
-    sendPingReq({
+    sendPingReqs({
         ringpop: ringpop,
         unreachableMember: unreachableMember,
         pingReqSize: pingReqSize
@@ -200,7 +200,7 @@ testRingpopCluster({
         }
     });
 
-    sendPingReq({
+    sendPingReqs({
         ringpop: ringpop,
         unreachableMember: unreachableMember,
         pingReqSize: pingReqSize
