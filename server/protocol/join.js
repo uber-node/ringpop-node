@@ -21,6 +21,7 @@
 
 var safeParse = require('../../lib/util').safeParse;
 var TypedError = require('error/typed');
+var validateHostPort = require('../../lib/util').validateHostPort;
 
 var BlacklistedError = TypedError({
     type: 'ringpop.invalid-join.blacklist',
@@ -43,10 +44,16 @@ var InvalidJoinAppError = TypedError({
     actual: null
 });
 
-var InvalidJoinSourceError = TypedError({
-    type: 'ringpop.invalid-join.source',
+var SelfJoinError = TypedError({
+    type: 'ringpop.self-join',
     message:  'A node tried joining a cluster by attempting to join itself.' +
         ' The joiner ({actual}) must join someone else.',
+    actual: null
+});
+
+var InvalidJoinSourceError = TypedError({
+    type: 'ringpop.invalid-join.source',
+    message:  'A node tried joining a cluster with an invalid host-port ({actual})',
     actual: null
 });
 
@@ -61,6 +68,13 @@ function validateDenyingJoins(ringpop, callback) {
 
 function validateJoinerAddress(ringpop, joiner, callback) {
     if (joiner === ringpop.whoami()) {
+        callback(SelfJoinError({
+            actual: joiner
+        }));
+        return false;
+    }
+
+    if (!validateHostPort(joiner)) {
         callback(InvalidJoinSourceError({
             actual: joiner
         }));
