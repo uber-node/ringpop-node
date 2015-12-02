@@ -117,6 +117,7 @@ Config.prototype._seed = function _seed(seed) {
         });
     }, 'expected to be array of RegExp objects');
     seedOrDefault('membershipUpdateRollupEnabled', false);
+    seedOrDefault('tchannelRetryLimit', 0);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
