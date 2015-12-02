@@ -22,23 +22,26 @@
 var Client = require('../../client.js');
 var test = require('tape');
 
-test('retryLimit for protocol calls', function t(assert) {
-    var retryLimit = 99;
-    var noop = function noop() {};
-
-    // Stub client's subchannel. Let it stand in for the request made
-    // against TChannel and verify the retryLimit that is used.
-    var subChannel = {
+// Stub client's subchannel. Let it stand in for the request made
+// against TChannel and verify the retryLimit that is used.
+function assertRetryLimitOnSubChannel(assert, retryLimit) {
+    // This is a subchannel stub.
+    return {
         waitForIdentified: function waitForIdentified(opts, callback) {
             callback();
         },
         request: function request(opts) {
             assert.equal(opts.retryLimit, retryLimit, 'retry limit is used');
             return {
-                send: noop
+                send: function noop() {}
             };
         }
     };
+}
+
+test('retryLimit for protocol calls', function t(assert) {
+    var retryLimit = 99;
+    var subChannel = assertRetryLimitOnSubChannel(assert, retryLimit);
     var client = new Client(subChannel);
 
     // Iterate over the Client's prototype looking for protocol*
@@ -68,7 +71,7 @@ test('retryLimit for protocol calls', function t(assert) {
         retryLimit: retryLimit
     };
     var body = {};
-    var callback = noop;
+    var callback = function noop() {};
     protocolFns.forEach(function eachFn(fn) {
         fn.call(client, opts, body, callback);
     });
@@ -80,19 +83,7 @@ test('retryLimit for protocol calls', function t(assert) {
 test('retryLimit defaults to 0', function t(assert) {
     assert.plan(1);
 
-    // Stub client's subchannel. Let it stand in for the request made
-    // against TChannel and verify the retryLimit that is used.
-    var subChannel = {
-        waitForIdentified: function waitForIdentified(opts, callback) {
-            callback();
-        },
-        request: function request(opts) {
-            assert.equal(opts.retryLimit, 0, 'retry limit defaults to 0');
-            return {
-                send: noop
-            };
-        }
-    };
+    var subChannel = assertRetryLimitOnSubChannel(assert, 0);
     var client = new Client(subChannel);
 
     var nobody = {};
