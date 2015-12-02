@@ -489,7 +489,6 @@ badHostPorts.forEach(function each(hostPort) {
             }, 
             {},
             function onPing(err, res) {
-                console.log(err);
                 assert.equals(err.type, 'ringpop.client.invalid-hostport',
                     'get an ringpop.client.invalid-hostport error');
                 ringpop.destroy();

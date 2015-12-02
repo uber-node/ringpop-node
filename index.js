@@ -65,6 +65,7 @@ var registerRingpopListeners = require('./lib/on_ringpop_event.js').register;
 var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var safeParse = require('./lib/util').safeParse;
+var validateHostPort = require('./lib/util').validateHostPort;
 var sendJoin = require('./lib/gossip/joiner.js').joinCluster;
 var TracerStore = require('./lib/trace/store.js');
 
@@ -86,18 +87,9 @@ function RingPop(options) {
         throw errors.AppRequiredError();
     }
 
-    var isString = typeof options.hostPort === 'string';
-    var parts = options.hostPort && options.hostPort.split(':');
-    var isColonSeparated = parts && parts.length === 2;
-    var isPort = parts && parts[1] &&
-        !isNaN(parseInt(parts[1], 10));
-
-    if (!isString || !isColonSeparated || !isPort) {
+    if (!validateHostPort(options.hostPort)) {
         throw errors.HostPortRequiredError({
-            hostPort: options.hostPort,
-            reason: !isString ? 'a string' :
-                !isColonSeparated ? 'a valid hostPort pattern' :
-                !isPort ? 'a valid port' : 'correct'
+            hostPort: options.hostPort
         });
     }
 
