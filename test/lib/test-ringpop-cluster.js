@@ -30,6 +30,11 @@ var TChannel = require('tchannel');
 
 function bootstrapClusterOf(cluster, opts, onBootstrap) {
 
+    var bootstrapSize = opts.bootstrapSize;
+    if (typeof bootstrapSize !== 'number' || isNaN(bootstrapSize)) {
+        bootstrapSize = cluster.length;
+    }
+
     var bootstrapHosts = cluster.map(function mapRingpop(ringpop) {
         return ringpop.hostPort;
     });
@@ -48,7 +53,7 @@ function bootstrapClusterOf(cluster, opts, onBootstrap) {
                 nodesJoined: nodesJoined
             };
 
-            if (++count === cluster.length) {
+            if (++count === bootstrapSize) {
                 onBootstrap(results);
             }
         };
@@ -62,7 +67,7 @@ function bootstrapClusterOf(cluster, opts, onBootstrap) {
             var cb = Array.isArray(onBootstrap) ?
                 onBootstrap[i] : bootstrapHandler(ringpop.hostPort);
             ringpop.bootstrap({
-                bootstrapFile: bootstrapHosts
+                bootstrapFile: ringpop.bootstrapHosts || bootstrapHosts
             }, cb);
         });
         ringpop.__channel.listen(Number(parts[1]), parts[0]);

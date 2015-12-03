@@ -19,10 +19,19 @@
 // THE SOFTWARE.
 'use strict';
 
+var errors = require('../../lib/errors.js');
 var safeParse = require('../../lib/util').safeParse;
 
 module.exports = function createPingHandler(ringpop) {
     return function handlePing(arg1, arg2, hostInfo, callback) {
+        ringpop.stat('increment', 'ping.recv');
+
+        if (!ringpop.isReady) {
+            ringpop.stat('increment', 'not-ready.ping');
+            callback(new errors.RingpopIsNotReadyError());
+            return;
+        }
+
         var body = safeParse(arg2);
 
         // NOTE sourceIncarnationNumber is an optional argument. It was not present
@@ -35,8 +44,6 @@ module.exports = function createPingHandler(ringpop) {
         var sourceIncarnationNumber = body.sourceIncarnationNumber;
         var changes = body.changes;
         var checksum = body.checksum;
-
-        ringpop.stat('increment', 'ping.recv');
 
         ringpop.serverRate.mark();
         ringpop.totalRate.mark();
