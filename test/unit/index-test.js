@@ -24,6 +24,7 @@ var mock = require('../mock');
 var Ringpop = require('../../index.js');
 var test = require('tape');
 var testRingpop = require('../lib/test-ringpop.js');
+var allocRingpop = require('../lib/alloc-ringpop.js');
 
 var createAdminJoinHandler = AdminMember.memberJoin.handler;
 var createAdminLeaveHandler = AdminMember.memberLeave.handler;
@@ -200,7 +201,7 @@ test('protocol join disallows joining itself', function t(assert) {
         incarnationNumber: 1
     }), null, function(err) {
         assert.ok(err, 'an error occurred');
-        assert.equals(err.type, 'ringpop.invalid-join.source', 'a node cannot join itself');
+        assert.equals(err.type, 'ringpop.self-join', 'a node cannot join itself');
         ringpop.destroy();
         assert.end();
     });
@@ -474,4 +475,26 @@ test('first time member, not alive', function t(assert) {
 
     ringpop.destroy();
     assert.end();
+});
+
+var badHostPorts = ['I.AM.BAD.IP.123', null];
+badHostPorts.forEach(function each(hostPort) {
+    test('don\'t call tchannel with invalid host port pair', function t(assert) {
+        assert.plan(1);
+
+        var ringpop = allocRingpop();
+
+        ringpop.client.protocolPing({
+                host: hostPort
+            }, 
+            {},
+            function onPing(err, res) {
+                console.log(err);
+                assert.equals(err.type, 'ringpop.client.invalid-hostport',
+                    'get an ringpop.client.invalid-hostport error');
+                ringpop.destroy();
+                assert.end();
+            }
+        );
+    });
 });

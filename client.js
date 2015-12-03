@@ -20,6 +20,7 @@
 'use strict';
 
 var safeParse = require('./lib/util.js').safeParse;
+var validateHostPort = require('./lib/util.js').validateHostPort;
 var TChannel = require('tchannel');
 var TypedError = require('error/typed');
 
@@ -28,6 +29,12 @@ var ChannelDestroyedError = TypedError({
     message: 'Channel is already destroyed',
     endpoint: null,
     channelType: null
+});
+
+var InvalidHostPortError = TypedError({
+    type: 'ringpop.client.invalid-hostport',
+    message: 'Request made with invalid host port combination ({hostPort})',
+    hostPort: null
 });
 
 function RingpopClient(subChannel) {
@@ -121,7 +128,14 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
         return;
     }
 
-    this.subChannel.waitForIdentified({
+    if (!opts || !validateHostPort(opts.host)) {
+        callback(InvalidHostPortError({
+            hostPort: String(opts && opts.host)
+        }));
+        return;
+    }
+
+    self.subChannel.waitForIdentified({
         host: opts.host
     }, function onIdentified(err) {
         if (err) {
