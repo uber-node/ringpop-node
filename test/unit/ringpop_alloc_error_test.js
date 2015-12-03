@@ -51,14 +51,14 @@ test('ringpop with invalid hostPort', function t(assert) {
         Ringpop({
             app: 'foo'
         });
-    }, /Got\s\swhich is not a string/);
+    }, /Got\s/);
 
     assert.throws(function throwIt() {
         Ringpop({
             app: 'oh lol silly me',
             hostPort: 'silly me'
         });
-    }, /Got silly me which is not a valid hostPort pattern/);
+    }, /Got silly me/);
 
     assert.doesNotThrow(function throwIt() {
         Ringpop({
@@ -72,7 +72,7 @@ test('ringpop with invalid hostPort', function t(assert) {
             app: 'foo',
             hostPort: 'localhost:not_a_port'
         });
-    }, /Got localhost:not_a_port which is not a valid port/);
+    }, /Got localhost:not_a_port/);
 
     assert.end();
 });
