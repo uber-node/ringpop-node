@@ -26,12 +26,9 @@ function ProtocolRequest(ringpop) {
     this.sourceAddr = localMember.address;
     this.sourceIncarnationNumber = localMember.incarnationNumber;
     this.sourceChecksum = ringpop.membership.checksum;
-    this.changes = ringpop.dissemination.issueAsSender();
 }
 
-function ProtocolResponse(ringpop, req) {
-    this.changes = ringpop.dissemination.issueAsReceiver(req.sourceAddr,
-        req.sourceIncarnationNumber, req.sourceChecksum);
+function ProtocolResponse(/*ringpop*/) {
 }
 
 function DampReqRequest(ringpop, flappers) {
