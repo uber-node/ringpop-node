@@ -25,3 +25,5 @@ require('./proxy_test.js');
 require('./ring-test.js');
 require('./gossip_test.js');
 require('./tchannel-proxy-test.js');
+require('./not-ready-test.js');
+require('./piggyback-test.js');
