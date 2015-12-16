@@ -63,6 +63,7 @@ that Ringpop emits:
 |damper.flapper.added|Flap damping detected a flappy node|count
 |damper.flapper.removed|Flap damping removed a flappy node|count
 |damper.flappers|Number of current flappers|gauge
+|dissemination.bump-bypass|Number of times piggyback count is preserved after failed ping or ping-req|count
 |filtered-change|A change to be disseminated was deduped|count
 |full-sync|Number of full syncs transmitted|count
 |join|Time required to complete join process successfully|timer
