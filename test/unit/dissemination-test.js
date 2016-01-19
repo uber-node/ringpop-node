@@ -70,3 +70,80 @@ testRingpop('avoids redundant dissemination by filtering changes from source', f
         membership.checksum);
     assert.ok(changes.length > 0, 'changes issued');
 });
+
+testRingpop('raise piggyback counter on issueAsReceiver', function t(deps, assert) {
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
+    var dissemination = deps.dissemination;
+
+    var addrAlive = '127.0.0.1:3001';
+    var addrSuspect = '127.0.0.1:3002';
+    var addrFaulty = '127.0.0.1:3003';
+    var incNo = Date.now();
+
+    // Clear changes to start fresh, otherwise local member changes
+    // recorded during bootstrap phase would have been issued.
+    dissemination.clearChanges();
+
+    membership.makeAlive(addrAlive, incNo);
+    membership.makeSuspect(addrSuspect, incNo);
+    membership.makeFaulty(addrFaulty, incNo);
+
+    // 'sender' and source of updates are different; issues changes.
+    var changes;
+
+    assert.equal(dissemination.maxPiggybackCount, 15, 'assert maxPiggybackCount is 15');
+    for (var i = 0; i < dissemination.maxPiggybackCount;  i++) {
+        changes = dissemination.issueAsReceiver(addrAlive, incNo, membership.checksum);
+        assert.equal(changes.length, 3, 'changes issued');
+    }
+    changes = dissemination.issueAsReceiver(addrAlive, incNo, membership.checksum);
+    assert.equal(changes.length, 0, 'changes issued');
+});
+
+testRingpop('raise piggyback counter on issueAsSender', function t(deps, assert) {
+    var membership = deps.membership;
+    var dissemination = deps.dissemination;
+
+    var addrAlive = '127.0.0.1:3001';
+    var addrSuspect = '127.0.0.1:3002';
+    var addrFaulty = '127.0.0.1:3003';
+    var incNo = Date.now();
+
+    // Clear changes to start fresh, otherwise local member changes
+    // recorded during bootstrap phase would have been issued.
+    dissemination.clearChanges();
+
+    membership.makeAlive(addrAlive, incNo);
+    membership.makeSuspect(addrSuspect, incNo);
+    membership.makeFaulty(addrFaulty, incNo);
+
+    // 'sender' and source of updates are different; issues changes.
+    var changes;
+
+    // Don't raise piggyback counter if we callback onIssue with an error.
+    dissemination.issueAsSender(function issue(changes, onIssue) {
+        assert.equal(changes.length, 3, 'three dissemination changes');
+        onIssue(new Error('error so that piggyback counter isn\'t raised'));
+    });
+
+    var disChanges = dissemination.changes;
+    assert.equal(disChanges[addrAlive].piggybackCount, 0, 'piggyback counter isn\'t raised');
+    assert.equal(disChanges[addrSuspect].piggybackCount, 0, 'piggyback counter isn\'t raised');
+    assert.equal(disChanges[addrFaulty].piggybackCount, 0, 'piggyback counter isn\'t raised');
+
+    // Exhaust changes.
+    assert.equal(dissemination.maxPiggybackCount, 15, 'assert maxPiggybackCount is 15');
+    for (var i = 0; i < dissemination.maxPiggybackCount;  i++) {
+        dissemination.issueAsSender(function issue(changes, onIssue) {
+            assert.equal(changes.length, 3, 'changes issued');
+            onIssue();
+        });
+    }
+
+    // No changes left, they are exhausted.
+    dissemination.issueAsSender(function issue(changes, onIssue) {
+        assert.equal(changes.length, 0, 'changes issued');
+        onIssue();
+    });
+});
