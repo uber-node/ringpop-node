@@ -70,3 +70,83 @@ testRingpop('avoids redundant dissemination by filtering changes from source', f
         membership.checksum);
     assert.ok(changes.length > 0, 'changes issued');
 });
+
+testRingpop('raise piggyback counter on issueAsReceiver', function t(deps, assert) {
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
+    var dissemination = deps.dissemination;
+
+    var addrAlive = '127.0.0.1:3001';
+    var addrSuspect = '127.0.0.1:3002';
+    var addrFaulty = '127.0.0.1:3003';
+    var incNo = Date.now();
+
+    // Clear changes to start fresh, otherwise local member changes
+    // recorded during bootstrap phase would have been issued.
+    dissemination.clearChanges();
+
+    membership.makeAlive(addrAlive, incNo);
+    membership.makeSuspect(addrSuspect, incNo);
+    membership.makeFaulty(addrFaulty, incNo);
+
+    // 'sender' and source of updates are different; issues changes.
+    var disChangeAlive = dissemination.changes[addrAlive];
+    var disChangeSuspect = dissemination.changes[addrAlive];
+    var disChangeFaulty = dissemination.changes[addrFaulty];
+
+    assert.equal(disChangeAlive.piggybackCount, 0, 'piggyback counter starts at 0');
+    assert.equal(disChangeSuspect.piggybackCount, 0, 'piggyback counter starts at 0');
+    assert.equal(disChangeFaulty.piggybackCount, 0, 'piggyback counter starts at 0');
+
+    dissemination.issueAsReceiver(addrAlive, incNo, membership.checksum);
+
+    assert.equal(disChangeAlive.piggybackCount, 1, 'piggyback counter is raised');
+    assert.equal(disChangeSuspect.piggybackCount, 1, 'piggyback counter is raised');
+    assert.equal(disChangeFaulty.piggybackCount, 1, 'piggyback counter is raised');
+});
+
+testRingpop('raise piggyback counter on issueAsSender', function t(deps, assert) {
+    var membership = deps.membership;
+    var dissemination = deps.dissemination;
+
+    var addrAlive = '127.0.0.1:3001';
+    var addrSuspect = '127.0.0.1:3002';
+    var addrFaulty = '127.0.0.1:3003';
+    var incNo = Date.now();
+
+    // Clear changes to start fresh, otherwise local member changes
+    // recorded during bootstrap phase would have been issued.
+    dissemination.clearChanges();
+
+    membership.makeAlive(addrAlive, incNo);
+    membership.makeSuspect(addrSuspect, incNo);
+    membership.makeFaulty(addrFaulty, incNo);
+
+    // Number of expected changes is number of nodes in membership exluding this node
+    var expectedNumberOfChanges = membership.getMemberCount() - 1;
+
+    // Don't raise piggyback counter if we callback onIssue with an error.
+    dissemination.issueAsSender(function issue(changes, onIssue) {
+        assert.equal(changes.length, expectedNumberOfChanges, 'expect ' + expectedNumberOfChanges + ' number of changes');
+        onIssue(new Error('error so that piggyback counter isn\'t raised'));
+    });
+
+    // 'sender' and source of updates are different; issues changes.
+    var disChangeAlive = dissemination.changes[addrAlive];
+    var disChangeSuspect = dissemination.changes[addrAlive];
+    var disChangeFaulty = dissemination.changes[addrFaulty];
+
+    assert.equal(disChangeAlive.piggybackCount, 0, 'piggyback counter starts at 0');
+    assert.equal(disChangeSuspect.piggybackCount, 0, 'piggyback counter starts at 0');
+    assert.equal(disChangeFaulty.piggybackCount, 0, 'piggyback counter starts at 0');
+
+    dissemination.issueAsSender(function issue(changes, onIssue) {
+        assert.equal(changes.length, expectedNumberOfChanges, 'expect ' + expectedNumberOfChanges + ' number of changes');
+        onIssue();
+    });
+
+    assert.equal(disChangeAlive.piggybackCount, 1, 'piggyback counter is raised');
+    assert.equal(disChangeSuspect.piggybackCount, 1, 'piggyback counter is raised');
+    assert.equal(disChangeFaulty.piggybackCount, 1, 'piggyback counter is raised');
+
+});
