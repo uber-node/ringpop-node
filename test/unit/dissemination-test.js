@@ -94,15 +94,15 @@ testRingpop('raise piggyback counter on issueAsReceiver', function t(deps, asser
     var disChangeSuspect = dissemination.changes[addrAlive];
     var disChangeFaulty = dissemination.changes[addrFaulty];
 
-    assert.equal(disChangeAlive.piggybackCount, 0, "piggyback counter starts at 0");
-    assert.equal(disChangeSuspect.piggybackCount, 0, "piggyback counter starts at 0");
-    assert.equal(disChangeFaulty.piggybackCount, 0, "piggyback counter starts at 0");
+    assert.equal(disChangeAlive.piggybackCount, 0, 'piggyback counter starts at 0');
+    assert.equal(disChangeSuspect.piggybackCount, 0, 'piggyback counter starts at 0');
+    assert.equal(disChangeFaulty.piggybackCount, 0, 'piggyback counter starts at 0');
 
     dissemination.issueAsReceiver(addrAlive, incNo, membership.checksum);
 
-    assert.equal(disChangeAlive.piggybackCount, 1, "piggyback counter is raised");
-    assert.equal(disChangeSuspect.piggybackCount, 1, "piggyback counter is raised");
-    assert.equal(disChangeFaulty.piggybackCount, 1, "piggyback counter is raised");
+    assert.equal(disChangeAlive.piggybackCount, 1, 'piggyback counter is raised');
+    assert.equal(disChangeSuspect.piggybackCount, 1, 'piggyback counter is raised');
+    assert.equal(disChangeFaulty.piggybackCount, 1, 'piggyback counter is raised');
 });
 
 testRingpop('raise piggyback counter on issueAsSender', function t(deps, assert) {
@@ -136,17 +136,17 @@ testRingpop('raise piggyback counter on issueAsSender', function t(deps, assert)
     var disChangeSuspect = dissemination.changes[addrAlive];
     var disChangeFaulty = dissemination.changes[addrFaulty];
 
-    assert.equal(disChangeAlive.piggybackCount, 0, "piggyback counter starts at 0");
-    assert.equal(disChangeSuspect.piggybackCount, 0, "piggyback counter starts at 0");
-    assert.equal(disChangeFaulty.piggybackCount, 0, "piggyback counter starts at 0");
+    assert.equal(disChangeAlive.piggybackCount, 0, 'piggyback counter starts at 0');
+    assert.equal(disChangeSuspect.piggybackCount, 0, 'piggyback counter starts at 0');
+    assert.equal(disChangeFaulty.piggybackCount, 0, 'piggyback counter starts at 0');
 
     dissemination.issueAsSender(function issue(changes, onIssue) {
         assert.equal(changes.length, expectedNumberOfChanges, 'expect ' + expectedNumberOfChanges + ' number of changes');
         onIssue();
     });
 
-    assert.equal(disChangeAlive.piggybackCount, 1, "piggyback counter is raised");
-    assert.equal(disChangeSuspect.piggybackCount, 1, "piggyback counter is raised");
-    assert.equal(disChangeFaulty.piggybackCount, 1, "piggyback counter is raised");
+    assert.equal(disChangeAlive.piggybackCount, 1, 'piggyback counter is raised');
+    assert.equal(disChangeSuspect.piggybackCount, 1, 'piggyback counter is raised');
+    assert.equal(disChangeFaulty.piggybackCount, 1, 'piggyback counter is raised');
 
 });
