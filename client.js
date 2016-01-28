@@ -135,14 +135,19 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
         return;
     }
 
+    self.isWaitingForIdentified = true;
+    self.lastEndpoint = endpoint;
+    self.lastTimeout = opts.timeout;
     self.subChannel.waitForIdentified({
         host: opts.host
     }, function onIdentified(err) {
+        self.isWaitingForIdentified = false;
         if (err) {
             callback(err);
             return;
         }
 
+        self.isRequesting = true;
         self.subChannel.request({
             host: opts.host,
             serviceName: 'ringpop',
@@ -158,6 +163,7 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
     });
 
     function onSend(err, res, arg2, arg3) {
+        self.isRequesting = false;
         if (!err && !res.ok) {
             err = safeParse(arg3) || new Error('Server Error');
         }
