@@ -138,12 +138,14 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
 
     if (typeof self.endpointCounts[endpoint] === 'undefined') {
         self.endpointCounts[endpoint] = {
-            outs: 0,
-            ins: 0
-        }
+            waitForIdentifiedReq: 0,
+            waitForIdentifiedResp: 0,
+            subChannelReq: 0,
+            subChannelResp: 0
+        };
     }
 
-    self.endpointCounts[endpoint].outs++;
+    self.endpointCounts[endpoint].waitForIdentifiedReq++;
 
     self.isWaitingForIdentified = true;
     self.lastEndpoint = endpoint;
@@ -151,13 +153,14 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
     self.subChannel.waitForIdentified({
         host: opts.host
     }, function onIdentified(err) {
-        self.endpointCounts[endpoint].ins++;
+        self.endpointCounts[endpoint].waitForIdentifiedResp++;
         self.isWaitingForIdentified = false;
         if (err) {
             callback(err);
             return;
         }
 
+        self.endpointCounts[endpoint].subChannelReq++;
         self.isRequesting = true;
         self.subChannel.request({
             host: opts.host,
@@ -174,6 +177,7 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
     });
 
     function onSend(err, res, arg2, arg3) {
+        self.endpointCounts[endpoint].subChannelResp++;
         self.isRequesting = false;
         if (!err && !res.ok) {
             err = safeParse(arg3) || new Error('Server Error');
