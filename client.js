@@ -48,6 +48,7 @@ function RingpopClient(subChannel) {
         });
         this.isChannelOwner = true;
     }
+    this.endpointCounts = {};
 }
 
 RingpopClient.prototype.adminConfigGet = function adminConfigGet(host, body, callback) {
@@ -135,12 +136,22 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
         return;
     }
 
+    if (typeof self.endpointCounts[endpoint] === 'undefined') {
+        self.endpointCounts[endpoint] = {
+            outs: 0,
+            ins: 0
+        }
+    }
+
+    self.endpointCounts[endpoint].outs++;
+
     self.isWaitingForIdentified = true;
     self.lastEndpoint = endpoint;
     self.lastTimeout = opts.timeout;
     self.subChannel.waitForIdentified({
         host: opts.host
     }, function onIdentified(err) {
+        self.endpointCounts[endpoint].ins++;
         self.isWaitingForIdentified = false;
         if (err) {
             callback(err);
