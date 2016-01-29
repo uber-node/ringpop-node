@@ -37,7 +37,9 @@ function Config(ringpop, seedConfig) {
 util.inherits(Config, EventEmitter);
 
 Config.Defaults = {
-    gossipLogLevel: 'debug'
+    gossipLogLevel: 'debug',
+    wedgedRequestTimeout: 30 * 1000,
+    wedgedTimerInterval: 1000
 };
 
 Config.prototype.get = function get(key) {
@@ -68,6 +70,7 @@ Config.prototype._seed = function _seed(seed) {
 
     // Logger configs; should be at least error by default.
     seedOrDefault('defaultLogLevel', LoggingLevels.info);
+    seedOrDefault('clientLogLevel', LoggingLevels.error);
     seedOrDefault('dampingLogLevel', LoggingLevels.error);
     seedOrDefault('disseminationLogLevel', LoggingLevels.error);
     seedOrDefault('gossipLogLevel', LoggingLevels.error);
@@ -119,6 +122,13 @@ Config.prototype._seed = function _seed(seed) {
     }, 'expected to be array of RegExp objects');
     seedOrDefault('membershipUpdateRollupEnabled', false);
     seedOrDefault('tchannelRetryLimit', 0);
+    // How long a request is outstanding until is it considered
+    // wedged and then canceled.
+    seedOrDefault('wedgedRequestTimeout', Config.Defaults.wedgedRequestTimeout);
+    // How often the wedge timer ticks.
+    seedOrDefault('wedgedTimerInterval', Config.Defaults.wedgedTimerInterval);
+    // Number of allowable inflight requests sent by RingpopClient.
+    seedOrDefault('inflightClientRequestsLimit', 100);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];

@@ -29,7 +29,7 @@ testRingpopCluster({
 }, 'config endpoints', function t(bootRes, cluster, assert) {
     assert.plan(4);
 
-    var client = new RingpopClient();
+    var client = new RingpopClient(cluster[0]);
     async.series([
         function configSetPart(callback) {
             client.adminConfigSet(cluster[0].whoami(), {
@@ -61,7 +61,7 @@ testRingpopCluster({
 }, 'gossip endpoints', function t(bootRes, cluster, assert) {
     assert.plan(4);
 
-    var client = new RingpopClient();
+    var client = new RingpopClient(cluster[0]);
     async.series([
         adminGossip('adminGossipStart'),
         adminGossip('adminGossipStop'),
