@@ -20,7 +20,38 @@
 'use strict';
 
 var Client = require('../../client.js');
+var ClientErrors = require('../../client_errors.js');
+var EventEmitter = require('events').EventEmitter;
+var RingpopErrors = require('../../ringpop_errors.js');
 var test = require('tape');
+var TimeMock = require('time-mock');
+var util = require('util');
+
+var noop = function noop() {};
+
+function DummyRingpop() {}
+util.inherits(DummyRingpop, EventEmitter);
+
+function createDummyRingpop() {
+    var dummy = new DummyRingpop();
+    dummy.config = {
+        get: noop
+    };
+    dummy.loggerFactory = {
+        getLogger: function getLogger() {
+            return {
+                canLogAt: function canLogAt() {
+                    return false;
+                },
+                error: noop
+            };
+        }
+    };
+    dummy.whoami = function whoami() {
+        return 'dummy';
+    };
+    return dummy;
+}
 
 // Stub client's subchannel. Let it stand in for the request made
 // against TChannel and verify the retryLimit that is used.
@@ -42,7 +73,7 @@ function assertRetryLimitOnSubChannel(assert, retryLimit) {
 test('retryLimit for protocol calls', function t(assert) {
     var retryLimit = 99;
     var subChannel = assertRetryLimitOnSubChannel(assert, retryLimit);
-    var client = new Client(subChannel);
+    var client = new Client(createDummyRingpop(), subChannel);
 
     // Iterate over the Client's prototype looking for protocol*
     // functions. When found, call it and make sure the retry limit
@@ -84,7 +115,7 @@ test('retryLimit defaults to 0', function t(assert) {
     assert.plan(1);
 
     var subChannel = assertRetryLimitOnSubChannel(assert, 0);
-    var client = new Client(subChannel);
+    var client = new Client(createDummyRingpop(), subChannel);
 
     var nobody = {};
     var noop = function noop() {};
@@ -93,5 +124,180 @@ test('retryLimit defaults to 0', function t(assert) {
         retryLimit: null
     }, nobody, noop);
     client.destroy();
+    assert.end();
+});
+
+test('number of inflight pings match number of tracked requests', function t(assert) {
+    var client = new Client(createDummyRingpop());
+
+    var numPings = 3;
+    for (var i = 0; i < numPings; i++) {
+        client.protocolPing({
+            host: '192.0.2.1:1'
+        }, null, noop);
+    }
+    assert.equals(Object.keys(client.requestsById).length, numPings,
+        '3 inflight requests');
+    client.destroy();
+    assert.end();
+});
+
+test('empties completed requests', function t(assert) {
+    var sender = {
+        send: function (_, _2, _3, callback) {
+            callback(null, {
+                ok: true
+            });
+        }
+    };
+    var subChannel = {
+        waitForIdentified: function waitForIdentified(_, callback) {
+            callback();
+        },
+        request: function request() { return sender; }
+    };
+    var client = new Client(createDummyRingpop(), subChannel);
+
+    for (var i = 0; i < 3; i++) {
+        client.protocolPing({
+            host: '192.0.2.1:1'
+        }, null, noop);
+    }
+    assert.equals(0, Object.keys(client.requestsById).length,
+        '0 inflight requests');
+    client.destroy();
+    assert.end();
+});
+
+test('exceeds max inflight limit', function t(assert) {
+    assert.plan(1);
+
+    var opts = {
+        host: '192.0.2.1:1'
+    };
+
+    // Set limit of outstanding client requests to 1. Below,
+    // two client pings will be sent. 1 will be stuck. The other
+    // will error out.
+    var dummyRingpop = createDummyRingpop();
+    dummyRingpop.config = {
+        get: function get(key) {
+            if (key === 'inflightClientRequestsLimit') {
+                return 1;
+            }
+        }
+    };
+
+    var wedgedChannel = {
+        waitForIdentified: function noop() {}
+    };
+    var client = new Client(dummyRingpop, wedgedChannel);
+    client.protocolPing(opts, null, function onPing() {
+        assert.fail('first ping should wedge');
+    });
+
+    // Second ping should error out with immediate error
+    client.protocolPing(opts, null, function onPing(err) {
+        assert.equal(ClientErrors.ClientRequestsLimitError().type, err.type,
+            'client requests limit error');
+        client.destroy();
+        assert.end();
+    });
+});
+
+test('cancels correct number of requests', function t(assert) {
+    var opts = {
+        host: '192.0.2.1:1'
+    };
+    var timeout = 15000;
+    var timeMock = new TimeMock(Date.now());
+
+    // Create a Ringpop that is configured with a 15s
+    // wedgedRequestTimeout.
+    var dummyRingpop = createDummyRingpop();
+    dummyRingpop.config = {
+        get : function get(key) {
+            if (key === 'wedgedRequestTimeout') {
+                return timeout;
+            }
+        }
+    };
+
+    // Create a wedged channel that does not respond
+    // to the ping requests sent below.
+    var wedgedChannel = {
+        waitForIdentified: function noop() {}
+    };
+
+    var client = new Client(dummyRingpop, wedgedChannel, null, timeMock);
+
+    // Send 3 pings. Each of the pings create a single ClientRequest object
+    // marked with a timestamp equal to the present.
+    client.protocolPing(opts, null, noop);
+    client.protocolPing(opts, null, noop);
+    client.protocolPing(opts, null, noop);
+
+    // Advance time by twice the timeout value causing each of the 3
+    // previous sent pings to be marked for expiry when scanned below.
+    timeMock.advance(timeout * 2);
+
+    // The last and final ping happens after the clock has been advanced
+    // and all 4 pending requests will be evaluated to see if they have
+    // timed-out immediately below. Only the first 3 should time-out.
+    client.protocolPing(opts, null, noop);
+
+    var wedgedRequests = client.scanForWedgedRequests();
+    assert.equals(3, wedgedRequests.length,
+        'correct number of wedged requests');
+
+    // Scanning for wedged requests above will also cancel them.
+    // Cancelling requests will not longer be pending and thus
+    // not appear in requestsById.
+    assert.equals(1, Object.keys(client.requestsById).length,
+        '1 inflight request');
+    client.destroy();
+    assert.end();
+});
+
+test('emits ringpop error on canceled request', function t(assert) {
+    assert.plan(1);
+
+    var opts = {
+        host: '192.0.2.1:1'
+    };
+    var timeout = 15000;
+    var timeMock = new TimeMock(Date.now());
+
+    // Create a Ringpop that is configured with a 15s
+    // wedgedRequestTimeout.
+    var dummyRingpop = createDummyRingpop();
+    dummyRingpop.config = {
+        get: function get(key) {
+            if (key === 'wedgedRequestTimeout') {
+                return timeout;
+            }
+        }
+    };
+
+    // Create a wedged channel that does not respond
+    // to the ping requests sent below.
+    var wedgedChannel = {
+        waitForIdentified: function noop() {}
+    };
+
+    var client = new Client(dummyRingpop, wedgedChannel, null, timeMock);
+    // Send 1 ping on wedged channel.
+    client.protocolPing(opts, null, noop);
+    // Advance time to trigger cancellation of previous ping request.
+    timeMock.advance(timeout * 2);
+
+    // Register for error just prior to it being raised by call to
+    // scanForWedgedRequests() below.
+    dummyRingpop.on('error', function onError(err) {
+        assert.equals(RingpopErrors.PotentiallyWedgedRequestsError().type,
+            err.type, 'wedged requests error');
+    });
+
+    client.scanForWedgedRequests();
     assert.end();
 });

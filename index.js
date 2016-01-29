@@ -236,7 +236,7 @@ RingPop.prototype.destroy = function destroy() {
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
-    this.client = new RingpopClient(this.channel);
+    this.client = new RingpopClient(this, this.channel);
     this.server = new RingpopServer(this, this.channel);
 };
 
