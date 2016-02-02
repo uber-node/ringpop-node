@@ -299,5 +299,6 @@ test('emits ringpop error on canceled request', function t(assert) {
     });
 
     client.scanForWedgedRequests();
+    client.destroy();
     assert.end();
 });

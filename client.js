@@ -205,7 +205,6 @@ RingpopClient.prototype._scheduleWedgedTimer = function _scheduleWedgedTimer() {
         self.scanForWedgedRequests();
         self._scheduleWedgedTimer();
     }, this.config.get('wedgedTimerInterval') || Config.Defaults.wedgedTimerInterval);
-    this.wedgedTimer.unref();
 };
 
 module.exports = RingpopClient;
