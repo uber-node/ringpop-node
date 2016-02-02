@@ -10,7 +10,7 @@ ping-reqs or joins are sent. Ringpop will timeout a wedged request and resume
 gracefully. We have observed Ringpop to behave correctly while in this state,
 but you may observe otherwise. We will let you come to your own conclusions.
 Ringpop will emit an `error` event (when listeners have subscribed) providing a
-`PotentiallyWedgedRequestError` object as an argument. Registering for this event
+`PotentiallyWedgedRequestsError` object as an argument. Registering for this event
 will give you the ability to restart your process, if you so choose.
 
 ## Upgrading from v10.9.6 to v10.9.7
