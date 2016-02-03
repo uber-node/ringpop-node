@@ -561,7 +561,7 @@ function send(host, arg1, arg2, arg3, callback) {
 program
     .version(require('../package.json').version)
     .option('-n <size>', 'Size of cluster. Default is ' + procsToStart + '.')
-    .option('-i, --interpreter <interpreter>', 'Interpreter that runs program.')
+    .option('-i, --interpreter <interpreter>', 'Interpreter that runs program. Usually `node`.')
     .option('--interface <address>', 'Interface to bind ringpop instances to.')
     .option('--port <num>', 'Starting port for instances.')
     .arguments('<program>')
