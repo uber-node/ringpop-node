@@ -5,10 +5,32 @@ and provides request forwarding as a routing convenience. It can be used to
 shard your application in a way that's scalable and fault tolerant.
 
 # Installation
-To install Ringpop:
+To install Ringpop for usage as a library:
 
 ```
 npm install ringpop
+```
+
+Prepare the current directory for development:
+
+```
+npm install
+```
+
+To be able to run the tests, make sure you have your open file limit
+restriction on at least 4K:
+
+```
+ulimit -n 4096
+```
+
+# Tick Cluster
+An example application `scripts/tick-cluster.js` is included to this
+repository. It just launches a ringpop cluster of a given size. Using this
+application is the quickest way to start a ringpop cluster.
+
+```
+./scripts/tick-cluster.js --interpreter node main.js
 ```
 
 # Example
