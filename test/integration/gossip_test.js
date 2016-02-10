@@ -196,7 +196,7 @@ testRingpopCluster({
     // unreachable and therefore, the results of ping-req inconclusive.
     ringpop.membership.members.forEach(function eachMember(member) {
         if (member.address !== unreachableMember.address) {
-            member.address += '001';
+            member.address = member.address.split(':')[0]+":9999"
         }
     });
 
