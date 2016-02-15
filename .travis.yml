@@ -2,4 +2,15 @@ language: node_js
 node_js:
   - "0.10"
 before_install: npm i npm@latest -g
-script: npm run travis
+
+env:
+  - RUN="npm run travis"
+  - RUN="npm run test-shared-integration-tests"
+
+matrix:
+  allow_failures:
+    - env: RUN="npm run test-shared-integration-tests"
+  fast_finish: true
+
+script:
+  - test/travis

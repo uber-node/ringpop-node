@@ -1,0 +1,129 @@
+#!/bin/bash
+#
+# Run integration tests for ringpop-node.
+#
+set -eo pipefail
+
+declare project_root="${0%/*}/.."
+declare ringpop_common_dir="${0%/*}/ringpop-common"
+declare tap_filter="${ringpop_common_dir}/test/tap-filter"
+
+declare test_cluster_sizes="1 2 3 4 5 10"
+declare test_result=
+
+declare temp_dir="$(mktemp -d)"
+
+# Check node is installed
+if ! type node &>/dev/null; then
+    echo "ERROR: missing 'node'" >&2
+    exit 1
+fi
+
+#
+# Echos and runs the specified command.
+#
+run() {
+    echo "+ $@" >&2
+    "$@"
+}
+
+#
+# Copy stdin to stdout but prefix each line with the specified string.
+#
+prefix() {
+    local _prefix=
+
+    [ -n "$1" ] && _prefix="[$1] "
+    while IFS= read -r -t 30 line; do
+        echo "${_prefix}${line}"
+    done
+}
+
+#
+# Clones or updates the ringpop-common repository.
+#
+fetch-ringpop-common() {
+    if [ ! -e "$ringpop_common_dir" ]; then
+        run git clone --depth=1 https://github.com/uber/ringpop-common.git "$ringpop_common_dir"
+    fi
+
+    run cd "$ringpop_common_dir"
+    run git pull
+    run cd - >/dev/null
+
+    run cd "${ringpop_common_dir}/test"
+    run npm install >/dev/null
+    run cd - >/dev/null
+
+    # Check tap-filter exists in ringpop-common. It is required to filter output
+    # correctly to stdout/stderr
+    if ! [ -x "$tap_filter" ]; then
+        echo "ERROR: missing '$tap_filter' in ringpop-common" >&2
+        exit 1
+    fi
+}
+
+#
+# Run test with specified cluster size.
+#
+# $1: cluster size
+#
+run-test-for-cluster-size() {
+    local cluster_size=$1
+    local err=0
+    local output_file="${temp_dir}/${cluster_size}.out"
+
+    # Run the tests and buffer the output to a log file. We'll display it later
+    # if the test fails. This avoids interleaving of output to the terminal
+    # when tests are running in parallel.
+    node "${ringpop_common_dir}/test/it-tests.js" \
+        -s "[$1]" "${project_root}/main.js" &>$output_file || err=$?
+
+    if [ $PIPESTATUS -gt 0 ]; then
+        echo "ERROR: Test errored for cluster size $cluster_size" | \
+            prefix "test-errors-${cluster_size}" >&2
+        return 1
+    fi
+
+    if [ $err -ne 0 ]; then
+        # If the test failed, print a message and display the failures
+        {
+            echo "FAIL: Test failed for cluster size $cluster_size"
+            # Output the test data through tap-filter, which discards success
+            cat "$output_file" |$tap_filter 2>&1
+
+        } | prefix "test-errors-${cluster_size}" >&2
+
+        return 1
+    fi
+}
+
+#
+# Run the integration tests against the testpop binary, in serial.
+#
+run-tests() {
+    local exit_code=0
+
+    for cluster_size in $test_cluster_sizes; do
+        echo "Running test for cluster size ${cluster_size}..." |prefix "test-runner"
+        run-test-for-cluster-size $cluster_size || exit_code=1
+    done
+
+    return $exit_code
+}
+
+# Fetch and build in parallel
+fetch-ringpop-common 2>&1|prefix "fetch ringpop-common"
+
+# Run integration tests
+run-tests
+test_result=$?
+
+if [ $test_result -eq 0 ]; then
+    echo "Tests passed"
+    rm -rf "$temp_dir"
+else
+    echo "Tests failed" >&2
+fi
+
+exit $test_result
