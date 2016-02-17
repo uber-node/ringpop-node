@@ -172,6 +172,7 @@ function RingPop(options) {
     registerRingpopListeners(this);
 
     this.periodicStats = new PeriodicStats(this, {timers: timers});
+    this.periodicStats.start();
 
     this.clientRate = new metrics.Meter();
     this.serverRate = new metrics.Meter();
@@ -204,6 +205,7 @@ RingPop.prototype.destroy = function destroy() {
     this.gossip.stop();
     this.suspicion.stopAll();
     this.membershipUpdateRollup.destroy();
+    this.periodicStats.stop();
     this.requestProxy.destroy();
     this.tracers.destroy();
 
