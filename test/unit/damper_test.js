@@ -23,9 +23,10 @@ var fixtures = require('../fixtures.js');
 var Damper = require('../../lib/gossip/damper.js');
 var DampReqRequest = require('../../request_response.js').DampReqRequest;
 var DampReqResponse = require('../../request_response.js').DampReqResponse;
+var makeTimersMock = require('../lib/timers-mock');
 var MemberDampScore = require('../../lib/membership/member_damp_score.js');
 var testRingpop = require('../lib/test-ringpop.js');
-var TimeMock = require('time-mock');
+var timers = require('timer-shim');
 
 var noop = function noop() {};
 
@@ -212,7 +213,7 @@ testRingpop({
 testRingpop('damp timer initiates subprotocol', function t(deps, assert) {
     assert.plan(2);
 
-    var timers = new TimeMock(Date.now());
+    var timers = makeTimersMock();
     var damper = deps.damper;
     damper.timers = timers;
     damper.on('started', function onEvent(event) {
@@ -250,7 +251,7 @@ testRingpop('expires damped members', function t(deps, assert) {
     assert.plan(5);
 
     var damper = deps.damper;
-    var timers = new TimeMock(Date.now());
+    var timers = makeTimersMock();
     // Stub damper timers to allow for expiring damped members
     damper.timers = timers;
     damper.Date = timers;

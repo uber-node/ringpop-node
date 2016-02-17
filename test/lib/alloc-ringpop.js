@@ -21,7 +21,8 @@
 'use strict';
 
 var TChannel = require('tchannel');
-var TimeMock = require('time-mock');
+
+var makeTimersMock = require('../lib/timers-mock');
 
 var globalTimers = {
     setTimeout: require('timers').setTimeout,
@@ -44,7 +45,7 @@ function allocRingpop(name, options) {
         logger: DebuglogLogger((name && name + 'tchannel') || 'tchannel')
     });
 
-    var timers = TimeMock(Date.now());
+    var timers = makeTimersMock();
     var ringpop = new RingPop({
         app: 'test.ringpop.proxy_req_test',
         hostPort: host + ':' + String(port),

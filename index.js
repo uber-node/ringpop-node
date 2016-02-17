@@ -36,7 +36,7 @@ var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
 var farmhash = require('farmhash');
-var globalSetTimeout = require('timers').setTimeout;
+var timers = require('timers');
 var hammock = require('uber-hammock');
 var metrics = require('metrics');
 var packageJSON = require('./package.json');
@@ -56,6 +56,7 @@ var LagSampler = require('./lib/lag_sampler.js');
 var MembershipIterator = require('./lib/membership/iterator.js');
 var MembershipUpdateRollup = require('./lib/membership/rollup.js');
 var nulls = require('./lib/nulls');
+var PeriodicStats = require('./lib/stats-periodic');
 var rawHead = require('./lib/request-proxy/util.js').rawHead;
 var RequestProxy = require('./lib/request-proxy/index.js');
 var registerConfigListeners = require('./lib/on_config_event.js').register;
@@ -99,7 +100,8 @@ function RingPop(options) {
     this.setLogger(options.logger || nulls.logger);
     this.statsd = options.statsd || nulls.statsd;
     this.bootstrapFile = options.bootstrapFile;
-    this.setTimeout = options.setTimeout || globalSetTimeout;
+    this.timers = options.timers || timers;
+    this.setTimeout = options.setTimeout || timers.setTimeout;
     this.Ring = options.Ring || HashRing;
 
     this.isReady = false;
@@ -168,6 +170,8 @@ function RingPop(options) {
     registerMembershipListeners(this);
     registerRingListeners(this);
     registerRingpopListeners(this);
+
+    this.periodicStats = new PeriodicStats(this, {timers: timers});
 
     this.clientRate = new metrics.Meter();
     this.serverRate = new metrics.Meter();

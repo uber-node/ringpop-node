@@ -22,9 +22,9 @@
 var Client = require('../../client.js');
 var ClientErrors = require('../../client_errors.js');
 var EventEmitter = require('events').EventEmitter;
+var makeTimersMock = require('../lib/timers-mock');
 var RingpopErrors = require('../../ringpop_errors.js');
 var test = require('tape');
-var TimeMock = require('time-mock');
 var util = require('util');
 
 var noop = function noop() {};
@@ -210,7 +210,7 @@ test('cancels correct number of requests', function t(assert) {
         host: '192.0.2.1:1'
     };
     var timeout = 15000;
-    var timeMock = new TimeMock(Date.now());
+    var timers = makeTimersMock();
 
     // Create a Ringpop that is configured with a 15s
     // wedgedRequestTimeout.
@@ -229,7 +229,7 @@ test('cancels correct number of requests', function t(assert) {
         waitForIdentified: function noop() {}
     };
 
-    var client = new Client(dummyRingpop, wedgedChannel, null, timeMock);
+    var client = new Client(dummyRingpop, wedgedChannel, null, timers);
 
     // Send 3 pings. Each of the pings create a single ClientRequest object
     // marked with a timestamp equal to the present.
@@ -239,7 +239,7 @@ test('cancels correct number of requests', function t(assert) {
 
     // Advance time by twice the timeout value causing each of the 3
     // previous sent pings to be marked for expiry when scanned below.
-    timeMock.advance(timeout * 2);
+    timers.advance(timeout * 2);
 
     // The last and final ping happens after the clock has been advanced
     // and all 4 pending requests will be evaluated to see if they have
@@ -266,7 +266,7 @@ test('emits ringpop error on canceled request', function t(assert) {
         host: '192.0.2.1:1'
     };
     var timeout = 15000;
-    var timeMock = new TimeMock(Date.now());
+    var timers = makeTimersMock();
 
     // Create a Ringpop that is configured with a 15s
     // wedgedRequestTimeout.
@@ -285,11 +285,11 @@ test('emits ringpop error on canceled request', function t(assert) {
         waitForIdentified: function noop() {}
     };
 
-    var client = new Client(dummyRingpop, wedgedChannel, null, timeMock);
+    var client = new Client(dummyRingpop, wedgedChannel, null, timers);
     // Send 1 ping on wedged channel.
     client.protocolPing(opts, null, noop);
     // Advance time to trigger cancellation of previous ping request.
-    timeMock.advance(timeout * 2);
+    timers.advance(timeout * 2);
 
     // Register for error just prior to it being raised by call to
     // scanForWedgedRequests() below.
