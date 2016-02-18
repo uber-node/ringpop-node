@@ -41,7 +41,12 @@ test('periodic stats have correct defaults', function t(assert) {
     stats.start();
     assert.deepEqual(ringpop.journal, [], 'empty journal after start');
     ringpop.timers.advance(5000);
-    assert.deepEqual(ringpop.journal, [['stat', 'gauge', 'ring.checksum-periodic', 0xDEADBEEF]]);
+    debugger;
+    assert.deepEqual(ringpop.journal, [
+        // hard ordering, not worth changing for 2. _.contains doesn't work :(
+        ['stat', 'gauge', 'membership.checksum-periodic', 0xCAFED00D],
+        ['stat', 'gauge', 'ring.checksum-periodic', 0xDEADBEEF]
+    ]);
 
     stats.stop();
     assert.end();
@@ -60,7 +65,11 @@ test('periodic stats respect period overrides', function t(assert) {
     stats.start();
     assert.deepEqual(ringpop.journal, [], 'empty journal after start');
     ringpop.timers.advance(500);
-    assert.deepEqual(ringpop.journal, [['stat', 'gauge', 'ring.checksum-periodic', 0xDEADBEEF]]);
+    assert.deepEqual(ringpop.journal, [
+        // hard ordering, not worth changing for 2. _.contains doesn't work :(
+        ['stat', 'gauge', 'membership.checksum-periodic', 0xCAFED00D],
+        ['stat', 'gauge', 'ring.checksum-periodic', 0xDEADBEEF]
+    ]);
 
     stats.stop();
     assert.end();
@@ -127,8 +136,10 @@ test('start/stop works too', function t(assert) {
 
     stats.start();
     ringpop.timers.advance(5000);
-    assert.deepEqual(ringpop.journal.length, 1, 'journal contains 1 entry');
-    assert.deepEqual(ringpop.journal[0][3], 0xDEADBEEF, 'journal contains checksum');
+    // hard ordering, not worth changing for 2. _.contains doesn't work :(
+    assert.deepEqual(ringpop.journal.length, 2, 'journal contains 1 entry');
+    assert.deepEqual(ringpop.journal[0][3], 0xCAFED00D, 'journal contains checksum');
+    assert.deepEqual(ringpop.journal[1][3], 0xDEADBEEF, 'journal contains checksum');
     ringpop.journal = [];
 
     stats.stop();
@@ -198,6 +209,7 @@ function RingpopMock() {
         info: push.bind(null, 'logger.info'),
         warn: push.bind(null, 'logger.warn'),
     };
+    this.membership = {checksum: 0xCAFED00D};
     this.ring = {checksum: 0xDEADBEEF};
     this.stat = push.bind(null, 'stat');
     this.timers = makeTimersMock();
