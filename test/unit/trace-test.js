@@ -23,20 +23,10 @@
 var EventEmitter = require('events').EventEmitter;
 
 var test = require('tape');
-var Timer = require('time-mock');
 
 var core = require('../../lib/trace/core');
+var makeTimersMock = require('../lib/timers-mock');
 var TracerStore = require('../../lib/trace/store');
-
-var timer = Timer(1000);
-// workaround timer id 0 by setting a throwaway, increments to 1
-timer.setTimeout(function() {}, 0);
-
-var timers = {
-    setTimeout: timer.setTimeout,
-    clearTimeout: timer.clearTimeout,
-    now: timer.now,
-};
 
 test('trace adds/removes work and are idempotent', function t(assert) {
     assert.plan(13);
@@ -100,6 +90,7 @@ test('trace events get traced', function t(assert) {
 });
 
 test('trace events can renew, and expire', function t(assert) {
+    var timers = makeTimersMock();
     var ringpop = new RingpopMock();
     var store = new TracerStore(ringpop, { timers: timers });
     var config = core.resolveEventConfig(ringpop, 'membership.checksum.update');
@@ -113,14 +104,14 @@ test('trace events can renew, and expire', function t(assert) {
         ringpop.membership.emit('checksumUpdate', 'foo');
         assert.equal(ringpop.journal.length, 1, 'trace added correctly');
 
-        timer.advance(25);
+        timers.advance(25);
         store.add(config, opts);
 
-        timer.advance(49);
+        timers.advance(49);
         ringpop.membership.emit('checksumUpdate', 'bar');
         assert.equal(ringpop.journal.length, 2, 'trace readd survived timeout');
 
-        timer.advance(1);
+        timers.advance(1);
         ringpop.membership.emit('checksumUpdate', 'dropped');
         assert.equal(ringpop.journal.length, 2, 'timer dropped trace @timeout');
     });

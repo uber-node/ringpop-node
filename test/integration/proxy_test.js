@@ -27,10 +27,10 @@ var bufferEqual = require('buffer-equal');
 var express = require('express');
 var http = require('http');
 var jsonBody = require('body/json');
+var makeTimersMock = require('../lib/timers-mock');
 var strHead = require('../../lib/request-proxy/util.js').strHead;
 var test = require('tape');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
-var TimeMock = require('time-mock');
 var tryIt = require('tryit');
 
 var retrySchedule = [0, 0.01, 0.02];
@@ -788,7 +788,7 @@ test('can serialize httpVersion', function t(assert) {
 });
 
 test('will timeout after default timeout', function t(assert) {
-    var timers = TimeMock(Date.now());
+    var timers = makeTimersMock();
     var cluster = allocCluster({
         timers: timers,
         createHandler: function createHandler() {
@@ -912,7 +912,7 @@ test('can send back a close event');
 
 // lack of coverage.
 test('custom timeouts', function t(assert) {
-    var timers = TimeMock(Date.now());
+    var timers = makeTimersMock();
     var cluster = allocCluster({
         timers: timers,
         createHandler: function createHandler() {

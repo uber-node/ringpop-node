@@ -61,7 +61,7 @@
     "tape-cluster": "2.1.0",
     "tchannel": "^3.6.13",
     "tcurl": "^4.11.1",
-    "time-mock": "^0.1.2",
+    "timer-shim": "^0.3.0",
     "tryit": "^1.0.1",
     "uber-licence": "^1.1.0",
     "winston": "^1.0.1"
