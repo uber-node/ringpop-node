@@ -59,69 +59,92 @@ testRingpop('gossip can be restarted', function t(deps, assert) {
 
 testRingpop('suspect period for member is started', function t(deps, assert) {
     var membership = deps.membership;
-    var suspicion = deps.suspicion;
+    var stateTransitions = deps.stateTransitions;
 
     var address = '127.0.0.1:3001';
     membership.makeAlive(address, Date.now());
 
     var member = membership.findMemberByAddress(address);
-    suspicion.start(member);
+    stateTransitions.scheduleSuspectToFaulty(member);
 
-    assert.ok(suspicion.timers[member.address],
-        'timer is set for member suspect period');
+    var st = stateTransitions.timers[member.address];
+    assert.ok(st.timer, 'timer is set for member suspect period');
+    assert.equals(st.state, Member.Status.suspect,
+        'initial state is set for the state transition');
 });
 
 testRingpop('suspect period cannot be started for local member', function t(deps, assert) {
     var membership = deps.membership;
-    var suspicion = deps.suspicion;
+    var stateTransitions = deps.stateTransitions;
 
     var member = membership.findMemberByAddress(deps.ringpop.whoami());
-    suspicion.start(member);
+    stateTransitions.scheduleSuspectToFaulty(member);
 
-    assert.notok(suspicion.timers[member.address],
+    assert.notok(stateTransitions.timers[member.address],
         'timer is not set for local member suspect period');
 });
 
-testRingpop('suspect period for member is stopped before another is started', function t(deps, assert) {
-    assert.plan(2);
-
+testRingpop('starting the same state transition for a member is a noop', function t(deps, assert) {
     var membership = deps.membership;
     var address = '127.0.0.1:3001';
     membership.makeAlive(address, Date.now());
 
-    var suspicion = deps.suspicion;
+    var stateTransitions = deps.stateTransitions;
 
     var remoteMember = membership.findMemberByAddress(address);
-    suspicion.timers[remoteMember.address] = true;
-    suspicion.stop = function(member) {
-        assert.equals(member.address, remoteMember.address, 'stopping correct member period');
-        assert.pass('stop was called on previous suspect period');
+    var st = stateTransitions.timers[remoteMember.address] = {
+        timer: 1,
+        state: Member.Status.suspect
     };
-
-    suspicion.start(remoteMember);
+    stateTransitions.scheduleSuspectToFaulty(remoteMember);
+    assert.equals(st.timer, 1, 'timer did not change');
+    assert.equals(st.state, Member.Status.suspect, 'status did not change');
 });
 
-testRingpop('suspect period can\'t be started until reenabled', function t(deps, assert) {
+testRingpop('starting a new state transition for a member stops the previous one', function t(deps, assert) {
+    assert.plan(4);
+
     var membership = deps.membership;
-    var suspicion = deps.suspicion;
+    var address = '127.0.0.1:3001';
+    membership.makeAlive(address, Date.now());
+
+    var stateTransitions = deps.stateTransitions;
+
+    var remoteMember = membership.findMemberByAddress(address);
+    stateTransitions.timers[remoteMember.address] = {
+        timer: -1,
+        state: Member.Status.suspect
+    };
+    stateTransitions.cancel = function(member) {
+        assert.equals(member.address, remoteMember.address, 'stopping correct member period');
+        assert.pass('stop was called on previous member period');
+    }
+    stateTransitions.schedule(remoteMember, Member.Status.faulty, 100, function() {});
+    assert.notEquals(stateTransitions.timers[remoteMember.address].timer, -1, 'timer was updated');
+    assert.equals(stateTransitions.timers[remoteMember.address].state, Member.Status.faulty, 'status was updated');
+});
+
+testRingpop('suspect period can\'t be started until enabled', function t(deps, assert) {
+    var membership = deps.membership;
+    var stateTransitions = deps.stateTransitions;
 
     var address = '127.0.0.1:3001';
     membership.makeAlive(address, Date.now());
 
-    suspicion.stopAll();
+    stateTransitions.disable();
 
     var remoteMember = membership.findMemberByAddress(address);
-    suspicion.start(remoteMember);
-    assert.notok(suspicion.timers[remoteMember.address], 'timer for member was not set');
+    stateTransitions.scheduleSuspectToFaulty(remoteMember);
+    assert.notok(stateTransitions.timers[remoteMember.address], 'timer for member was not set');
 
-    suspicion.reenable();
-    assert.equals(suspicion.isStoppedAll, null, 'suspicion reenabled');
+    stateTransitions.enable();
+    assert.ok(stateTransitions.enabled, 'state transitions enabled');
 
-    suspicion.start(remoteMember);
-    assert.ok(suspicion.timers[remoteMember.address], 'timer for member was set');
+    stateTransitions.scheduleSuspectToFaulty(remoteMember);
+    assert.ok(stateTransitions.timers[remoteMember.address], 'timer for member was set');
 });
 
-testRingpop('suspect period stop all clears all timers', function t(deps, assert) {
+testRingpop('state transition stop all clears all timers', function t(deps, assert) {
     var addr1 = '127.0.0.1:3001';
     var addr2 = '127.0.0.1:3002';
 
@@ -132,25 +155,25 @@ testRingpop('suspect period stop all clears all timers', function t(deps, assert
     var remoteMember = membership.findMemberByAddress(addr1);
     var remoteMember2 = membership.findMemberByAddress(addr2);
 
-    var suspicion = deps.suspicion;
-    suspicion.start(remoteMember);
-    suspicion.start(remoteMember2);
+    var stateTransitions = deps.stateTransitions;
+    stateTransitions.scheduleSuspectToFaulty(remoteMember);
+    stateTransitions.scheduleSuspectToFaulty(remoteMember2);
 
-    assert.ok(suspicion.timers[remoteMember.address], 'suspect timer started for first member');
-    assert.ok(suspicion.timers[remoteMember2.address], 'suspect timer started for next member');
+    assert.ok(stateTransitions.timers[remoteMember.address], 'suspect timer started for first member');
+    assert.ok(stateTransitions.timers[remoteMember2.address], 'suspect timer started for next member');
 
-    suspicion.stopAll();
-    assert.notok(suspicion.timers[remoteMember.address], 'suspect timer clear for first member');
-    assert.notok(suspicion.timers[remoteMember2.address], 'suspect timer clear for next member');
-    assert.ok(suspicion.isStoppedAll, 'stopped all timers');
+    stateTransitions.disable();
+    assert.notok(stateTransitions.timers[remoteMember.address], 'suspect timer clear for first member');
+    assert.notok(stateTransitions.timers[remoteMember2.address], 'suspect timer clear for next member');
+    assert.notok(stateTransitions.enabled, 'stopped all timers');
 });
 
-testRingpop('suspicion subprotocol cannot be reenabled without all timers first being stopped', function t(deps, assert) {
-    var suspicion = deps.suspicion;
+testRingpop('state transitions cannot be enabled without all timers first being stopped', function t(deps, assert) {
+    var stateTransitions = deps.stateTransitions;
 
-    suspicion.isStoppedAll = 'fakestopall';
-    suspicion.reenable();
-    assert.equals(suspicion.isStoppedAll, 'fakestopall', 'suspicion not reenabled');
+    stateTransitions.enabled = 'fakestopall';
+    stateTransitions.enable();
+    assert.equals(stateTransitions.enabled, 'fakestopall', 'state transitions not enabled');
 });
 
 testRingpop({
@@ -159,18 +182,18 @@ testRingpop({
     assert.plan(1);
 
     var membership = deps.membership;
-    var suspicion = deps.suspicion;
+    var stateTransitions = deps.stateTransitions;
 
     var address = '127.0.0.1:3001';
     membership.makeAlive(address, Date.now());
 
     var member = membership.findMemberByAddress(address);
 
-    suspicion.period = 1;
-    suspicion.start(member);
+    stateTransitions.suspectTimeout = 1;
+    stateTransitions.scheduleSuspectToFaulty(member);
 
     setTimeout(function onTimeout() {
         assert.equals(member.status, Member.Status.faulty, 'member is faulty');
         done();
-    }, suspicion.period + 1);
+    }, stateTransitions.period + 1);
 });

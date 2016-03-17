@@ -22,9 +22,9 @@
 var membershipEventListeners = require('../../lib/on_membership_event.js');
 var testRingpop = require('../lib/test-ringpop.js');
 
-testRingpop('starts suspicion period for suspect', function t(deps, assert) {
+testRingpop('starts state transition period for suspect', function t(deps, assert) {
     var ringpop = deps.ringpop;
-    var suspicion = deps.suspicion;
+    var stateTransitions = deps.stateTransitions;
     var suspect = {
         address: '127.0.0.1:3001',
         status: 'suspect',
@@ -34,7 +34,7 @@ testRingpop('starts suspicion period for suspect', function t(deps, assert) {
     var createSetHandler = membershipEventListeners.createSetHandler;
     var listener = createSetHandler(ringpop);
     listener([suspect]);
-    assert.ok(suspicion.timers[suspect.address], 'suspicion period started');
+    assert.ok(stateTransitions.timers[suspect.address], 'state transition started');
 
-    suspicion.stop(suspect);
+    stateTransitions.cancel(suspect);
 });

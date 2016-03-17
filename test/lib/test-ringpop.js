@@ -53,7 +53,7 @@ function testRingpop(opts, name, test) {
             requestProxy: ringpop.requestProxy,
             ringpop: ringpop,
             rollup: ringpop.membershipUpdateRollup,
-            suspicion: ringpop.suspicion
+            stateTransitions: ringpop.stateTransitions
         };
 
         if (opts.async) {

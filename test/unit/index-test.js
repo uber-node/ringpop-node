@@ -33,7 +33,7 @@ function createRingpop(opts) {
     var ringpop = new Ringpop(_.extend({
         app: 'test',
         hostPort: '127.0.0.1:3000'
-    }), opts);
+    }, opts));
 
     ringpop.isReady = true;
 
@@ -155,7 +155,7 @@ test('admin leave stops gossip', function t(assert) {
     });
 });
 
-test('admin leave stops suspicion subprotocol', function t(assert) {
+test('admin leave stops state transitions', function t(assert) {
     assert.plan(2);
 
     var ringpopRemote = createRemoteRingpop();
@@ -164,12 +164,12 @@ test('admin leave stops suspicion subprotocol', function t(assert) {
     var ringpop = createRingpop();
     ringpop.membership.makeAlive(ringpop.whoami(), 1);
     ringpop.membership.makeAlive(ringpopRemote.whoami(), Date.now());
-    ringpop.suspicion.start(ringpopRemote.hostPort);
+    ringpop.stateTransitions.scheduleSuspectToFaulty(ringpopRemote.hostPort);
 
     var handleAdminLeave = createAdminLeaveHandler(ringpop);
     handleAdminLeave(null, null, null, function(err) {
         assert.notok(err, 'an error did not occur');
-        assert.equals(true, ringpop.suspicion.isStoppedAll, 'suspicion subprotocol is stopped');
+        assert.notok(ringpop.stateTransitions.enabled, 'state transitions is stopped');
         ringpop.destroy();
         ringpopRemote.destroy();
         assert.end();
@@ -496,4 +496,14 @@ badHostPorts.forEach(function each(hostPort) {
             }
         );
     });
+});
+
+test('suspicionTimeout backward compatibility', function t(assert) {
+    var ringpop = createRingpop({suspicionTimeout: 123});
+    assert.deepEquals(ringpop.stateTransitions.suspectTimeout, 123);
+    ringpop.destroy();
+    ringpop = createRingpop({suspicionTimeout: 123, stateTimeouts: {suspect: 124}});
+    assert.deepEquals(ringpop.stateTransitions.suspectTimeout, 124);
+    ringpop.destroy();
+    assert.end();
 });
