@@ -45,7 +45,7 @@ function createJoinHandler(ringpop) {
             ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
 
             ringpop.gossip.start();
-            ringpop.suspicion.reenable();
+            ringpop.stateTransitions.enable();
 
             callback(null, null, 'rejoined');
             return;

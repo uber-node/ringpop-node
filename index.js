@@ -42,7 +42,7 @@ var metrics = require('metrics');
 var packageJSON = require('./package.json');
 
 var Gossip = require('./lib/gossip');
-var Suspicion = require('./lib/gossip/suspicion');
+var StateTransitions = require('./lib/gossip/state_transitions');
 
 var Config = require('./config.js');
 var Damper = require('./lib/gossip/damper.js');
@@ -155,9 +155,14 @@ function RingPop(options) {
     this.damper = new Damper({
         ringpop: this
     });
-    this.suspicion = new Suspicion({
+    var periods = options.stateTimeouts;
+    if (!periods) {
+        // backward compatibility
+        periods = {suspect: options.suspicionTimeout};
+    }
+    this.stateTransitions = new StateTransitions({
         ringpop: this,
-        suspicionTimeout: options.suspicionTimeout
+        periods: periods
     });
     this.membershipUpdateRollup = new MembershipUpdateRollup({
         ringpop: this,
@@ -203,7 +208,7 @@ RingPop.prototype.destroy = function destroy() {
     this.emit('destroying');
 
     this.gossip.stop();
-    this.suspicion.stopAll();
+    this.stateTransitions.disable();
     this.membershipUpdateRollup.destroy();
     this.periodicStats.stop();
     this.requestProxy.destroy();

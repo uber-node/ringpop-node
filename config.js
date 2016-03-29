@@ -77,7 +77,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('joinLogLevel', LoggingLevels.warn);
     seedOrDefault('membershipLogLevel', LoggingLevels.error);
     seedOrDefault('ringLogLevel', LoggingLevels.error);
-    seedOrDefault('suspicionLogLevel', LoggingLevels.error);
+    seedOrDefault('stateTransitionsLogLevel', LoggingLevels.error);
 
     // Gossip configs
     seedOrDefault('autoGossip', true);
