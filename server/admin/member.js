@@ -99,6 +99,27 @@ function createLeaveHandler(ringpop) {
     };
 }
 
+function createReapHandler(ringpop) {
+    return function handleReap(arg1, arg2, hostInfo, callback) {
+        if (!ringpop.membership.localMember) {
+            process.nextTick(function() {
+                callback(errors.InvalidLocalMemberError());
+            });
+            return;
+        }
+
+        ringpop.membership.members.forEach(function(member) {
+            if (member.status === Member.Status.faulty) {
+                ringpop.membership.makeTombstone(member.address, member.incarnationNumber);
+            }
+        });
+
+        process.nextTick(function() {
+            callback(null, null, JSON.stringify({'status': 'ok'}));
+        });
+    };
+}
+
 module.exports = {
     memberJoin: {
         endpoint: '/admin/member/join',
@@ -107,5 +128,9 @@ module.exports = {
     memberLeave: {
         endpoint: '/admin/member/leave',
         handler: createLeaveHandler
+    },
+    reap: {
+        endpoint: '/admin/reap',
+        handler: createReapHandler
     }
 };
