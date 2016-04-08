@@ -20,11 +20,9 @@
 
 'use strict';
 
-var safeParse = require('../../lib/util.js').safeParse;
-
 module.exports = function createReloadHandler(ringpop) {
     return function handleReload(arg1, arg2, hostInfo, callback) {
-        var body = safeParse(arg2.toString());
+        var body = arg2;
         if (body && body.file) {
             ringpop.reload(body.file, function(err) {
                 callback(err);

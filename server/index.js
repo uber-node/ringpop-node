@@ -20,11 +20,14 @@
 
 'use strict';
 
+var middleware = require('../lib/middleware');
 
-function RingpopServer(ringpop, tchannel) {
+function RingpopServer(ringpop, tchannel, middlewares) {
     var self = this;
     self.ringpop = ringpop;
     self.tchannel = tchannel;
+    // mind the order: request is applied top-down, response in reverse
+    self.middlewareStack = new middleware.MiddlewareStack(middlewares || []);
 
     registerEndpointHandlers(require('./admin'));
     registerEndpointHandlers(require('./protocol'));
@@ -49,20 +52,24 @@ function RingpopServer(ringpop, tchannel) {
     // know TChannel req/res API.
     function registerEndpoint(url, handler) {
         tchannel.register(url, function (req, res, arg2, arg3) {
-            handler(arg2, arg3, req.remoteAddr, onResponse);
 
-            function onResponse(err, res1, res2) {
-                res.headers.as = 'raw';
-                if (err) {
-                    res.sendNotOk(null, JSON.stringify(err));
-                } else {
-                    if (res2 && !Buffer.isBuffer(res2)) {
-                        res2 = new Buffer(res2);
+            self.middlewareStack.run(req, arg2, arg3,
+                function(req, arg2, arg3, callback) {
+                    handler(arg2, arg3, req.remoteAddr, callback);
+                },
+                function(req, err, res1, res2) {
+                    res.headers.as = 'raw';
+                    if (err) {
+                        res.sendNotOk(null, JSON.stringify(err));
+                    } else {
+                        if (res2 && !Buffer.isBuffer(res2)) {
+                            res2 = new Buffer(res2);
+                        }
+
+                        res.sendOk(res1, res2);
                     }
+                });
 
-                    res.sendOk(res1, res2);
-                }
-            }
         });
     }
 }

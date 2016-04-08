@@ -21,7 +21,6 @@
 'use strict';
 
 var errors = require('../../lib/errors.js');
-var safeParse = require('../../lib/util').safeParse;
 
 module.exports = function createPingHandler(ringpop) {
     return function handlePing(arg1, arg2, hostInfo, callback) {
@@ -33,7 +32,7 @@ module.exports = function createPingHandler(ringpop) {
             return;
         }
 
-        var body = safeParse(arg2);
+        var body = arg2;
 
         // NOTE sourceIncarnationNumber is an optional argument. It was not present
         // until after the v9.8.12 release.
@@ -57,8 +56,8 @@ module.exports = function createPingHandler(ringpop) {
         if (res.fullSync) {
             ringpop.dissemination.tryStartReverseFullSync(source, ringpop.maxJoinDuration);
         }
-        callback(null, null, JSON.stringify({
+        callback(null, null, {
             changes: res.changes,
-        }));
+        });
     };
 };

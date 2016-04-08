@@ -20,14 +20,12 @@
 
 'use strict';
 
-var safeParse = require('../../lib/util.js').safeParse;
-
 function createConfigGetHandler(ringpop) {
     return function handleConfigGet(arg2, arg3, hostInfo, callback) {
-        var body = safeParse(arg3 && arg3.toString());
+        var body = arg3;
 
         if (!body || !Array.isArray(body)) {
-            callback(null, null, JSON.stringify(ringpop.config.getAll()));
+            callback(null, null, ringpop.config.getAll());
             return;
         }
 
@@ -36,13 +34,13 @@ function createConfigGetHandler(ringpop) {
             return memo;
         }, {});
 
-        callback(null, null, JSON.stringify(configs));
+        callback(null, null, configs);
     };
 }
 
 function createConfigSetHandler(ringpop) {
     return function handleConfigSet(arg2, arg3, hostInfo, callback) {
-        var body = safeParse(arg3 && arg3.toString());
+        var body = arg3;
 
         if (!body) {
             callback(new Error('body is required'));

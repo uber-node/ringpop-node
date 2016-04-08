@@ -28,11 +28,13 @@ var globalTimers = require('timers');
 var RingpopErrors = require('./ringpop_errors.js');
 var TChannel = require('tchannel');
 
-function RingpopClient(ringpop, subChannel, timers, date) {
+/* jshint maxparams: 5 */
+function RingpopClient(ringpop, subChannel, timers, date, middlewares) {
     this.ringpop = ringpop;
     this.subChannel = subChannel;
     this.timers = timers || globalTimers;
     this.date = date || Date;
+    this.middlewares = middlewares || [];
 
     this.config = this.ringpop.config;
     this.logger = this.ringpop.loggerFactory.getLogger('client');
@@ -159,7 +161,6 @@ RingpopClient.prototype._emitWedgedError = function _emitWedgedError() {
     }
 };
 
-/* jshint maxparams: 5 */
 RingpopClient.prototype._request = function _request(opts, endpoint, head, body, callback) {
     var self = this;
 
@@ -168,7 +169,7 @@ RingpopClient.prototype._request = function _request(opts, endpoint, head, body,
     }
 
     var request = new ClientRequest(this, opts, endpoint, head, body,
-        this.date, onSend);
+        this.date, onSend, this.middlewares);
 
     // Evaluate the number of inflight requests. If we've got more than the
     // allowable limit it's a strong indication that at least some are wedged.

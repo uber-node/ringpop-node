@@ -70,6 +70,7 @@ var safeParse = require('./lib/util').safeParse;
 var validateHostPort = require('./lib/util').validateHostPort;
 var sendJoin = require('./lib/gossip/joiner.js').joinCluster;
 var TracerStore = require('./lib/trace/store.js');
+var middleware = require('./lib/middleware');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
@@ -251,8 +252,14 @@ RingPop.prototype.destroy = function destroy() {
 };
 
 RingPop.prototype.setupChannel = function setupChannel() {
-    this.client = new RingpopClient(this, this.channel);
-    this.server = new RingpopServer(this, this.channel);
+    this.client = new RingpopClient(this, this.channel, timers, Date, [
+        middleware.tombstonePatchClientMiddleware]);
+    this.server = new RingpopServer(this, this.channel, [
+        // We want the transportMiddleware to be close to the top because it
+        // does encoding/decoding of arguments/results. Any middleware that
+        // needs to access those values must be below it.
+        middleware.transportServerMiddleware,
+        middleware.tombstonePatchServerMiddleware]);
 };
 
 /*
