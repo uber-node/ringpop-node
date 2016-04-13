@@ -21,6 +21,7 @@
 'use strict';
 
 var testRingpop = require('../lib/test-ringpop');
+var mock = require('../mock');
 
 testRingpop('full sync includes all members', function t(deps, assert) {
     var membership = deps.membership;
@@ -63,12 +64,12 @@ testRingpop('avoids redundant dissemination by filtering changes from source', f
 
     // 'sender' and source of updates (above) are same; issues no changes.
     var changes = dissemination.issueAsReceiver(localMember.address,
-        localMember.incarnationNumber, membership.checksum);
+        localMember.incarnationNumber, membership.checksum).changes;
     assert.equal(changes.length, 0, 'no changes issued');
 
     // 'sender' and source of updates are different; issues changes.
     changes = dissemination.issueAsReceiver(addrAlive, incNo,
-        membership.checksum);
+        membership.checksum).changes;
     assert.ok(changes.length > 0, 'changes issued');
 });
 
@@ -150,4 +151,89 @@ testRingpop('raise piggyback counter on issueAsSender', function t(deps, assert)
     assert.equal(disChangeSuspect.piggybackCount, 1, 'piggyback counter is raised');
     assert.equal(disChangeFaulty.piggybackCount, 1, 'piggyback counter is raised');
 
+});
+
+testRingpop('issueAsReceiver sets full sync correctly', function t(deps, assert) {
+    var membership = deps.membership;
+    var dissemination = deps.dissemination;
+
+    var addrAlive = '127.0.0.1:3001';
+    var incNo = Date.now();
+
+    // Clear changes to start fresh, otherwise local member changes
+    // recorded during bootstrap phase would have been issued.
+    dissemination.clearChanges();
+
+    var res = dissemination.issueAsReceiver(addrAlive, incNo,
+        membership.checksum);
+
+    assert.notOk(res.fullSync, 'full sync is false when checksums match');
+
+    res = dissemination.issueAsReceiver(addrAlive, incNo,
+        membership.checksum-1);
+    assert.ok(res.fullSync, 'full sync is true when checksums differ');
+});
+
+testRingpop('tryStartReverseFullSync keeps track of running jobs', function t(deps, assert) {
+    var dissemination = deps.dissemination;
+
+    dissemination._reverseFullSync = function(target, timeout, callback) {
+        assert.equal(dissemination.reverseFullSyncJobs, 1, 'reverse full sync jobs increased');
+        callback();
+
+        assert.equal(dissemination.reverseFullSyncJobs, 0, 'reverse full sync jobs decreased');
+    };
+
+
+    assert.plan(3);
+    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
+
+    var target = '127.0.0.1:3001';
+    dissemination.tryStartReverseFullSync(target, 1000);
+});
+
+testRingpop('tryStartReverseFullSync doesn\'t start reverse full sync when out of workers', function t(deps, assert) {
+    var dissemination = deps.dissemination;
+    var ringpop = deps.ringpop;
+
+    ringpop.maxReverseFullSyncJobs = 0;
+
+    dissemination._reverseFullSync = function() {
+        assert.fail();
+    };
+    
+    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
+    var target = '127.0.0.1:3001';
+    dissemination.tryStartReverseFullSync(target, 1000);
+});
+
+testRingpop('tryStartReverseFullSync send join request to target node', function t(deps, assert) {
+    var dissemination = deps.dissemination;
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
+
+    var target = '127.0.0.1:3001';
+    var timeout = 1000;
+
+    var client = {
+        protocolJoin: function(opts, body, callback) {
+            assert.equal(opts.host, target, 'send join to remote');
+            assert.equal(opts.timeout, timeout, 'send join with correct timeout');
+
+            callback(null, {
+                membership: dissemination.fullSync(),
+                membershipChecksum: membership.checksum
+            });
+        },
+        destroy: mock.noop
+    };
+    ringpop.client = client;
+
+    membership.update = function() {
+        assert.pass('membership updated');
+        return [];
+    };
+
+    assert.plan(3);
+    dissemination.tryStartReverseFullSync(target, timeout);
 });

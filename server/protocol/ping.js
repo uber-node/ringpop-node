@@ -51,9 +51,14 @@ module.exports = function createPingHandler(ringpop) {
 
         ringpop.membership.update(changes);
 
+        var res = ringpop.dissemination.issueAsReceiver(source,
+            sourceIncarnationNumber, checksum);
+
+        if (res.fullSync) {
+            ringpop.dissemination.tryStartReverseFullSync(source, ringpop.maxJoinDuration);
+        }
         callback(null, null, JSON.stringify({
-            changes: ringpop.dissemination.issueAsReceiver(source,
-                sourceIncarnationNumber, checksum),
+            changes: res.changes,
         }));
     };
 };

@@ -77,7 +77,7 @@ module.exports = function createPingReqHandler(ringpop) {
 
             callback(null, null, JSON.stringify({
                 changes: ringpop.dissemination.issueAsReceiver(source,
-                    sourceIncarnationNumber, checksum),
+                    sourceIncarnationNumber, checksum).changes,
                 pingStatus: isOk,
                 target: target
             }));
