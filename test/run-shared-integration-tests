@@ -45,11 +45,11 @@ prefix() {
 fetch-ringpop-common() {
     if [ ! -e "$ringpop_common_dir" ]; then
         run git clone --depth=1 https://github.com/uber/ringpop-common.git "$ringpop_common_dir"
+    else
+        run cd "$ringpop_common_dir"
+        run git pull
+        run cd - >/dev/null
     fi
-
-    run cd "$ringpop_common_dir"
-    run git pull
-    run cd - >/dev/null
 
     run cd "${ringpop_common_dir}/test"
     run npm install >/dev/null
