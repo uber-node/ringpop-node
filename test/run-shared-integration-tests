@@ -6,6 +6,7 @@ set -eo pipefail
 
 declare project_root="${0%/*}/.."
 declare ringpop_common_dir="${0%/*}/ringpop-common"
+declare ringpop_common_branch="master"
 declare tap_filter="${ringpop_common_dir}/test/tap-filter"
 
 declare test_cluster_sizes="1 2 3 4 5 10"
@@ -44,10 +45,11 @@ prefix() {
 #
 fetch-ringpop-common() {
     if [ ! -e "$ringpop_common_dir" ]; then
-        run git clone --depth=1 https://github.com/uber/ringpop-common.git "$ringpop_common_dir"
+        run git clone --depth=1 https://github.com/uber/ringpop-common.git "$ringpop_common_dir" --branch "$ringpop_common_branch"
     else
         run cd "$ringpop_common_dir"
-        run git pull
+        run git fetch origin "$ringpop_common_branch"
+        run git checkout "FETCH_HEAD"
         run cd - >/dev/null
     fi
 
