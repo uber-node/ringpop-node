@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+# Run Travis CI scripts from an environment variable.
+#
+# This script evaluates and executes the command string from the RUN
+# environment variable.
+#
+# It allows you to execute different commands in a test matrix on Travis CI,
+# based on env vars in your .travis.yml.
+#
+declare RUN_DEFAULT=""
+
+# Perform default action if none specified
+if [ -z "$RUN" ]; then
+	RUN=$RUN_DEFAULT
+fi
+
+# Exit with error if there's nothing to do
+if [ -z "$RUN" ]; then
+	echo "ERROR: No actions specified and no default actions. Exiting." >&2
+	exit 1
+fi
+
+# Execute the command string; echo the commands as they run
+eval "set -x; $RUN"

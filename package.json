@@ -20,6 +20,7 @@
     "test": "npm run jshint && node test/index.js | faucet",
     "test-debug": "node debug test/index.js",
     "test-integration": "node test/integration/index.js | faucet",
+    "test-shared-integration-tests": "test/run-shared-integration-tests",
     "test-unit": "node test/unit/index.js | faucet",
     "add-licence": "uber-licence",
     "check-licence": "uber-licence --dry",
