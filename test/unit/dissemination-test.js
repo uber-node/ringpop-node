@@ -153,7 +153,7 @@ testRingpop('raise piggyback counter on issueAsSender', function t(deps, assert)
 
 });
 
-testRingpop('issueAsReceiver sets full sync correctly', function t(deps, assert) {
+testRingpop('issueAsReceiver returns whether a full sync is made', function t(deps, assert) {
     var membership = deps.membership;
     var dissemination = deps.dissemination;
 
@@ -176,18 +176,105 @@ testRingpop('issueAsReceiver sets full sync correctly', function t(deps, assert)
 
 testRingpop('tryStartReverseFullSync keeps track of running jobs', function t(deps, assert) {
     var dissemination = deps.dissemination;
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
 
-    dissemination._reverseFullSync = function(target, timeout, callback) {
-        assert.equal(dissemination.reverseFullSyncJobs, 1, 'reverse full sync jobs increased');
-        callback();
+    var target = '127.0.0.1:3001';
 
-        assert.equal(dissemination.reverseFullSyncJobs, 0, 'reverse full sync jobs decreased');
+    var client = {
+        protocolJoin: function(opts, body, callback) {
+            assert.equal(dissemination.reverseFullSyncJobs, 1, 'reverse full sync jobs increased');
+            assert.equal(opts.host, target, 'send join to remote');
+
+            callback(null, {
+                membership: dissemination.fullSync(),
+                membershipChecksum: membership.checksum
+            });
+        },
+        destroy: mock.noop
     };
+    ringpop.client = client;
 
-
-    assert.plan(3);
+    assert.plan(4);
     assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
 
+    dissemination.tryStartReverseFullSync(target, 100);
+
+    // reverseFullSyncJobs should be 0 again.
+    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
+});
+
+testRingpop('tryStartReverseFullSync keeps track of running jobs', function t(deps, assert) {
+    var dissemination = deps.dissemination;
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
+
+    var target = '127.0.0.1:3001';
+    var maxWorkers = ringpop.maxReverseFullSyncJobs;
+
+    var client = {
+        protocolJoin: function(opts, body, callback) {
+            if (dissemination.reverseFullSyncJobs > maxWorkers) {
+                assert.fail('to many full sync workers!');
+            }
+
+            callback(null, {
+                membership: dissemination.fullSync(),
+                membershipChecksum: membership.checksum
+            });
+        },
+        destroy: mock.noop
+    };
+    ringpop.client = client;
+
+    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
+
+    for(var i=0; i<maxWorkers+2; i++) {
+        dissemination.tryStartReverseFullSync(target, 100);
+    }
+
+    // reverseFullSyncJobs should be 0 again.
+    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
+});
+
+testRingpop('tryStartReverseFullSync keeps track of running jobs on error', function t(deps, assert) {
+    var dissemination = deps.dissemination;
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
+
+    var target = '127.0.0.1:3001';
+
+    var client = {
+        protocolJoin: function(opts, body, callback) {
+            assert.equal(dissemination.reverseFullSyncJobs, 1, 'reverse full sync jobs increased');
+            assert.equal(opts.host, target, 'send join to remote');
+
+            callback('error', null);
+        },
+        destroy: mock.noop
+    };
+    ringpop.client = client;
+
+    assert.plan(4);
+    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
+
+    dissemination.tryStartReverseFullSync(target, 100);
+
+    // reverseFullSyncJobs should be 0 again.
+    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
+});
+
+testRingpop('tryStartReverseFullSync doesn\'t start reverse full sync when max jobs is 0', function t(deps, assert) {
+    var dissemination = deps.dissemination;
+    var ringpop = deps.ringpop;
+
+    ringpop.maxReverseFullSyncJobs = 0;
+
+    dissemination._reverseFullSync = function() {
+        assert.fail('too many full sync jobs');
+    };
+    
+    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
     var target = '127.0.0.1:3001';
     dissemination.tryStartReverseFullSync(target, 1000);
 });
@@ -196,15 +283,30 @@ testRingpop('tryStartReverseFullSync doesn\'t start reverse full sync when out o
     var dissemination = deps.dissemination;
     var ringpop = deps.ringpop;
 
-    ringpop.maxReverseFullSyncJobs = 0;
+    ringpop.maxReverseFullSyncJobs = 1;
+    var target = '127.0.0.1:3001';
+
+    var callbackOfFirstFullSync = null;
+    dissemination._reverseFullSync = function(tar, timeout, callback) {
+        callbackOfFirstFullSync = callback;
+        assert.equal(tar, target);
+        assert.equal(dissemination.reverseFullSyncJobs, 1, 'reverse full sync jobs increased');
+    };
+
+    assert.equal(dissemination.reverseFullSyncJobs, 0);
+    dissemination.tryStartReverseFullSync(target, 1000);
+    assert.equal(dissemination.reverseFullSyncJobs, 1);
 
     dissemination._reverseFullSync = function() {
-        assert.fail();
+        //Fail if second full sync is started
+        assert.fail('too many full sync jobs');
     };
-    
-    assert.equal(dissemination.reverseFullSyncJobs, 0, 'running reverse full sync jobs is 0');
-    var target = '127.0.0.1:3001';
+
     dissemination.tryStartReverseFullSync(target, 1000);
+    assert.equal(dissemination.reverseFullSyncJobs, 1);
+    assert.notEqual(callbackOfFirstFullSync, null);
+    callbackOfFirstFullSync();
+    assert.equal(dissemination.reverseFullSyncJobs, 0);
 });
 
 testRingpop('tryStartReverseFullSync send join request to target node', function t(deps, assert) {

@@ -20,48 +20,114 @@
 
 'use strict';
 
+var async = require('async');
+var _ = require('underscore');
+
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 
 testRingpopCluster({
+    bootstrapSize: 1,
     size: 2,
     waitForConvergence: false,
     autoGossip: false
-}, 'raise piggyback counter', function t(bootRes, cluster, assert) {
-    assert.plan(1);
+}, 'test bi-directional full syncs', function t(bootRes, cluster, assert) {
+    // nodeA will include B in it's member list
+    var nodeA = _.find(cluster, function(node) { return node.isReady;});
 
-    var pingSender = cluster[0];
-    pingSender.gossip.tick(function() {
-        var changes = pingSender.dissemination.changes;
-        var joinChange = changes[pingSender.whoami()];
-        var piggybackCount = joinChange.piggybackCount;
-        assert.equals(piggybackCount, 1, 'piggyback counter raised by one');
-        assert.end();
+    // nodeB will not include A in it's member list
+    var nodeB = _.find(cluster, function(node) { return !node.isReady;});
+
+    // bootstrap node B without A.
+    nodeB.bootstrap([nodeB.hostPort], function onBootStrapped(err) {
+        assert.error(err);
+
+        // clear changes to trigger a full sync
+        nodeA.dissemination.clearChanges();
+        nodeB.dissemination.clearChanges();
+
+        // verify nodeA does include B in it's member list
+        assert.notEqual(nodeA.membership.findMemberByAddress(nodeB.hostPort), undefined);
+
+        // verify nodeB doesn't include A in it's member list
+        assert.equal(nodeB.membership.findMemberByAddress(nodeA.hostPort), undefined);
+
+        nodeB.membership.on('updated', function(updates) {
+            // verify nodeB now includes A in it's member list
+            assert.notEqual(nodeB.membership.findMemberByAddress(nodeA.hostPort), undefined);
+            assert.end();
+        });
+
+        nodeA.gossip.tick();
     });
+
+    assert.timeoutAfter(2000);
 });
 
-function mkBadPingResponder(ringpop) {
-    ringpop.channel.register('/protocol/ping', function protocolPing(req, res) {
-        res.headers.as = 'raw';
-        res.sendNotOk(null, JSON.stringify('ping failed on purpose'));
-    });
-}
 
 testRingpopCluster({
+    bootstrapSize: 1,
     size: 2,
     waitForConvergence: false,
-    autoGossip: false,
-    tap: function tap(cluster) {
-        mkBadPingResponder(cluster[1]);
-    },
-}, 'don\'t raise piggyback counter when ping fails', function t(bootRes, cluster, assert) {
-    assert.plan(1);
+    autoGossip: false
+}, 'test bi-directional full syncs throttles', function t(bootRes, cluster, assert) {
+    // nodeA will include B in it's member list
+    var nodeA = _.find(cluster, function(node) { return node.isReady;});
 
-    var pingSender = cluster[0];
-    pingSender.gossip.tick(function() {
-        var changes = pingSender.dissemination.changes;
-        var joinChange = changes[pingSender.whoami()];
-        var piggybackCount = joinChange.piggybackCount;
-        assert.equals(piggybackCount, 0, 'piggyback counter not raised');
-        assert.end();
+    // nodeB will not include A in it's member list
+    var nodeB = _.find(cluster, function(node) { return !node.isReady;});
+
+    // bootstrap node B without A.
+    nodeB.bootstrap([nodeB.hostPort], function onBootStrapped(err) {
+        assert.error(err);
+
+        // verify nodeA does include B in it's member list
+        assert.notEqual(nodeA.membership.findMemberByAddress(nodeB.hostPort), undefined);
+
+        // verify nodeB doesn't include A in it's member list
+        assert.equal(nodeB.membership.findMemberByAddress(nodeA.hostPort), undefined);
+
+        var realProtocolJoin = nodeB.client.protocolJoin.bind(nodeB.client);
+        var protocolJoinCalls = [];
+        nodeB.client.protocolJoin = function() {
+            protocolJoinCalls.push(arguments);
+            assert.equal(nodeB.dissemination.reverseFullSyncJobs, protocolJoinCalls.length);
+            if (protocolJoinCalls.length > nodeB.maxReverseFullSyncJobs) {
+                assert.fail('full sync should have been throttled');
+            }
+        };
+
+        async.timesSeries(nodeB.maxReverseFullSyncJobs, function tick(i, next) {
+            // clear changes to trigger a full sync
+            nodeA.dissemination.clearChanges();
+            nodeB.dissemination.clearChanges();
+
+            nodeA.gossip.tick(next);
+        }, function done(err) {
+            console.log('done pinging', err);
+            assert.error(err);
+
+            process.nextTick(executeJoins);
+        });
+
+        function executeJoins() {
+            var count = protocolJoinCalls.length;
+
+            async.timesSeries(protocolJoinCalls.length, function executeJoin(index, next) {
+                var args = protocolJoinCalls[index];
+                assert.equal(nodeB.dissemination.reverseFullSyncJobs, count - index);
+
+                // Wrap callback to check decrement of reverseFullSyncJobs
+                var origCallback = args[args.length-1];
+                args[args.length-1] = function onJoined() {
+                    origCallback.apply(this, arguments);
+                    assert.equal(nodeB.dissemination.reverseFullSyncJobs, count - index - 1);
+                    next();
+                };
+                realProtocolJoin.apply(null, args)
+            }, function done(err) {
+                assert.error(err);
+                assert.end();
+            });
+        }
     });
 });
