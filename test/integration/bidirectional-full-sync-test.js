@@ -31,10 +31,10 @@ testRingpopCluster({
     waitForConvergence: false,
     autoGossip: false
 }, 'test bi-directional full syncs', function t(bootRes, cluster, assert) {
-    // nodeA will include B in it's member list
+    // nodeA will include B in its member list
     var nodeA = _.find(cluster, function(node) { return node.isReady;});
 
-    // nodeB will not include A in it's member list
+    // nodeB will not include A in its member list
     var nodeB = _.find(cluster, function(node) { return !node.isReady;});
 
     // bootstrap node B without A.
@@ -45,14 +45,14 @@ testRingpopCluster({
         nodeA.dissemination.clearChanges();
         nodeB.dissemination.clearChanges();
 
-        // verify nodeA does include B in it's member list
+        // verify nodeA does include B in its member list
         assert.notEqual(nodeA.membership.findMemberByAddress(nodeB.hostPort), undefined);
 
-        // verify nodeB doesn't include A in it's member list
+        // verify nodeB doesn't include A in its member list
         assert.equal(nodeB.membership.findMemberByAddress(nodeA.hostPort), undefined);
 
         nodeB.membership.on('updated', function(updates) {
-            // verify nodeB now includes A in it's member list
+            // verify nodeB now includes A in its member list
             assert.notEqual(nodeB.membership.findMemberByAddress(nodeA.hostPort), undefined);
             assert.end();
         });
@@ -70,20 +70,20 @@ testRingpopCluster({
     waitForConvergence: false,
     autoGossip: false
 }, 'test bi-directional full syncs throttles', function t(bootRes, cluster, assert) {
-    // nodeA will include B in it's member list
+    // nodeA will include B in its member list
     var nodeA = _.find(cluster, function(node) { return node.isReady;});
 
-    // nodeB will not include A in it's member list
+    // nodeB will not include A in its member list
     var nodeB = _.find(cluster, function(node) { return !node.isReady;});
 
     // bootstrap node B without A.
     nodeB.bootstrap([nodeB.hostPort], function onBootStrapped(err) {
         assert.error(err);
 
-        // verify nodeA does include B in it's member list
+        // verify nodeA does include B in its member list
         assert.notEqual(nodeA.membership.findMemberByAddress(nodeB.hostPort), undefined);
 
-        // verify nodeB doesn't include A in it's member list
+        // verify nodeB doesn't include A in its member list
         assert.equal(nodeB.membership.findMemberByAddress(nodeA.hostPort), undefined);
 
         var realProtocolJoin = nodeB.client.protocolJoin.bind(nodeB.client);
@@ -103,7 +103,6 @@ testRingpopCluster({
 
             nodeA.gossip.tick(next);
         }, function done(err) {
-            console.log('done pinging', err);
             assert.error(err);
 
             process.nextTick(executeJoins);
