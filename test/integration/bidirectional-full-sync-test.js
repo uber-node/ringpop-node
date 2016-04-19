@@ -87,46 +87,39 @@ testRingpopCluster({
         assert.equal(nodeB.membership.findMemberByAddress(nodeA.hostPort), undefined);
 
         var realProtocolJoin = nodeB.client.protocolJoin.bind(nodeB.client);
-        var protocolJoinCalls = [];
-        nodeB.client.protocolJoin = function() {
-            protocolJoinCalls.push(arguments);
-            assert.equal(nodeB.dissemination.reverseFullSyncJobs, protocolJoinCalls.length);
-            if (protocolJoinCalls.length > nodeB.maxReverseFullSyncJobs) {
-                assert.fail('full sync should have been throttled');
-            }
+
+        var protocolJoinCallbacks = [];
+
+        // overwrite protocolJoin to be able to flood nodeB with reverse full sync before join responses are handled
+        nodeB.client.protocolJoin = function cachedProtocolJoin(opts, body, callback) {
+            realProtocolJoin(opts, body, function onJoin(err, result) {
+               protocolJoinCallbacks.push(callback.bind(null, err, result));
+            });
         };
 
-        async.timesSeries(nodeB.maxReverseFullSyncJobs, function tick(i, next) {
+
+        // pinging maxReverseFullSyncJobs+2 times to trigger maxReverseFullSyncJobs+1 full syncs.
+        // only maxReverseFullSyncJobs should result in an actual join-request.
+        async.timesSeries(nodeB.maxReverseFullSyncJobs+2, function tick(i, next) {
+
             // clear changes to trigger a full sync
             nodeA.dissemination.clearChanges();
             nodeB.dissemination.clearChanges();
 
-            nodeA.gossip.tick(next);
+            nodeA.client.protocolPing({
+                host: nodeB.hostPort
+            }, {
+                changes: [],
+                checksum: 1,
+                source: nodeA.whoami(),
+                sourceIncarnationNumber:  nodeA.membership.getIncarnationNumber()
+            }, next);
         }, function done(err) {
             assert.error(err);
 
-            process.nextTick(executeJoins);
+            assert.equal(protocolJoinCallbacks.length, nodeB.maxReverseFullSyncJobs);
+
+            assert.end();
         });
-
-        function executeJoins() {
-            var count = protocolJoinCalls.length;
-
-            async.timesSeries(protocolJoinCalls.length, function executeJoin(index, next) {
-                var args = protocolJoinCalls[index];
-                assert.equal(nodeB.dissemination.reverseFullSyncJobs, count - index);
-
-                // Wrap callback to check decrement of reverseFullSyncJobs
-                var origCallback = args[args.length-1];
-                args[args.length-1] = function onJoined() {
-                    origCallback.apply(this, arguments);
-                    assert.equal(nodeB.dissemination.reverseFullSyncJobs, count - index - 1);
-                    next();
-                };
-                realProtocolJoin.apply(null, args)
-            }, function done(err) {
-                assert.error(err);
-                assert.end();
-            });
-        }
     });
 });
