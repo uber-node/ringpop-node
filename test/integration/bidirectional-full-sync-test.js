@@ -63,7 +63,15 @@ testRingpopCluster({
     assert.timeoutAfter(2000);
 });
 
-
+/*
+    To test if the number of concurrent join requests is correctly throttled,
+    we're overwriting the protocolJoinMethod. Instead of calling the callback
+    immediately, we bind the arguments to the callback and add it to an array.
+    After the full sync flood we verify that the number of joins doesn't exceed
+    it's configured maximum and the counter to keep track of the concurrent joins
+    is in sync; afterwards we can call the stored callbacks, completing the joins
+    and double check if the counter is decremented again.
+ */
 testRingpopCluster({
     bootstrapSize: 1,
     size: 2,
@@ -86,19 +94,19 @@ testRingpopCluster({
         // verify nodeB doesn't include A in its member list
         assert.equal(nodeB.membership.findMemberByAddress(nodeA.hostPort), undefined);
 
-        var realProtocolJoin = nodeB.client.protocolJoin.bind(nodeB.client);
-
+        var originalProtocolJoinFunction = nodeB.client.protocolJoin.bind(nodeB.client);
         var protocolJoinCallbacks = [];
 
-        // overwrite protocolJoin to be able to flood nodeB with reverse full sync before join responses are handled
-        nodeB.client.protocolJoin = function cachedProtocolJoin(opts, body, callback) {
-            realProtocolJoin(opts, body, function onJoin(err, result) {
-               protocolJoinCallbacks.push(callback.bind(null, err, result));
+        // overwrite the protocolJoin function so we're able to stall calling it's callback
+        nodeB.client.protocolJoin = function cachedProtocolJoin(opts, body, originalCallback) {
+            // first call the original protocolJoin-function
+            originalProtocolJoinFunction(opts, body, function onJoin(err, result) {
+                // bind the params to the original callback-function and store it in the array.
+               protocolJoinCallbacks.push(originalCallback.bind(null, err, result));
             });
         };
 
-
-        // pinging maxReverseFullSyncJobs+2 times to trigger maxReverseFullSyncJobs+1 full syncs.
+        // pinging maxReverseFullSyncJobs+2 times to trigger maxReverseFullSyncJobs+2 full syncs.
         // only maxReverseFullSyncJobs should result in an actual join-request.
         async.timesSeries(nodeB.maxReverseFullSyncJobs+2, function tick(i, next) {
 
@@ -118,8 +126,20 @@ testRingpopCluster({
             assert.error(err);
 
             assert.equal(protocolJoinCallbacks.length, nodeB.maxReverseFullSyncJobs);
+            assert.equal(nodeB.dissemination.reverseFullSyncJobs, protocolJoinCallbacks.length);
 
-            assert.end();
+            // call the original callbacks
+            async.each(protocolJoinCallbacks, function callOriginalCallback(fn, next){
+                // the response err and res are already bound to fn so no need for any params.
+                fn();
+                next();
+            }, function done(err){
+                assert.error(err);
+                // verify if reverseFullSyncJobs is decremented correctly.
+                assert.equal(nodeB.dissemination.reverseFullSyncJobs, 0);
+                assert.end();
+            });
         });
     });
+    assert.timeoutAfter(2000);
 });
