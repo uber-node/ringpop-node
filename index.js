@@ -73,6 +73,7 @@ var TracerStore = require('./lib/trace/store.js');
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
+var MAX_REVERSE_FULL_SYNC_JOBS = 5;
 
 function RingPop(options) {
     if (!(this instanceof RingPop)) {
@@ -115,6 +116,8 @@ function RingPop(options) {
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
+    this.maxReverseFullSyncJobs = options.maxReverseFullSyncJobs || 
+        MAX_REVERSE_FULL_SYNC_JOBS;
 
     // Initialize Config before all other gossip, membership, forwarding,
     // and hash ring dependencies.
