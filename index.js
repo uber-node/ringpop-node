@@ -269,6 +269,8 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         opts = null;
     }
 
+    opts = opts || {};
+
     var self = this;
 
     if (this.isReady) {
