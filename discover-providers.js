@@ -75,8 +75,8 @@ function createJsonFileDiscoverProvider(hostsFile) {
  *
  * @param opts: an object configuring the DiscoverProvider:
  *          - if opts or opts.discoverProvider is a function, it's returned as the {DiscoverProvider}.
- *          - if opts.hosts is an array, a static hosts discover provider is returned (see {createStaticHostsProvider})
- *          - if opts.bootstrapFile is a string, a json file discover provider is returned (see {createJsonFileDiscoverProvider})
+ *          - if opts or opts.hosts is an array, a static hosts discover provider is returned (see {createStaticHostsProvider})
+ *          - if opts or opts.bootstrapFile is a string, a json file discover provider is returned (see {createJsonFileDiscoverProvider})
  *
  *
  * @returns {DiscoverProvider} The discover provider.
