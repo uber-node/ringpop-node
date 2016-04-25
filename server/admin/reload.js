@@ -24,6 +24,7 @@ var safeParse = require('../../lib/util.js').safeParse;
 
 module.exports = function createReloadHandler(ringpop) {
     return function handleReload(arg1, arg2, hostInfo, callback) {
+        ringpop.logger.warn('endpoint is deprecated: /admin/reload', {hostInfo: hostInfo});
         var body = safeParse(arg2.toString());
         if (body && body.file) {
             ringpop.reload(body.file, function(err) {

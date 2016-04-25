@@ -50,6 +50,7 @@ var baseEndpointHandlers = {
         endpoint: '/admin/lookup',
         handler: require('./lookup.js')
     },
+    // Deprecated!
     reload: {
         endpoint: '/admin/reload',
         handler: require('./reload.js')
