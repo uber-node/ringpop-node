@@ -54,7 +54,7 @@
     "glob": "^4.3.1",
     "istanbul": "^0.3.5",
     "itape": "^1.5.0",
-    "jshint": "^2.5.6",
+    "jshint": "^2.9.2",
     "leaked-handles": "^5.1.0",
     "opn": "^1.0.1",
     "pre-commit": "^0.0.9",
