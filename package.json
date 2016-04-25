@@ -26,7 +26,7 @@
     "check-licence": "uber-licence --dry",
     "cover": "istanbul cover --print detail --report html test/index.js | faucet",
     "jshint": "jshint --verbose *.js lib/**/*.js scripts/*.js server/**/*.js",
-    "travis": "npm run cover -s && istanbul report lcov && ((cat coverage/lcov.info | coveralls) || exit 0)",
+    "travis": "npm run jshint && npm run cover -s && istanbul report lcov && ((cat coverage/lcov.info | coveralls) || exit 0)",
     "view-cover": "opn coverage/index.html"
   },
   "dependencies": {
