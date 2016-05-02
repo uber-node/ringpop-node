@@ -28,9 +28,10 @@ var safeParse = require('./lib/util.js').safeParse;
 var validateHostPort = require('./lib/util.js').validateHostPort;
 var uuid = require('node-uuid');
 var util = require('util');
+var middleware = require('./lib/middleware');
 
-/* jshint maxparams: 7 */
-function ClientRequest(client, opts, endpoint, head, body, date, callback) {
+/* jshint maxparams: 8 */
+function ClientRequest(client, opts, endpoint, head, body, date, callback, middlewares) {
     this.client = client;
     this.opts = opts;
     this.endpoint = endpoint;
@@ -42,6 +43,7 @@ function ClientRequest(client, opts, endpoint, head, body, date, callback) {
     this.isCanceled = false;
     this.state = ClientRequestStates.initialized;
     this.timestamp = this.date.now();
+    this.middlewareStack = new middleware.MiddlewareStack(middlewares || []);
 }
 
 util.inherits(ClientRequest, EventEmitter);
@@ -113,49 +115,55 @@ ClientRequest.prototype.send = function send() {
             return;
         }
 
-        self._changeState(ClientRequestStates.subChannelRequestPre);
-        // Set stringified head/body as member variables
-        // so we can log their size later.
-        self.strHead = JSON.stringify(self.head);
-        self.strBody = JSON.stringify(self.body);
-        subChannel.request({
-            host: opts.host,
-            serviceName: 'ringpop',
-            hasNoParent: true,
-            retryLimit: opts.retryLimit || 0,
-            trace: false,
-            headers: {
-                as: 'raw',
-                cn: 'ringpop'
+        self.middlewareStack.run(self, self.head, self.body,
+            function subChannelRequest(req, arg2, arg3, callback) {
+                self._changeState(ClientRequestStates.subChannelRequestPre);
+                // Set stringified head/body as member variables
+                // so we can log their size later.
+                self.strHead = JSON.stringify(arg2);
+                self.strBody = JSON.stringify(arg3);
+                subChannel.request({
+                    host: opts.host,
+                    serviceName: 'ringpop',
+                    hasNoParent: true,
+                    retryLimit: opts.retryLimit || 0,
+                    trace: false,
+                    headers: {
+                        as: 'raw',
+                        cn: 'ringpop'
+                    },
+                    timeout: timeout
+                }).send(endpoint, self.strHead, self.strBody, onSend);
+
+                function onSend(err, res, arg2, arg3) {
+                    self._changeState(ClientRequestStates.subChannelRequestPost);
+
+                    if (self.isCanceled) {
+                        self.client.logger.error('ringpop tchannel completed after request was canceled', {
+                            local: self.client.ringpop.whoami(),
+                            state: self.state,
+                            request: self.toLog()
+                        });
+                        self.emit('alreadyCanceled', ClientRequestErrors.SubChannelRequestAfterCancelError());
+                        return;
+                    }
+
+                    if (!err && !res.ok) {
+                        err = safeParse(arg3) || new Error('Server Error');
+                    }
+
+                    if (err) {
+                        callback(err, null, null);
+                    } else {
+                        callback(null, safeParse(arg3), null);
+                    }
+                }
             },
-            timeout: timeout
-        }).send(endpoint, self.strHead, self.strBody, onSend);
+            function afterSubChannelRequest (req, err, res1) { // we don't use res2
+                self._invokeCallback(err, res1);
+            });
     });
 
-    function onSend(err, res, arg2, arg3) {
-        self._changeState(ClientRequestStates.subChannelRequestPost);
-
-        if (self.isCanceled) {
-            self.client.logger.error('ringpop tchannel completed after request was canceled', {
-                local: self.client.ringpop.whoami(),
-                state: self.state,
-                request: self.toLog()
-            });
-            self.emit('alreadyCanceled', ClientRequestErrors.SubChannelRequestAfterCancelError());
-            return;
-        }
-
-        if (!err && !res.ok) {
-            err = safeParse(arg3) || new Error('Server Error');
-        }
-
-        if (err) {
-            self._invokeCallback(err);
-            return;
-        }
-
-        self._invokeCallback(null, safeParse(arg3));
-    }
 };
 
 ClientRequest.prototype.toLog = function toLog() {

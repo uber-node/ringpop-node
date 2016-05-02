@@ -33,7 +33,7 @@ testRingpop({
 
     var handleDampReq = createDampReqHandler(deps.ringpop);
     handleDampReq(null, null, null, onHandle1);
-    handleDampReq(null, JSON.stringify({ flappers: 1 }), null, onHandle2);
+    handleDampReq(null, { flappers: 1 }, null, onHandle2);
 
     function onHandle1(err) {
         assert.true(err, 'an error occurred');
@@ -76,13 +76,13 @@ testRingpop('responds with damp scores', function t(deps, assert) {
     var handleDampReq = createDampReqHandler(ringpop);
     // Ask for the damp scores for only 3 of the 4 members
     var flappers = _.chain(members).head(3).pluck('address').value();
-    handleDampReq(null, JSON.stringify({
+    handleDampReq(null, {
         flappers: flappers
-    }), null, function onHandle(err, res1, res2) {
+    }, null, function onHandle(err, res1, res2) {
         assert.false(err, 'no error occurred');
 
         var expected = ringpop.membership.collectDampScores(flappers);
-        var body = JSON.parse(res2);
+        var body = res2;
         assert.deepEquals(body.scores, expected, 'all damp scores returned');
     });
 });

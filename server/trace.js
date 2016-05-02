@@ -21,7 +21,6 @@
 'use strict';
 
 var errors = require('../lib/errors');
-var safeParse = require('../lib/util').safeParse;
 var toCamelCase = require('../lib/util').toCamelCase;
 var traceCore = require('../lib/trace/core');
 
@@ -49,7 +48,7 @@ function createRemoveTrace(ringpop) {
 }
 
 function _updateTracers(ringpop, fnStr, optsStr, cb) {
-    var opts = toCamelCase(safeParse(optsStr));
+    var opts = toCamelCase(optsStr);
     var config = traceCore.resolveEventConfig(ringpop, opts.event);
     if (!config) {
         var err = errors.InvalidOptionError({ option: 'event', reason: 'it is unknown'});

@@ -22,6 +22,6 @@
 
 module.exports = function createStatsHandler(ringpop) {
     return function handleStats(arg1, arg2, hostInfo, callback) {
-        callback(null, null, JSON.stringify(ringpop.getStats()));
+        callback(null, null, ringpop.getStats());
     };
 };

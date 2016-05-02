@@ -21,7 +21,6 @@
 'use strict';
 
 var errors = require('../../lib/errors.js');
-var safeParse = require('../../lib/util').safeParse;
 var sendPing = require('../../lib/gossip/ping-sender.js');
 
 module.exports = function createPingReqHandler(ringpop) {
@@ -36,7 +35,7 @@ module.exports = function createPingReqHandler(ringpop) {
             return;
         }
 
-        var body = safeParse(arg2);
+        var body = arg2;
 
         // NOTE sourceIncarnationNumber is an optional argument. It was not present
         // until after the v9.8.12 release.
@@ -75,12 +74,12 @@ module.exports = function createPingReqHandler(ringpop) {
                 isOk: isOk
             });
 
-            callback(null, null, JSON.stringify({
+            callback(null, null, {
                 changes: ringpop.dissemination.issueAsReceiver(source,
                     sourceIncarnationNumber, checksum).changes,
                 pingStatus: isOk,
                 target: target
-            }));
+            });
         });
     };
 };
