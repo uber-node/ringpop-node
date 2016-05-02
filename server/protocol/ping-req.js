@@ -21,7 +21,7 @@
 'use strict';
 
 var errors = require('../../lib/errors.js');
-var sendPing = require('../../lib/gossip/ping-sender.js');
+var sendPing = require('../../lib/gossip/ping-sender.js').sendPing;
 
 module.exports = function createPingReqHandler(ringpop) {
     var gossipLogger = ringpop.loggerFactory.getLogger('gossip');
