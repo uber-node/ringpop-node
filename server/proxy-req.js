@@ -20,11 +20,9 @@
 
 'use strict';
 
-var safeParse = require('../lib/util').safeParse;
-
 module.exports = function createProxyReqHandler(ringpop) {
     return function handleProxyReq(arg1, arg2, hostInfo, callback) {
-        var header = safeParse(arg1);
+        var header = arg1;
         if (header === null) {
             return callback(new Error('need header to exist'));
         }

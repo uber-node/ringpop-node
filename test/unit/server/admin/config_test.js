@@ -34,11 +34,11 @@ test('config set handler validation', function t(assert) {
     });
     var handleConfigSet = createConfigSetHandler(ringpop);
     // Missing body
-    handleConfigSet(null, JSON.stringify(null), null, function onHandle(err) {
+    handleConfigSet(null, null, null, function onHandle(err) {
         assert.ok(err, 'an error occurred');
     });
     // Invalid body
-    handleConfigSet(null, JSON.stringify(1), null, function onHandle(err) {
+    handleConfigSet(null, 1, null, function onHandle(err) {
         assert.ok(err, 'an error occurred');
     });
     assert.end();
@@ -56,7 +56,7 @@ test('config get/set handlers', function t(assert) {
 
     var handleConfigSet = createConfigSetHandler(ringpop);
     // Test set entire config
-    handleConfigSet(null, JSON.stringify(config), null, function onHandle(err) {
+    handleConfigSet(null, config, null, function onHandle(err) {
         assert.notok(err, 'an error did not occur');
         assert.equals(ringpop.config.get('testconfig1'), 1,
             'config was set');
@@ -66,10 +66,10 @@ test('config get/set handlers', function t(assert) {
 
     var handleConfigGet = createConfigGetHandler(ringpop);
     // Test single config get
-    handleConfigGet(null, JSON.stringify(['testconfig1']), null,
+    handleConfigGet(null, ['testconfig1'], null,
             function onHandle(err, res1, res2) {
         assert.notok(err, 'an error did not occur');
-        assert.deepEquals(JSON.parse(res2), {
+        assert.deepEquals(res2, {
             'testconfig1': 1
         }, 'config was gotten');
     });
@@ -77,7 +77,7 @@ test('config get/set handlers', function t(assert) {
     // Test get all config
     handleConfigGet(null, null, null, function onHandle(err, res1, res2) {
         assert.notok(err, 'an error did not occur');
-        assert.deepEquals(JSON.parse(res2), ringpop.config.getAll(),
+        assert.deepEquals(res2, ringpop.config.getAll(),
             'config was gotten');
     });
     assert.end();

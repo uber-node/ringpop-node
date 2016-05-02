@@ -31,11 +31,11 @@ test('join fails with blacklist error', function t(assert) {
         memberBlacklist: [/127.0.0.1:*/]
     });
     var handleProtocolJoin = createProtocolJoinHandler(ringpop);
-    handleProtocolJoin(null, JSON.stringify({
+    handleProtocolJoin(null, {
         app: 'ringpop',
         source: '127.0.0.1:3001',
         incarnationNumber: 1
-    }), null, function onHandled(err) {
+    }, null, function onHandled(err) {
         assert.ok(err, 'an error occurred');
         assert.equals(err.type, 'ringpop.invalid-join.blacklist',
             'blacklist error occurred');
@@ -53,11 +53,11 @@ badHostPorts.forEach(function each(hostPort) {
             hostPort: '127.0.0.1:3000'
         });
         var handleProtocolJoin = createProtocolJoinHandler(ringpop);
-        handleProtocolJoin(null, JSON.stringify({
+        handleProtocolJoin(null, {
             app: 'ringpop',
             source: hostPort,
             incarnationNumber: 1
-        }), null, function onHandled(err) {
+        }, null, function onHandled(err) {
             assert.ok(err, 'an error occurred');
             assert.equals(err.type, 'ringpop.invalid-join.source');
             assert.end();
@@ -75,11 +75,11 @@ goodHostPorts.forEach(function each(hostPort) {
             hostPort: '127.0.0.1:3000'
         });
         var handleProtocolJoin = createProtocolJoinHandler(ringpop);
-        handleProtocolJoin(null, JSON.stringify({
+        handleProtocolJoin(null, {
             app: 'ringpop',
             source: hostPort,
             incarnationNumber: 1
-        }), null, function onHandled(err) {
+        }, null, function onHandled(err) {
             assert.ifError(err, 'an error occurred');
             assert.end();
             ringpop.destroy();

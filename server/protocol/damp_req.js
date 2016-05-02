@@ -21,7 +21,6 @@
 'use strict';
 
 var DampReqResponse = require('../../request_response.js').DampReqResponse;
-var safeParse = require('../../lib/util.js').safeParse;
 var TypedError = require('error/typed');
 
 var BadRequestError = TypedError({
@@ -34,7 +33,7 @@ module.exports = function createDampReqHandler(ringpop) {
     return function handleDampReq(arg2, arg3, hostInfo, callback) {
         ringpop.stat('increment', 'damp-req.recv');
 
-        var body = safeParse(arg3 && arg3.toString());
+        var body = arg3;
         if (!body || !body.flappers) {
             callback(BadRequestError({
                 type: 'ringpop.server.damp-req.bad-request.flappers-required',
@@ -54,6 +53,6 @@ module.exports = function createDampReqHandler(ringpop) {
 
         var dampScores = ringpop.membership.collectDampScores(flappers);
         var response = new DampReqResponse(ringpop, body, dampScores);
-        callback(null, null, JSON.stringify(response));
+        callback(null, null, response);
     };
 };

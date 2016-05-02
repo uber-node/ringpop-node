@@ -42,18 +42,18 @@ function createGossipTickHandler(ringpop) {
                 return;
             }
 
-            callback(null, null, JSON.stringify({
+            callback(null, null, {
                 checksum: ringpop.membership.checksum
-            }));
+            });
         });
     };
 }
 
 function createGossipStatusHandler(ringpop) {
     return function handleGossipStatus(arg1, arg2, hostInfo, callback) {
-        callback(null, null, JSON.stringify({
+        callback(null, null, {
             status: ringpop.gossip.getStatus()
-        }));
+        });
     };
 }
 

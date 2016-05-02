@@ -20,7 +20,6 @@
 
 'use strict';
 
-var safeParse = require('../../lib/util').safeParse;
 var TypedError = require('error/typed');
 var validateHostPort = require('../../lib/util').validateHostPort;
 
@@ -115,7 +114,7 @@ function validateJoinerApp(ringpop, app, callback) {
 
 module.exports = function createJoinHandler(ringpop) {
     return function handleJoin(arg1, arg2, hostInfo, callback) {
-        var body = safeParse(arg2.toString());
+        var body = arg2;
         if (body === null) {
             return callback(new Error('need JSON req body with source and incarnationNumber'));
         }
@@ -138,11 +137,11 @@ module.exports = function createJoinHandler(ringpop) {
         ringpop.serverRate.mark();
         ringpop.totalRate.mark();
 
-        callback(null, null, JSON.stringify({
+        callback(null, null, {
             app: ringpop.app,
             coordinator: ringpop.whoami(),
             membership: ringpop.dissemination.fullSync(),
             membershipChecksum: ringpop.membership.checksum
-        }));
+        });
     };
 };

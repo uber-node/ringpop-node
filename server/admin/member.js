@@ -62,9 +62,9 @@ function createJoinHandler(ringpop) {
                 return;
             }
 
-            callback(null, null, JSON.stringify({
+            callback(null, null, {
                 candidateHosts: candidateHosts
-            }));
+            });
         });
     };
 }
