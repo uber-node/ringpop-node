@@ -22,6 +22,10 @@
 
 module.exports = function createReloadHandler(ringpop) {
     return function handleReload(arg1, arg2, hostInfo, callback) {
+        ringpop.logger.warn('ringpop endpoint is deprecated: /admin/reload', {
+            local: ringpop.whoami(),
+            hostInfo: hostInfo
+        });
         var body = arg2;
         if (body && body.file) {
             ringpop.reload(body.file, function(err) {
