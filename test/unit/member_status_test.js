@@ -34,6 +34,9 @@ test('is status pingable', function(assert) {
     };
 
     for(var k in Member.Status) {
+        // skip loop if property is from prototype.
+        if (!Member.Status.hasOwnProperty(k)) continue;
+
         var status = Member.Status[k];
         if (expectation[status] !== undefined) {
             assert.equal(Member.isStatusPingable(status), expectation[status], status + ' is ' + (expectation[status] ? '' : 'not ') + 'pingable');
@@ -41,5 +44,11 @@ test('is status pingable', function(assert) {
             assert.fail('missing expectation for '+ status);
         }
     }
+
+    // test some garbage values
+    assert.equal(Member.isStatusPingable(null), false);
+    assert.equal(Member.isStatusPingable(''), false);
+    assert.equal(Member.isStatusPingable('fake'), false);
+
     assert.end()
 });
