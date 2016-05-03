@@ -24,6 +24,19 @@ var _ = require('underscore');
 var test = require('tape');
 
 var Member = require('../../lib/membership/member');
+var Ringpop = require('../../index');
+
+var ALL_STATUSES = getAllStatuses();
+
+function getAllStatuses() {
+    var statuses = [];
+    for (var k in Member.Status) {
+        var status = Member.Status[k];
+        statuses.push(status);
+    }
+
+    return statuses;
+}
 
 test('is status pingable', function(assert) {
     var expectation = {
@@ -52,3 +65,60 @@ test('is status pingable', function(assert) {
 
     assert.end()
 });
+
+test('status precedence is correct', function t(assert) {
+    var precedenceOrder = [Member.Status.alive, Member.Status.suspect, Member.Status.faulty, Member.Status.leave, Member.Status.tombstone];
+
+    for (var i = 0; i < precedenceOrder.length; i++) {
+        var status = precedenceOrder[i];
+
+        for (var j = 0; j < i; j++) {
+            var otherStatus = precedenceOrder[j];
+
+            assert.true(Member.statusPrecedence(status) > Member.statusPrecedence(otherStatus), status + ' takes precedence over ' + otherStatus);
+        }
+    }
+    assert.end()
+});
+
+test('status precedence with unknown state never takes precedence', function t(assert) {
+    var unknownStatusPriority = Member.statusPrecedence('fake');
+
+    for(var k in Member.Status) {
+        var status = Member.Status[k];
+        assert.true(unknownStatusPriority < Member.statusPrecedence(status), 'unknown status does not take precedence over '+ status);
+    }
+    assert.end()
+});
+
+function testOtherOverride(currentState, expectedOverridingStatuses) {
+    test('test other override (' + currentState + ')', function t(assert) {
+        var ringpop = new Ringpop({app: 'test', hostPort: '127.0.0.1:3000'});
+
+        var member = new Member(ringpop, {
+            incarnationNumber: 1,
+            status: currentState
+        });
+
+        var overridingStatuses = [];
+
+        for (var i = 0; i < ALL_STATUSES.length; i++) {
+            var status = ALL_STATUSES[i];
+            if(member._isOtherOverride({incarnationNumber: 1, status: status})){
+                overridingStatuses.push(status);
+            }
+            assert.true(member._isOtherOverride({incarnationNumber: 2, status: status}), 'newer incarnation always overrides');
+        }
+
+        assert.deepEqual(overridingStatuses.sort(), expectedOverridingStatuses.sort());
+
+        ringpop.destroy();
+        assert.end();
+    });
+}
+
+testOtherOverride('alive', ['suspect', 'faulty', 'leave', 'tombstone']);
+testOtherOverride('suspect', ['faulty', 'leave', 'tombstone']);
+testOtherOverride('faulty', ['leave', 'tombstone']);
+testOtherOverride('leave', ['tombstone']);
+testOtherOverride('tombstone', []);
