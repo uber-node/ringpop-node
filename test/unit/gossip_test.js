@@ -217,7 +217,7 @@ testRingpop({
     setTimeout(function onTimeout() {
         assert.equals(member.status, Member.Status.tombstone, 'member is tombstone');
         done();
-    }, stateTransitions.period + 1);
+    }, stateTransitions.faultyTimeout + 1);
 });
 
 testRingpop({
@@ -239,5 +239,5 @@ testRingpop({
     setTimeout(function onTimeout() {
         assert.notOk(membership.findMemberByAddress(address), 'member was evicted');
         done();
-    }, stateTransitions.period + 1);
+    }, stateTransitions.tombstoneTimeout + 1);
 });
