@@ -31,6 +31,9 @@ var ALL_STATUSES = getAllStatuses();
 function getAllStatuses() {
     var statuses = [];
     for (var k in Member.Status) {
+        // skip loop if property is from prototype.
+        if (!Member.Status.hasOwnProperty(k)) continue;
+
         var status = Member.Status[k];
         statuses.push(status);
     }
@@ -47,10 +50,9 @@ test('is status pingable', function(assert) {
         'tombstone': false
     };
 
-    var statuses = _.values(Member.Status);
-    for (var i = 0; i < statuses.length; i++) {
-        var status = statuses[i];
-
+    for(var i=0; i<ALL_STATUSES.length; i++) {
+        var status = ALL_STATUSES[i];
+        
         if (expectation[status] !== undefined) {
             assert.equal(Member.isStatusPingable(status), expectation[status], status + ' is ' + (expectation[status] ? '' : 'not ') + 'pingable');
         } else {
