@@ -167,7 +167,7 @@ function testRingpopCluster(opts, name, test) {
         if (opts.waitForConvergence !== false) {
             var onOneExhausted = _.after(cluster.length, onSteadyState);
             cluster.forEach(function each(ringpop) {
-                ringpop.dissemination.on('changesExhausted', onOneExhausted);
+                ringpop.dissemination.once('changesExhausted', onOneExhausted);
             });
         }
 
