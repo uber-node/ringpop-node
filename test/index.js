@@ -18,4 +18,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-require('glob').sync(__dirname + '/{unit,integration}/*{_test,-test}.js').forEach(require);
+require('glob').sync(__dirname + '/{unit,integration}/**/*{_test,-test}.js').forEach(require);
