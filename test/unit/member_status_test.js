@@ -26,20 +26,7 @@ var test = require('tape');
 var Member = require('../../lib/membership/member');
 var Ringpop = require('../../index');
 
-var ALL_STATUSES = getAllStatuses();
-
-function getAllStatuses() {
-    var statuses = [];
-    for (var k in Member.Status) {
-        // skip loop if property is from prototype.
-        if (!Member.Status.hasOwnProperty(k)) continue;
-
-        var status = Member.Status[k];
-        statuses.push(status);
-    }
-
-    return statuses;
-}
+var ALL_STATUSES = _.values(Member.Status);
 
 test('is status pingable', function(assert) {
     var expectation = {
