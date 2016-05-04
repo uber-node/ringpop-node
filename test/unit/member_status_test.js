@@ -33,11 +33,10 @@ test('is status pingable', function(assert) {
         'leave': false
     };
 
-    for(var k in Member.Status) {
-        // skip loop if property is from prototype.
-        if (!Member.Status.hasOwnProperty(k)) continue;
+    var statuses = _.values(Member.Status);
+    for (var i = 0; i < statuses.length; i++) {
+        var status = statuses[i];
 
-        var status = Member.Status[k];
         if (expectation[status] !== undefined) {
             assert.equal(Member.isStatusPingable(status), expectation[status], status + ' is ' + (expectation[status] ? '' : 'not ') + 'pingable');
         } else {
