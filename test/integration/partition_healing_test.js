@@ -32,33 +32,37 @@ testRingpopCluster({
         GossipUtils.stopGossiping(cluster);
     }
 }, 'healing - two nodes', function t(bootRes, cluster, assert) {
-    var ringpopA = cluster[0];
-    var ringpopB = cluster[1];
+    GossipUtils.waitForNoGossip(cluster, test);
+    
+    function test() {
+        var ringpopA = cluster[0];
+        var ringpopB = cluster[1];
 
-    var addressB = ringpopB.hostPort;
-    var addressA = ringpopA.hostPort;
+        var addressB = ringpopB.hostPort;
+        var addressA = ringpopA.hostPort;
 
-    // create a partition by marking nodeB faulty on nodeA and vice versa.
-    var initialIncarnationNumberB = ringpopB.membership.getIncarnationNumber();
-    var initialIncarnationNumberA = ringpopA.membership.getIncarnationNumber();
-    ringpopA.membership.makeFaulty(addressB, initialIncarnationNumberB);
-    ringpopB.membership.makeFaulty(addressA, initialIncarnationNumberA);
+        // create a partition by marking nodeB faulty on nodeA and vice versa.
+        var initialIncarnationNumberB = ringpopB.membership.getIncarnationNumber();
+        var initialIncarnationNumberA = ringpopA.membership.getIncarnationNumber();
+        ringpopA.membership.makeFaulty(addressB, initialIncarnationNumberB);
+        ringpopB.membership.makeFaulty(addressA, initialIncarnationNumberA);
 
-    ringpopA.healer.heal(function afterFirstHeal(err, targets) {
-        assert.ifError(err, 'healing successful');
-        assert.deepEqual(targets, [ringpopB.hostPort]);
-
-        assert.ok(ringpopA.membership.getIncarnationNumber() > initialIncarnationNumberA, 'node A reincarnated');
-        assert.ok(ringpopB.membership.getIncarnationNumber() > initialIncarnationNumberB, 'node B reincarnated');
-
-        ringpopA.healer.heal(function afterSecondHeal(err, targets) {
+        ringpopA.healer.heal(function afterFirstHeal(err, targets) {
             assert.ifError(err, 'healing successful');
             assert.deepEqual(targets, [ringpopB.hostPort]);
-            assert.equal(ringpopA.membership.findMemberByAddress(addressB).status, 'alive', 'B is alive in A');
-            assert.equal(ringpopB.membership.findMemberByAddress(addressA).status, 'alive', 'A is alive in B');
-            assert.end();
+
+            assert.ok(ringpopA.membership.getIncarnationNumber() > initialIncarnationNumberA, 'node A reincarnated');
+            assert.ok(ringpopB.membership.getIncarnationNumber() > initialIncarnationNumberB, 'node B reincarnated');
+
+            ringpopA.healer.heal(function afterSecondHeal(err, targets) {
+                assert.ifError(err, 'healing successful');
+                assert.deepEqual(targets, [ringpopB.hostPort]);
+                assert.equal(ringpopA.membership.findMemberByAddress(addressB).status, 'alive', 'B is alive in A');
+                assert.equal(ringpopB.membership.findMemberByAddress(addressA).status, 'alive', 'A is alive in B');
+                assert.end();
+            });
         });
-    });
+    }
 });
 
 function assertNoPartition(assert, cluster) {
