@@ -173,9 +173,6 @@ testRingpop('tombstone has priority vs other states', function t(deps, assert) {
     membership.makeTombstone(addrSuspect, incNo);
     membership.makeTombstone(addrFaulty, incNo);
 
-    // Number of expected changes
-    var expectedNumberOfChanges = membership.getMemberCount() - 1;
-
     assert.plan(3);
     dissemination.issueAsSender(function issue(changes, onIssue) {
         changes.forEach(function(change) {
