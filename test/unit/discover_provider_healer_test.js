@@ -21,6 +21,8 @@
 var _ = require('underscore');
 var test = require('tape');
 
+var makeTimersMock = require('../lib/timers-mock');
+
 var DiscoverProviderHealer = require('../../lib/partition_healing/discover_provider_healer');
 var Healer = require('../../lib/partition_healing/healer');
 var Ringpop = require('../../index');
@@ -218,4 +220,59 @@ test('DiscoverProviderHeal.heal - only attempt to heal faulty (or worse) nodes',
         assert.end();
         ringpop.destroy();
     }
+});
+
+test('DiscoverProviderHealer - timers', function t(assert) {
+    var timers = makeTimersMock();
+
+    var periodTime = 10;
+    var ringpop = new Ringpop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000',
+        discoverProviderHealerPeriod: periodTime,
+        timers: timers
+    });
+
+    var discoverProviderHealer = ringpop.healer;
+    discoverProviderHealer.heal = function mockedHeal(cb){
+        assert.fail('heal called without start');
+        cb(null);
+    };
+
+    timers.advance(periodTime+1);
+
+    discoverProviderHealer.heal = function mockedHeal(cb){
+        assert.pass('heal called after start');
+        cb(null);
+    };
+    discoverProviderHealer.start();
+    timers.advance(periodTime+1);
+
+    discoverProviderHealer.stop();
+    discoverProviderHealer.heal = function mockedHeal(){
+        assert.fail('heal called after stop');
+    };
+    timers.advance(periodTime+1);
+
+    discoverProviderHealer._run();
+
+    ringpop.destroy();
+    assert.end();
+});
+
+test('DiscoverProviderHealer - starts on ready', function t(assert) {
+    var ringpop = new Ringpop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000'
+    });
+
+    var discoverProviderHealer = ringpop.healer;
+    discoverProviderHealer.start = function mockedStart(){
+        assert.pass('started!');
+    };
+
+    assert.plan(1);
+    ringpop.emit('ready');
+    ringpop.destroy();
+    assert.end();
 });

@@ -32,11 +32,9 @@ test('healing via discovery provider', function t(assert) {
         hostPort: '127.0.0.1:3000'
     });
 
-    ringpop.healer = {
-        heal: function heal(cb) {
-            assert.pass('endpoint calls heal');
-            cb(null);
-        }
+    ringpop.healer.heal = function heal(cb) {
+        assert.pass('endpoint calls heal');
+        cb(null);
     };
 
     var handleHeal = partitionHealingHandlers.healViaDiscoverProvider.handler(ringpop);
@@ -55,11 +53,9 @@ test('healing via discovery provider - error path', function t(assert) {
         hostPort: '127.0.0.1:3000'
     });
 
-    ringpop.healer = {
-        heal: function heal(cb) {
-            assert.pass('endpoint calls heal');
-            cb('error'); 
-        }
+    ringpop.healer.heal = function heal(cb) {
+        assert.pass('endpoint calls heal');
+        cb('error');
     };
 
     var handleHeal = partitionHealingHandlers.healViaDiscoverProvider.handler(ringpop);
