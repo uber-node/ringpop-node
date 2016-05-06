@@ -22,6 +22,8 @@
 var program = require('commander');
 var RingPop = require('./index');
 var TChannel = require('tchannel');
+var repl = require('repl');
+var net = require('net');
 
 function main(args) {
     program
@@ -29,6 +31,7 @@ function main(args) {
         .usage('[options]')
         .option('-l, --listen <listen>', 'Host and port on which server listens (also node\'s identity in cluster)')
         .option('-h, --hosts <hosts>', 'Seed file of list of hosts to join')
+        .option('-r, --repl <listen>', 'Host and port on which TCP REPL server listens')
         .parse(args);
 
     var listen = program.listen;
@@ -61,6 +64,20 @@ function main(args) {
 
     function onListening() {
         ringpop.bootstrap(program.hosts);
+    }
+
+    if (program.repl) {
+        var replParts = program.repl.split(':');
+        var replPort = Number(replParts[1]);
+        var replHost = replParts[0];
+        net.createServer(function(socket) {
+            repl.start({
+                input: socket,
+                output: socket
+            }).on('exit', function() {
+                socket.end();
+            });
+        }).listen(replPort, replHost);
     }
 }
 
