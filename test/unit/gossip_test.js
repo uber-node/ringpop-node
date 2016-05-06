@@ -195,5 +195,5 @@ testRingpop({
     setTimeout(function onTimeout() {
         assert.equals(member.status, Member.Status.faulty, 'member is faulty');
         done();
-    }, stateTransitions.period + 1);
+    }, stateTransitions.suspectTimeout + 1);
 });
