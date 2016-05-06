@@ -108,14 +108,16 @@ function createReapHandler(ringpop) {
             return;
         }
 
+        var reaped = 0;
         ringpop.membership.members.forEach(function(member) {
             if (member.status === Member.Status.faulty) {
+                reaped++;
                 ringpop.membership.makeTombstone(member.address, member.incarnationNumber);
             }
         });
 
         process.nextTick(function() {
-            callback(null, null, JSON.stringify({'status': 'ok'}));
+            callback(null, null, JSON.stringify({'reaped': reaped}));
         });
     };
 }

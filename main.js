@@ -51,8 +51,8 @@ function main(args) {
         }),
         isCrossPlatform: true,
         stateTimeouts: {
-            faulty: 5 * 1000, //5s
-            tombstone: 5 * 1000 //5s
+            faulty: 5 * 1000, // 5s
+            tombstone: 5 * 1000 // 5s
         }
     });
 
