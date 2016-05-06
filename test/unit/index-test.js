@@ -443,7 +443,7 @@ testRingpop('max piggyback not adjusted on membership update', function t(deps, 
 
     var address = '127.0.0.1:3002';
     var incarnationNumber = Date.now();
-    membership.makeSuspect(address, incarnationNumber);
+    membership.makeFaulty(address, incarnationNumber);
 });
 
 testRingpop('max piggyback adjusted on new members', function t(deps, assert) {

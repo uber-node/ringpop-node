@@ -146,6 +146,33 @@ testRingpop('leave does not cause neverending updates', function t(deps, assert)
     assert.equals(updates.length, 0, 'no leave update applied');
 });
 
+testRingpop('evict removes a member', function t(deps, assert) {
+    var membership = deps.membership;
+
+    var addr = '127.0.0.1:3001';
+    var incNo = Date.now();
+
+    membership.makeAlive(addr, incNo);
+    assert.ok(membership.getMemberAt(1), 'alive applied');
+    assert.ok(membership.findMemberByAddress(addr), 'alive applied');
+
+    membership.evict(addr);
+    assert.notOk(membership.getMemberAt(1), 'evict applied');
+    assert.notOk(membership.findMemberByAddress(addr), 'evict applied');
+});
+
+testRingpop('cannot evict self', function t(deps, assert) {
+    var membership = deps.membership;
+
+    var localAddr = '127.0.0.1:3000';
+    var incNo = Date.now();
+
+    membership.makeAlive(localAddr, incNo);
+    membership.evict(localAddr);
+    assert.ok(membership.getMemberAt(0), 'evict not applied');
+    assert.ok(membership.findMemberByAddress(localAddr), 'evict not applied');
+});
+
 testRingpop('generate checksums string preserves order of members', function t(deps, assert) {
     var membership = deps.membership;
 
