@@ -30,7 +30,8 @@ test('is status pingable', function(assert) {
         'alive': true,
         'suspect': true,
         'faulty': false,
-        'leave': false
+        'leave': false,
+        'tombstone': false
     };
 
     var statuses = _.values(Member.Status);
