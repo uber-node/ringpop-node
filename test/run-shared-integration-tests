@@ -78,7 +78,8 @@ run-test-for-cluster-size() {
     # Run the tests and buffer the output to a log file. We'll display it later
     # if the test fails. This avoids interleaving of output to the terminal
     # when tests are running in parallel.
-    node "${ringpop_common_dir}/test/it-tests.js" --enable-feature reaping-faulty-nodes --enable-feature partition-healing\
+    node "${ringpop_common_dir}/test/it-tests.js" --enable-feature reaping-faulty-nodes \
+		--enable-feature partition-healing \
         -s "[$1]" "${project_root}/main.js" &>$output_file || err=$?
 
     if [ $PIPESTATUS -gt 0 ]; then

@@ -109,7 +109,7 @@ testRingpopCluster({
                 } else if (_.pluck(partitionB, 'hostPort').indexOf(member.address) > -1) {
                     assert.equal(member.status, 'faulty');
                 } else {
-                    assert.fail('!!!!');
+                    assert.fail('member is not part of one of the partitions');
                 }
             }
         }
