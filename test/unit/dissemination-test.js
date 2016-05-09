@@ -153,6 +153,35 @@ testRingpop('raise piggyback counter on issueAsSender', function t(deps, assert)
 
 });
 
+testRingpop('tombstone has priority vs other states', function t(deps, assert) {
+    var membership = deps.membership;
+    var dissemination = deps.dissemination;
+
+    var addrAlive = '127.0.0.1:3001';
+    var addrSuspect = '127.0.0.1:3002';
+    var addrFaulty = '127.0.0.1:3003';
+    var incNo = Date.now();
+
+    // Clear changes to start fresh, otherwise local member changes
+    // recorded during bootstrap phase would have been issued.
+    dissemination.clearChanges();
+
+    membership.makeAlive(addrAlive, incNo);
+    membership.makeSuspect(addrSuspect, incNo);
+    membership.makeFaulty(addrFaulty, incNo);
+    membership.makeTombstone(addrAlive, incNo);
+    membership.makeTombstone(addrSuspect, incNo);
+    membership.makeTombstone(addrFaulty, incNo);
+
+    assert.plan(3);
+    dissemination.issueAsSender(function issue(changes, onIssue) {
+        changes.forEach(function(change) {
+            assert.equal('tombstone', change.status, 'state should be tombstone');
+        });
+    });
+});
+
+
 testRingpop('issueAsReceiver returns whether a full sync is made', function t(deps, assert) {
     var membership = deps.membership;
     var dissemination = deps.dissemination;

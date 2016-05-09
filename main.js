@@ -49,7 +49,11 @@ function main(args) {
             serviceName: 'ringpop',
             trace: false
         }),
-        isCrossPlatform: true
+        isCrossPlatform: true,
+        stateTimeouts: {
+            faulty: 5 * 1000, // 5s
+            tombstone: 5 * 1000 // 5s
+        }
     });
 
     ringpop.setupChannel();

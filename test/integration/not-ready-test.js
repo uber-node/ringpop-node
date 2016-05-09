@@ -21,7 +21,7 @@
 'use strict';
 
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
-var sendPing = require('../../lib/gossip/ping-sender.js');
+var sendPing = require('../../lib/gossip/ping-sender.js').sendPing;
 var sendPingReqs = require('../../lib/gossip/ping-req-sender.js');
 
 // If a node has bad bootstrap hosts it will be unable to join. We use this

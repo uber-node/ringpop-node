@@ -195,5 +195,49 @@ testRingpop({
     setTimeout(function onTimeout() {
         assert.equals(member.status, Member.Status.faulty, 'member is faulty');
         done();
-    }, stateTransitions.period + 1);
+    }, stateTransitions.suspectTimeout + 1);
+});
+
+testRingpop({
+    async: true
+}, 'marks member tombstone after faulty period', function t(deps, assert, done) {
+    assert.plan(1);
+
+    var membership = deps.membership;
+    var stateTransitions = deps.stateTransitions;
+
+    var address = '127.0.0.1:3001';
+    membership.makeAlive(address, Date.now());
+
+    var member = membership.findMemberByAddress(address);
+
+    stateTransitions.faultyTimeout = 1;
+    stateTransitions.scheduleFaultyToTombstone(member);
+
+    setTimeout(function onTimeout() {
+        assert.equals(member.status, Member.Status.tombstone, 'member is tombstone');
+        done();
+    }, stateTransitions.faultyTimeout + 1);
+});
+
+testRingpop({
+    async: true
+}, 'evict member after tombstone period', function t(deps, assert, done) {
+    assert.plan(1);
+
+    var membership = deps.membership;
+    var stateTransitions = deps.stateTransitions;
+
+    var address = '127.0.0.1:3001';
+    membership.makeAlive(address, Date.now());
+
+    var member = membership.findMemberByAddress(address);
+
+    stateTransitions.tombstoneTimeout = 1;
+    stateTransitions.scheduleTombstoneToEvict(member);
+
+    setTimeout(function onTimeout() {
+        assert.notOk(membership.findMemberByAddress(address), 'member was evicted');
+        done();
+    }, stateTransitions.tombstoneTimeout + 1);
 });
