@@ -146,7 +146,7 @@ testRingpopCluster({
                 res.sendOk(null, JSON.stringify({
                     app: 'test',
                     coordinator: cluster[1].whoami(),
-                    membership: cluster[1].dissemination.fullSync()
+                    membership: cluster[1].dissemination.membershipAsChanges()
                 }));
             }, 100);
         });
