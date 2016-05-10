@@ -23,19 +23,19 @@
 var testRingpop = require('../lib/test-ringpop');
 var mock = require('../mock');
 
-testRingpop('full sync includes all members', function t(deps, assert) {
+testRingpop('member ship as changes includes all members', function t(deps, assert) {
     var membership = deps.membership;
     var dissemination = deps.dissemination;
 
     membership.makeAlive('127.0.0.1:3001', Date.now());
     membership.makeAlive('127.0.0.1:3002', Date.now());
 
-    var fullSync = dissemination.fullSync();
-    var addrs = fullSync.map(function mapMember(member) {
+    var membershipAsChanges = dissemination.membershipAsChanges();
+    var addrs = membershipAsChanges.map(function mapMember(member) {
         return member.address;
     });
 
-    assert.equals(fullSync.length, 3, 'all 3 members');
+    assert.equals(membershipAsChanges.length, 3, 'all 3 members');
     assert.ok(addrs.indexOf('127.0.0.1:3000') !== -1, 'first member included');
     assert.ok(addrs.indexOf('127.0.0.1:3001') !== -1, 'second member included');
     assert.ok(addrs.indexOf('127.0.0.1:3002') !== -1, 'third member included');
@@ -216,7 +216,7 @@ testRingpop('tryStartReverseFullSync keeps track of running jobs', function t(de
             assert.equal(opts.host, target, 'send join to remote');
 
             callback(null, {
-                membership: dissemination.fullSync(),
+                membership: dissemination.membershipAsChanges(),
                 membershipChecksum: membership.checksum
             });
         },
@@ -248,7 +248,7 @@ testRingpop('tryStartReverseFullSync keeps track of running jobs', function t(de
             }
 
             callback(null, {
-                membership: dissemination.fullSync(),
+                membership: dissemination.membershipAsChanges(),
                 membershipChecksum: membership.checksum
             });
         },
@@ -352,7 +352,7 @@ testRingpop('tryStartReverseFullSync send join request to target node', function
             assert.equal(opts.timeout, timeout, 'send join with correct timeout');
 
             callback(null, {
-                membership: dissemination.fullSync(),
+                membership: dissemination.membershipAsChanges(),
                 membershipChecksum: membership.checksum
             });
         },

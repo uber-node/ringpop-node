@@ -140,7 +140,7 @@ module.exports = function createJoinHandler(ringpop) {
         callback(null, null, {
             app: ringpop.app,
             coordinator: ringpop.whoami(),
-            membership: ringpop.dissemination.fullSync(),
+            membership: ringpop.dissemination.membershipAsChanges(),
             membershipChecksum: ringpop.membership.checksum
         });
     };
