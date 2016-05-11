@@ -376,11 +376,12 @@ test('emits ring changed event', function t(assert) {
 
     var node1Addr = '127.0.0.1:3001';
     var node2Addr = '127.0.0.1:3002';
-    var magicIncNo = Date.now() +  123456;
+    var incNo = Date.now();
+    var magicIncNo = incNo +  123456;
 
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
-    ringpop.membership.makeAlive(node1Addr, Date.now());
+    ringpop.membership.makeAlive(ringpop.whoami(), incNo);
+    ringpop.membership.makeAlive(node1Addr, incNo);
 
     function assertChanged(changer, intent) {
         ringpop.once('membershipChanged', function onMembershipChanged() {
@@ -397,7 +398,7 @@ test('emits ring changed event', function t(assert) {
     }
 
     assertChanged(function assertIt() {
-        ringpop.membership.makeFaulty(node1Addr);
+        ringpop.membership.makeFaulty(node1Addr, incNo);
     }, {
         adding: [],
         removing: [node1Addr]
@@ -406,8 +407,8 @@ test('emits ring changed event', function t(assert) {
     assertChanged(function assertIt() {
         ringpop.membership.makeAlive(node1Addr, magicIncNo);
     }, {
-        adding: [],
-        removing: [node1Addr]
+        adding: [node1Addr],
+        removing: []
     });
 
     assertChanged(function assertIt() {
