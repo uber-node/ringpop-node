@@ -131,6 +131,9 @@ Config.prototype._seed = function _seed(seed) {
     // Number of allowable inflight requests sent by RingpopClient.
     seedOrDefault('inflightClientRequestsLimit', 100);
 
+    // Healer config
+    seedOrDefault('discoverProviderHealerMaxFailures', 10);
+
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
         if (typeof seedVal === 'undefined') {
