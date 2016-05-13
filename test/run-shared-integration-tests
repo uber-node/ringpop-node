@@ -41,6 +41,13 @@ prefix() {
 }
 
 #
+# Prune installed dev-dependencies
+#
+prune-dev-dependencies() {
+    run npm prune --production 
+}
+
+#
 # Clones or updates the ringpop-common repository.
 #
 fetch-ringpop-common() {
@@ -114,6 +121,9 @@ run-tests() {
 
     return $exit_code
 }
+
+# Prune installed dev dependencies
+prune-dev-dependencies 2>&1|prefix "npm prune"
 
 # Fetch and build in parallel
 fetch-ringpop-common 2>&1|prefix "fetch ringpop-common"
