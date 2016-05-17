@@ -131,19 +131,6 @@ Config.prototype._seed = function _seed(seed) {
     // Number of allowable inflight requests sent by RingpopClient.
     seedOrDefault('inflightClientRequestsLimit', 100);
 
-    // Healer config
-    // Maximum number of heal failures in one period.
-    seedOrDefault('discoverProviderHealerMaxFailures', 10);
-    // The time of a period in ms.
-    seedOrDefault('discoverProviderHealerPeriod', 30000);
-    // The base probability of a node to run in a period: the average number
-    // of nodes in each period that will perform the heal algorithm in a period.
-    // E.g. if there are 100 nodes and the base probability is 3, there is a
-    // chance of 3/100 that a node will run.
-    seedOrDefault('discoverProviderHealerBaseProbability', 3);
-    // Enable the period healer.
-    seedOrDefault('discoverProviderHealerPeriodicEnabled', true);
-
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
         if (typeof seedVal === 'undefined') {
