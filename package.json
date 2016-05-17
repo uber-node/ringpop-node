@@ -31,10 +31,12 @@
   },
   "dependencies": {
     "body": "^5.0.0",
+    "commander": "^2.6.0",
     "error": "^5.0.0",
     "farmhash": "^0.2.0",
     "metrics": "^0.1.8",
     "node-uuid": "^1.4.3",
+    "tchannel": "^3.6.13",
     "toobusy": "^0.2.4",
     "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
@@ -45,7 +47,6 @@
     "benchmark": "^1.0.0",
     "buffer-equal": "0.0.1",
     "cli-color": "^0.3.2",
-    "commander": "^2.6.0",
     "coveralls": "^2.11.2",
     "debug-logtron": "^2.1.0",
     "express": "^4.13.3",
@@ -60,12 +61,14 @@
     "pre-commit": "^0.0.9",
     "tape": "^3.0.3",
     "tape-cluster": "2.1.0",
-    "tchannel": "^3.6.13",
     "tcurl": "^4.11.1",
     "timer-shim": "^0.3.0",
     "tryit": "^1.0.1",
     "uber-licence": "^2.0.1",
     "winston": "^1.0.1"
+  },
+  "peerDependencies": {
+    "tchannel": "^3.6.13"
   },
   "pre-commit": [
     "check-licence",
