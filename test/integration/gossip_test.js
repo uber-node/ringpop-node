@@ -22,7 +22,6 @@
 
 var sendPingReqs = require('../../lib/gossip/ping-req-sender.js');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
-var stopGossiping = require('../lib/gossip-utils').stopGossiping;
 
 // Avoid depending upon mutation of member and find
 // member again and assert its status.
@@ -44,6 +43,12 @@ function assertNumBadStatuses(assert, res, num) {
     assert.equals(badStatuses.length, num, 'correct number of bad statuses');
 }
 
+function mkNoGossip(cluster) {
+    cluster.forEach(function eachRingpop(ringpop) {
+        ringpop.gossip.stop();
+    });
+}
+
 function mkBadPingReqResponder(ringpop) {
     ringpop.channel.register('/protocol/ping-req', function protocolPingReq(req, res) {
         res.headers.as = 'raw';
@@ -53,7 +58,7 @@ function mkBadPingReqResponder(ringpop) {
 
 testRingpopCluster({
     tapAfterConvergence: function tapAfterConvergence(cluster) {
-        stopGossiping(cluster);
+        mkNoGossip(cluster);
     }
 }, 'ping-reqs 1 member', function t(bootRes, cluster, assert) {
 
@@ -77,7 +82,7 @@ testRingpopCluster({
 testRingpopCluster({
     size: 5,
     tapAfterConvergence: function tapAfterConvergence(cluster) {
-        stopGossiping(cluster);
+        mkNoGossip(cluster);
     }
 }, 'ping-reqs 3 members', function t(bootRes, cluster, assert) {
     var ringpop = cluster[0];
@@ -101,7 +106,7 @@ testRingpopCluster({
 testRingpopCluster({
     size: 5,
     tapAfterConvergence: function tapAfterConvergence(cluster) {
-        stopGossiping(cluster);
+        mkNoGossip(cluster);
     }
 }, 'ping-req target unreachable', function t(bootRes, cluster, assert) {
     var badRingpop = cluster[4];
@@ -129,7 +134,7 @@ testRingpopCluster({
 testRingpopCluster({
     size: 2,
     tapAfterConvergence: function tapAfterConvergence(cluster) {
-        stopGossiping(cluster);
+        mkNoGossip(cluster);
     }
 }, 'no ping-req members', function t(bootRes, cluster, assert) {
     var ringpop = cluster[0];
@@ -156,7 +161,7 @@ testRingpopCluster({
         mkBadPingReqResponder(cluster[3]);
     },
     tapAfterConvergence: function tapAfterConvergence(cluster) {
-        stopGossiping(cluster);
+        mkNoGossip(cluster);
     }
 }, 'some bad ping-statuses', function t(bootRes, cluster, assert) {
     var badRingpop = cluster[4];
@@ -181,7 +186,7 @@ testRingpopCluster({
 testRingpopCluster({
     size: 5,
     tapAfterConvergence: function tapAfterConvergence(cluster) {
-        stopGossiping(cluster);
+        mkNoGossip(cluster);
     }
 }, 'ping-req inconclusive', function t(bootRes, cluster, assert) {
     var ringpop = cluster[0];
