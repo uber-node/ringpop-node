@@ -10,6 +10,7 @@ declare ringpop_common_branch="master"
 declare tap_filter="${ringpop_common_dir}/test/tap-filter"
 
 declare test_cluster_sizes="1 2 3 4 5 10"
+declare white_listed_dev_dependencies="commander tchannel"
 declare test_result=
 
 declare temp_dir="$(mktemp -d)"
@@ -41,10 +42,22 @@ prefix() {
 }
 
 #
-# Prune installed dev-dependencies
+# Prune installed dependencies
 #
-prune-dev-dependencies() {
-    run npm prune --production 
+prune-dependencies() {
+    run npm prune --production | prefix "npm prune"
+
+	# install commander and tchannel because those are required by main.js
+    # this is a temporary workaround until main.js is moved to it's own (sub-)module.
+	install-white-listed-dev-dependencies | prefix 'white-listed dev'
+}
+
+install-white-listed-dev-dependencies() {
+	for package in $white_listed_dev_dependencies; do
+    	version=($(jq -r ".devDependencies.$package" package.json))
+    	echo "Installing: ${package}@$version"
+    	output=$(npm install ${package}@$version 2>&1) || echo "failed to install ${package}: $output"
+	done
 }
 
 #
@@ -122,7 +135,7 @@ run-tests() {
 }
 
 # Prune installed dev dependencies
-prune-dev-dependencies 2>&1|prefix "npm prune"
+prune-dependencies 2>&1
 
 # Fetch and build in parallel
 fetch-ringpop-common 2>&1|prefix "fetch ringpop-common"
