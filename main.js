@@ -19,6 +19,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+var fs = require('fs');
+var path = require('path');
+
 var program = require('commander');
 var RingPop = require('./index');
 var TChannel = require('tchannel');
@@ -29,6 +32,8 @@ function main(args) {
         .usage('[options]')
         .option('-l, --listen <listen>', 'Host and port on which server listens (also node\'s identity in cluster)')
         .option('-h, --hosts <hosts>', 'Seed file of list of hosts to join')
+        .option('-s --stats <stats-destination>', 'Enable stats emitting. Destination can be a host-port (e.g. localhost:8125) or a file-name (e.g. ./stats.log). If unset, no stats are emitted. '+
+            'Note: you need to manually install "uber-statsd-client" to be able to emit stats')
         .parse(args);
 
     var listen = program.listen;
@@ -36,6 +41,11 @@ function main(args) {
         console.error('Error: listen arg is required');
         program.outputHelp();
         process.exit(1);
+    }
+
+    var stats = null;
+    if (program.stats) {
+        stats = createStatsClient(program.stats);
     }
 
     var tchannel = new TChannel({
@@ -53,7 +63,8 @@ function main(args) {
         stateTimeouts: {
             faulty: 5 * 1000, // 5s
             tombstone: 5 * 1000 // 5s
-        }
+        },
+        statsd: stats
     });
 
     ringpop.setupChannel();
@@ -67,6 +78,69 @@ function main(args) {
         ringpop.bootstrap(program.hosts);
     }
 }
+
+function createStatsClient(val) {
+    var opts = null;
+    var matchesHostPort = val.match(/^(.+):(\d+)$/);
+    if (matchesHostPort) {
+        opts = {
+            host: matchesHostPort[1],
+            port: parseInt(matchesHostPort[2])
+        };
+    } else {
+        var file = path.resolve(val);
+        opts = {
+            _ephemeralSocket: new FileStatsLogger(file)
+        };
+    }
+
+    var createStatsdClient;
+
+    try {
+        createStatsdClient = require('uber-statsd-client');
+    } catch (e) {
+        if (e.code !== "MODULE_NOT_FOUND") {
+            throw e;
+        }
+
+        console.error("To be able to emit stats you need to have uber-statsd-client installed.");
+        console.error("Please run \"npm install uber-statsd-client\" and try again!");
+        process.exit(1);
+    }
+
+    return createStatsdClient(opts);
+}
+
+function FileStatsLogger(file) {
+    if (!(this instanceof FileStatsLogger)) {
+        return new FileStatsLogger(file);
+    }
+
+    this.file = file;
+    this.stream = null;
+    this.ensureStream();
+}
+
+FileStatsLogger.prototype.ensureStream = function ensureStream() {
+    if (this.stream) {
+        return;
+    }
+    this.stream = fs.createWriteStream(this.file, {flags: 'a'});
+};
+
+FileStatsLogger.prototype.close = function close() {
+    if (this.stream) {
+        this.stream.end();
+        this.stream = null;
+    }
+};
+
+FileStatsLogger.prototype._writeToSocket = function _writeToSocket(data, cb) {
+    this.ensureStream();
+    this.stream.write(new Date().toISOString() + ': ' + data + '\n', cb);
+};
+
+FileStatsLogger.prototype.send = FileStatsLogger.prototype._writeToSocket;
 
 function createLogger(name) {
     return {
