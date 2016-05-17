@@ -13,9 +13,6 @@
   ],
   "version": "10.14.0",
   "repository": "git://github.com/uber/ringpop.git",
-  "bin": {
-    "ringpop": "./main.js"
-  },
   "scripts": {
     "test": "npm run jshint && node test/index.js | faucet",
     "test-debug": "node debug test/index.js",
