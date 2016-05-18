@@ -96,6 +96,8 @@ function createStatsClient(val) {
 
     var createStatsdClient;
 
+    // Wrap the require in a try/catch so we're don't have to add uber-statsd-client
+    // as a dependency but fail gracefully when not available.
     try {
         createStatsdClient = require('uber-statsd-client');
     } catch (e) {
