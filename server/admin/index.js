@@ -67,4 +67,4 @@ var baseEndpointHandlers = {
 };
 
 module.exports = _.extend({}, baseEndpointHandlers, require('./config.js'),
-    require('./gossip.js'), require('./member.js'));
+    require('./gossip.js'), require('./member.js'), require('./partition-healing.js'));

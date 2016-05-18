@@ -70,6 +70,7 @@ var validateHostPort = require('./lib/util').validateHostPort;
 var sendJoin = require('./lib/gossip/joiner.js').joinCluster;
 var TracerStore = require('./lib/trace/store.js');
 var middleware = require('./lib/middleware');
+var DiscoverProviderHealer = require('./lib/partition_healing').DiscoverProviderHealer;
 
 var HOST_PORT_PATTERN = /^(\d+.\d+.\d+.\d+):\d+$/;
 var MEMBERSHIP_UPDATE_FLUSH_INTERVAL = 5000;
@@ -203,6 +204,8 @@ function RingPop(options) {
 
     this.tchannelVersion = getTChannelVersion();
     this.ringpopVersion = packageJSON.version;
+
+    this.healer = new DiscoverProviderHealer(this);
 }
 
 require('util').inherits(RingPop, EventEmitter);

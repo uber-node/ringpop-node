@@ -20,38 +20,21 @@
 
 'use strict';
 
-function createDestroyedHandler(ringpop) {
-    return function onDestroyed() {
-        ringpop.lagSampler.stop();
-        ringpop.membership.stopDampScoreDecayer();
-        ringpop.damper.destroy();
-        ringpop.healer.stop();
+function createHealPartitionViaDiscoverProviderHandler(ringpop) {
+    return function handleHealViaDiscoverProvider(arg1, arg2, hostInfo, callback) {
+        ringpop.healer.heal(function onHeal(err, targets) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            callback(null, null, {targets: targets});
+        });
     };
-}
-
-function createReadyHandler(ringpop) {
-    return function onReady() {
-        if (ringpop.config.get('autoGossip')) {
-            ringpop.gossip.start();
-        }
-
-        if (ringpop.config.get('backpressureEnabled')) {
-            ringpop.lagSampler.start();
-        }
-
-        if (ringpop.config.get('discoverProviderHealerPeriodicEnabled')) {
-            ringpop.healer.start();
-        }
-    };
-}
-
-function register(ringpop) {
-    ringpop.on('destroyed', createDestroyedHandler(ringpop));
-    ringpop.on('ready', createReadyHandler(ringpop));
 }
 
 module.exports = {
-    createDestroyedHandler: createDestroyedHandler,
-    createReadyHandler: createReadyHandler,
-    register: register
+    healViaDiscoverProvider: {
+        endpoint: '/admin/healpartition/disco',
+        handler: createHealPartitionViaDiscoverProviderHandler
+    }
 };
