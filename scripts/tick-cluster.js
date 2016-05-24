@@ -54,6 +54,16 @@ function formatDate() {
     return lpad(now.getHours(), 2) + ':' + lpad(now.getMinutes(), 2) + ':' + lpad(now.getSeconds(), 2) + '.' + lpad(now.getMilliseconds(), 3);
 }
 
+function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = a[i];
+        a[i] = a[j];
+        a[j] = tmp;
+    }
+    return a;
+}
+
 function logMsg(who, msg) {
     console.log(color.blue('[' + who + '] ') + color.yellow(formatDate()) + ' ' + msg);
 }
@@ -429,34 +439,32 @@ function reviveProcs() {
 }
 
 function suspendProc(count) {
-    toSuspend = +count;
+    var running = procs.filter(function (proc) { return !proc.killed && !proc.suspended; });
+    toSuspend = Math.min(+count, running.length);
+    shuffle(running);
 
-    var suspended = [];
-    while (suspended.length < toSuspend) {
-        var rand = Math.floor(Math.random() * procs.length);
-        var proc = procs[rand];
-        if (proc.killed === null && proc.suspended === null) {
-            logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for sleep'));
-            process.kill(proc.proc.pid, 'SIGSTOP');
-            proc.suspended = Date.now();
-            suspended.push(proc);
-        }
+    var i = 0;
+    while (i < toSuspend) {
+        var proc = running[i];
+        logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for sleep'));
+        process.kill(proc.proc.pid, 'SIGSTOP');
+        proc.suspended = Date.now();
+        i = i + 1;
     }
 }
 
 function killProc(count) {
-    toKill = +count;
+    var running = procs.filter(function (proc) { return !proc.killed && !proc.suspended; });
+    toKill = Math.min(+count, running.length);
+    shuffle(running);
 
-    var killed = [];
-    while (killed.length < toKill) {
-        var rand = Math.floor(Math.random() * procs.length);
-        var proc = procs[rand];
-        if (proc.killed === null && proc.suspended === null) {
-            logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for death'));
-            process.kill(proc.proc.pid, 'SIGKILL');
-            proc.killed = Date.now();
-            killed.push(proc);
-        }
+    var i = 0;
+    while (i < toKill) {
+        var proc = running[i];
+        logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for death'));
+        process.kill(proc.proc.pid, 'SIGKILL');
+        proc.killed = Date.now();
+        i = i + 1;
     }
 }
 
