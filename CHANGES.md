@@ -33,7 +33,7 @@ We ran into a few situations where ringpop operators were alarmed by seeing a lo
 After a long lived network partition in the order of 10 seconds, the ringpop cluster is split into two smaller cluster. When the network partition resolves, the ringpop cluster remains partitioned. Only after triggering a rolling restart we would be sure that the partitioned cluster would heal and merge again. Until now. In this version of ringpop we add automatic partition healing, this feature heals the cluster from long lived network partitions without the need of an operator/rolling restart.
 
 **Bidirectional Full Syncs:**
-Full syncs are Ringpop's anti-entropy mechanism, it guards nodes from ever being out of sync, guarantying an eventually consistent cluster. A full sync exchanges the full membership and is triggered when two nodes disagree on the membership after dissemination of all membership information. Before, only the node that discovers that the membership is out of sync, would receive the membership of the other node. With bidirectional full syncs, the membership is exchanged in both directions. This feature is important for safe automatic partition healing, preventing indefinite full syncs.
+Full syncs are Ringpop's anti-entropy mechanism, it guards nodes from ever being out of sync, guaranteeing an eventually consistent cluster. A full sync exchanges the full membership and is triggered when two nodes disagree on the membership after dissemination of all membership information. Before, only the node that discovers that the membership is out of sync, would receive the membership of the other node. With bidirectional full syncs, the membership is exchanged in both directions. This feature is important for safe automatic partition healing, preventing indefinite full syncs.
 
 Reaping faulty nodes and Partition healing can both be triggered manually as well via `ringpop-admin heal ip:port` and `ringpop-admin reap ip:port`. This version is backwards compatible and therefore should be a drop in replacement. But don’t hesitate to reach out to us if you would like some help with upgrading. If you are upgrading please try to upgrade the entire cluster before the reaping kicks in (24 hours). When ran together with an older version for a prolonged period of time an increase in cpu and bandwidth utilization is expected.
 
@@ -43,7 +43,7 @@ Reaping faulty nodes and Partition healing can both be triggered manually as wel
 **Feature: Partition Detection:**
 * Add ring and membership checksums at stat path {membership,ring}-checksum{,-periodic} [#247](https://github.com/uber/ringpop-node/pull/247)
 
-**Miscelanious:**
+**Miscellaneous:**
 * Add travis badge to README.md [#246](https://github.com/uber/ringpop-node/pull/246)
 * Update tchan to 3.6.13 [#243](https://github.com/uber/ringpop-node/pull/243)
 * Update README for newbies [#240](https://github.com/uber/ringpop-node/pull/240)
