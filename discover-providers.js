@@ -59,14 +59,15 @@ function createJsonFileDiscoverProvider(hostsFile) {
                 return;
             }
 
+            var hosts;
             try {
-                var hosts = JSON.parse(data.toString());
-                callback(null, hosts);
-                return;
+                hosts = JSON.parse(data.toString());
             } catch (e) {
                 callback(e);
                 return;
             }
+            callback(null, hosts);
+            return;
         });
     };
 }
