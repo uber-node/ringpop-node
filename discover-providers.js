@@ -58,15 +58,21 @@ function createJsonFileDiscoverProvider(hostsFile) {
             return;
         }
 
-        var hosts;
-        try {
-            hosts = JSON.parse(fs.readFileSync(hostsFile).toString());
-        } catch (e) {
-            callback(e);
-            return;
-        }
+        fs.readFile(hostsFile, function onFileRead(err, data) {
+            if (err) {
+                callback(err);
+                return;
+            }
 
-        return callback(null, hosts);
+            try {
+                var hosts =JSON.parse(data.toString());
+                callback(null, hosts);
+                return;
+            } catch (e){
+                callback(e);
+                return;
+            }
+        });
     };
 }
 
