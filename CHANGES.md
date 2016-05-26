@@ -9,6 +9,7 @@ ringpop-node release notes
 * Feature: Bidirectional full syncs for more robust gossip [#251](https://github.com/uber/ringpop-node/pull/251)
 * Feature: Automatic cleanup of faulty nodes from membership [#257](https://github.com/uber/ringpop-node/pull/257)
 * Deprecated: "admin/reload"-endpoint [#255](https://github.com/uber/ringpop-node/pull/255)
+* Refactor: DiscoverProvider abstraction to discover bootstrap hosts [#253](https://github.com/uber/ringpop-node/pull/253)
 * Various fixes and improvements for test suite [#263](https://github.com/uber/ringpop-node/pull/263) [#262](https://github.com/uber/ringpop-node/pull/262) [#254](https://github.com/uber/ringpop-node/pull/254) [#245](https://github.com/uber/ringpop-node/pull/245)
 
 
