@@ -53,11 +53,6 @@ function createJsonFileDiscoverProvider(hostsFile) {
     var fs = require('fs');
 
     return function jsonFileProvider(callback) {
-        if (!fs.existsSync(hostsFile)) {
-            callback(new Error('bootstrap hosts file does not exist', {file: hostsFile}));
-            return;
-        }
-
         fs.readFile(hostsFile, function onFileRead(err, data) {
             if (err) {
                 callback(err);
@@ -65,10 +60,10 @@ function createJsonFileDiscoverProvider(hostsFile) {
             }
 
             try {
-                var hosts =JSON.parse(data.toString());
+                var hosts = JSON.parse(data.toString());
                 callback(null, hosts);
                 return;
-            } catch (e){
+            } catch (e) {
                 callback(e);
                 return;
             }
