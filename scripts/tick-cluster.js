@@ -21,6 +21,7 @@
 
 'use strict';
 
+var _ = require('underscore');
 var childProc = require('child_process');
 var color = require('cli-color');
 var generateHosts = require('./generate-hosts');
@@ -29,7 +30,7 @@ var TChannel = require('tchannel');
 var fs = require('fs');
 
 var programInterpreter, programPath, startingPort, bindInterface, procsToStart = 5;
-var hosts, procs, ringPool, localIP, toSuspend, toKill, tchannel; // defined later
+var hosts, procs, ringPool, localIP, tchannel; // defined later
 
 /* jshint maxparams: 6 */
 
@@ -429,35 +430,27 @@ function reviveProcs() {
 }
 
 function suspendProc(count) {
-    toSuspend = +count;
+    var processesToSuspend = _.chain(procs)
+        .filter(function (proc) { return !proc.killed && !proc.suspended; })
+        .sample(+count);
 
-    var suspended = [];
-    while (suspended.length < toSuspend) {
-        var rand = Math.floor(Math.random() * procs.length);
-        var proc = procs[rand];
-        if (proc.killed === null && proc.suspended === null) {
-            logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for sleep'));
-            process.kill(proc.proc.pid, 'SIGSTOP');
-            proc.suspended = Date.now();
-            suspended.push(proc);
-        }
-    }
+    processesToSuspend.each(function suspend(proc) {
+        logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for sleep'));
+        process.kill(proc.proc.pid, 'SIGSTOP');
+        proc.suspended = Date.now();
+    });
 }
 
 function killProc(count) {
-    toKill = +count;
+    var processesToKill = _.chain(procs)
+        .filter(function (proc) { return !proc.killed && !proc.suspended; })
+        .sample(+count);
 
-    var killed = [];
-    while (killed.length < toKill) {
-        var rand = Math.floor(Math.random() * procs.length);
-        var proc = procs[rand];
-        if (proc.killed === null && proc.suspended === null) {
-            logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for death'));
-            process.kill(proc.proc.pid, 'SIGKILL');
-            proc.killed = Date.now();
-            killed.push(proc);
-        }
-    }
+    processesToKill.each(function kill(proc) {
+        logMsg(proc.port, color.green('pid ' + proc.pid) + color.red(' randomly selected for death'));
+        process.kill(proc.proc.pid, 'SIGKILL');
+        proc.killed = Date.now();
+    });
 }
 
 function killAllProcs() {
