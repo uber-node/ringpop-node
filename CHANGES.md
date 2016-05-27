@@ -1,6 +1,10 @@
 ringpop-node release notes
 ==========================
 
+Future
+-------
+* Remove tick-cluster.js, the version from ringpop-common should be used [#278](https://github.com/uber/ringpop-node/pull/278)
+
 10.15.0
 -------
 
