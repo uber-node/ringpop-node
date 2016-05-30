@@ -29,6 +29,9 @@ function main(args) {
         .usage('[options]')
         .option('-l, --listen <listen>', 'Host and port on which server listens (also node\'s identity in cluster)')
         .option('-h, --hosts <hosts>', 'Seed file of list of hosts to join')
+        .option('--suspect [suspect]', 'Suspect period in seconds')
+        .option('--faulty [faulty]', 'Faulty period in seconds')
+        .option('--tombstone [tombstone]', 'Tombstone period in seconds')
         .parse(args);
 
     var listen = program.listen;
@@ -37,6 +40,10 @@ function main(args) {
         program.outputHelp();
         process.exit(1);
     }
+
+    program.suspect = parseInt(program.suspect) || 5;
+    program.faulty = parseInt(program.faulty) || 24*60*60;
+    program.tombstone = parseInt(program.tombstone) || 5;
 
     var tchannel = new TChannel({
     });
@@ -51,8 +58,9 @@ function main(args) {
         }),
         isCrossPlatform: true,
         stateTimeouts: {
-            faulty: 5 * 1000, // 5s
-            tombstone: 5 * 1000 // 5s
+            suspect: program.suspect * 1000,
+            faulty: program.faulty * 1000,
+            tombstone: program.tombstone * 1000,
         }
     });
 
