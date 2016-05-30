@@ -41,9 +41,9 @@ function main(args) {
         process.exit(1);
     }
 
-    program.suspect = parseInt(program.suspect) || 5;
-    program.faulty = parseInt(program.faulty) || 24*60*60;
-    program.tombstone = parseInt(program.tombstone) || 5;
+    program.suspect = parseInt(program.suspect, 10) || 5;
+    program.faulty = parseInt(program.faulty, 10) || 24*60*60;
+    program.tombstone = parseInt(program.tombstone, 10) || 5;
 
     var tchannel = new TChannel({
     });
