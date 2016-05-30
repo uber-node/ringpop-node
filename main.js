@@ -32,8 +32,10 @@ function main(args) {
         .usage('[options]')
         .option('-l, --listen <listen>', 'Host and port on which server listens (also node\'s identity in cluster)')
         .option('-h, --hosts <hosts>', 'Seed file of list of hosts to join')
-        .option('-s --stats <stats-destination>', 'Enable stats emitting. Destination can be a host-port (e.g. localhost:8125) or a file-name (e.g. ./stats.log). If unset, no stats are emitted. '+
-            'Note: you need to manually install "uber-statsd-client" to be able to emit stats')
+        .option('--stats-file <stats-file>', 'Enable stats emitting to a file. Stats-file can be a relative or absolute path. '+
+            'Note: this flag is mututally excslusive with --stats-udp and you need to manually install "uber-statsd-client" to be able to emit stats')
+        .option('--stats-udp <stats-udp>', 'Enable stats emitting over udp. Destination is in the host-port format (e.g. localhost:8125 or 127.0.0.1:8125) ' +
+            'Note: this flag is mututally excslusive with --stats-udp and you need to manually install "uber-statsd-client" to be able to emit stats', /^(.+):(\d+)$/)
         .parse(args);
 
     var listen = program.listen;
@@ -43,10 +45,7 @@ function main(args) {
         process.exit(1);
     }
 
-    var stats = null;
-    if (program.stats) {
-        stats = createStatsClient(program.stats);
-    }
+    var stats = createStatsClient(program);
 
     var tchannel = new TChannel({
     });
@@ -79,16 +78,25 @@ function main(args) {
     }
 }
 
-function createStatsClient(val) {
+function createStatsClient(program) {
+    if (!program.statsUdp && !program.statsFile) {
+        return null;
+    }
+    if (program.statsUdp && program.statsFile) {
+        console.error("--stats-udp and --stats-file are mutually exclusive.");
+        console.error("Please specify only one of the two options!");
+        process.exit(1);
+    }
+
     var opts = null;
-    var matchesHostPort = val.match(/^(.+):(\d+)$/);
-    if (matchesHostPort) {
+    if (program.statsUdp) {
+        var matchesHostPort = program.statsUdp.match(/^(.+):(\d+)$/);
         opts = {
             host: matchesHostPort[1],
             port: parseInt(matchesHostPort[2])
         };
-    } else {
-        var file = path.resolve(val);
+    } else if (program.statsFile) {
+        var file = path.resolve(program.statsFile);
         opts = {
             _ephemeralSocket: new FileStatsLogger(file)
         };
