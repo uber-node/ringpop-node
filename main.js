@@ -26,9 +26,27 @@ var TChannel = require('tchannel');
 function main(args) {
     program
         .version(require('./package.json').version)
+
         .usage('[options]')
-        .option('-l, --listen <listen>', 'Host and port on which server listens (also node\'s identity in cluster)')
-        .option('-h, --hosts <hosts>', 'Seed file of list of hosts to join')
+
+        .option('-l, --listen <listen>',
+            'Host and port on which server listens (also node\'s identity in cluster)')
+
+        .option('-h, --hosts <hosts>',
+            'Seed file of list of hosts to join')
+
+        .option('--suspect-period <suspectPeriod>',
+            'The lifetime of a suspect member in ms. After that the member becomes faulty.',
+            parseInt10, 5000)
+
+        .option('--faulty-period <faultyPeriod>',
+            'The lifetime of a faulty member in ms. After that the member becomes a tombstone.',
+            parseInt10, 24*60*60*1000) // 24hours
+
+        .option('--tombstone-period <tombstonePeriod>',
+            'The lifetime of a tombstone member in ms. After that the member is removed from the membership.',
+            parseInt10, 5000)
+
         .parse(args);
 
     var listen = program.listen;
@@ -51,8 +69,9 @@ function main(args) {
         }),
         isCrossPlatform: true,
         stateTimeouts: {
-            faulty: 5 * 1000, // 5s
-            tombstone: 5 * 1000 // 5s
+            suspect: program.suspectPeriod,
+            faulty: program.faultyPeriod,
+            tombstone: program.tombstonePeriod,
         }
     });
 
@@ -66,6 +85,10 @@ function main(args) {
     function onListening() {
         ringpop.bootstrap(program.hosts);
     }
+}
+
+function parseInt10(str) {
+    return parseInt(str, 10);
 }
 
 function createLogger(name) {
