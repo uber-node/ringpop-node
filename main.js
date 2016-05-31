@@ -29,9 +29,9 @@ function main(args) {
         .usage('[options]')
         .option('-l, --listen <listen>', 'Host and port on which server listens (also node\'s identity in cluster)')
         .option('-h, --hosts <hosts>', 'Seed file of list of hosts to join')
-        .option('--suspect [suspect]', 'Suspect period in seconds')
-        .option('--faulty [faulty]', 'Faulty period in seconds')
-        .option('--tombstone [tombstone]', 'Tombstone period in seconds')
+        .option('--suspect-period <suspectPeriod>', 'Suspect period in ms', parseInt10, 5000)
+        .option('--faulty-period <faultyPeriod>', 'Faulty period in ms', parseInt10, 24*60*60*1000) // 24h
+        .option('--tombstone-period <tombstonePeriod>', 'Tombstone period in ms', parseInt10, 5000)
         .parse(args);
 
     var listen = program.listen;
@@ -40,10 +40,6 @@ function main(args) {
         program.outputHelp();
         process.exit(1);
     }
-
-    program.suspect = parseInt(program.suspect, 10) || 5;
-    program.faulty = parseInt(program.faulty, 10) || 24*60*60;
-    program.tombstone = parseInt(program.tombstone, 10) || 5;
 
     var tchannel = new TChannel({
     });
@@ -58,9 +54,9 @@ function main(args) {
         }),
         isCrossPlatform: true,
         stateTimeouts: {
-            suspect: program.suspect * 1000,
-            faulty: program.faulty * 1000,
-            tombstone: program.tombstone * 1000,
+            suspect: program.suspectPeriod,
+            faulty: program.faultyPeriod,
+            tombstone: program.tombstonePeriod,
         }
     });
 
@@ -74,6 +70,10 @@ function main(args) {
     function onListening() {
         ringpop.bootstrap(program.hosts);
     }
+}
+
+function parseInt10(str) {
+    return parseInt(str, 10)
 }
 
 function createLogger(name) {
