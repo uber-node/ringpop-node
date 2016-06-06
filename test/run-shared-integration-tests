@@ -120,7 +120,7 @@ run-tests() {
 fetch-ringpop-common 2>&1|prefix "fetch ringpop-common"
 
 # Break a test
-(cd ringpop_common_dir; sed -i '32 s/0/1/' test/join-tests.js)
+(cd $ringpop_common_dir; sed -i '32 s/0/1/' test/join-tests.js)
 
 # Run integration tests
 run-tests
