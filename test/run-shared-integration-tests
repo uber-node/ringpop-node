@@ -89,6 +89,9 @@ run-test-for-cluster-size() {
     fi
 
     if [ $err -ne 0 ]; then
+        echo "output file, tap_filtered, without prefix:"
+        cat "$output_file" |$tap_filter 2>&1
+
         # If the test failed, print a message and display the failures
         {
             echo "FAIL: Test failed for cluster size $cluster_size"
@@ -101,9 +104,6 @@ run-test-for-cluster-size() {
             cat "$output_file" | $tap_filter 2>&1
 
         } | prefix "test-errors-${cluster_size}" >&2
-
-        echo "output file, tap_filtered, without prefix:"
-        cat "$output_file" | $tap_filter 2>&1
 
         return 1
     fi
