@@ -3,6 +3,7 @@
 # Run integration tests for ringpop-node.
 #
 set -eo pipefail
+set -x
 
 declare project_root="${0%/*}/.."
 declare ringpop_common_dir="${0%/*}/ringpop-common"
@@ -109,7 +110,7 @@ run-tests() {
 
     for cluster_size in $test_cluster_sizes; do
         echo "Running test for cluster size ${cluster_size}..." |prefix "test-runner"
-        run-test-for-cluster-size $cluster_size || exit_code=1
+        run-test-for-cluster-size $cluster_size
     done
 
     return $exit_code
