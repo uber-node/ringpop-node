@@ -90,18 +90,13 @@ run-test-for-cluster-size() {
 
     if [ $err -ne 0 ]; then
         echo "output file, tap_filtered, without prefix:"
-        cat "$output_file" |$tap_filter 2>&1
-
+        cat "$output_file" | $tap_filter 2>&1
+        echo "Prefixed version below..."
         # If the test failed, print a message and display the failures
         {
             echo "FAIL: Test failed for cluster size $cluster_size"
-            # Output the test data through tap_filter, which discards success
-            echo -n "Line count in ${output_file}: "
-            wc -l "$output_file"
-            echo -n "Line count in ${output_file} tap_filtered: "
-            cat "$output_file" | $tap_filter 2>&1 | wc -l
-            echo "output file, tap_filtered: "
-            cat "$output_file" | $tap_filter 2>&1
+            # Output the test data through tap-filter, which discards success
+            cat "$output_file" |$tap_filter 2>&1
 
         } | prefix "test-errors-${cluster_size}" >&2
 
@@ -117,7 +112,7 @@ run-tests() {
 
     for cluster_size in $test_cluster_sizes; do
         echo "Running test for cluster size ${cluster_size}..." |prefix "test-runner"
-        run-test-for-cluster-size $cluster_size
+        run-test-for-cluster-size $cluster_size || return 1
     done
 
     return $exit_code
