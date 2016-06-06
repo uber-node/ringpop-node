@@ -96,7 +96,7 @@ run-test-for-cluster-size() {
             echo -n "Line count in ${output_file}: "
             wc -l "$output_file"
             echo -n "Line count in ${output_file} tap_filtered: "
-            cat "$output_file" | $tap_filter | wc -l
+            cat "$output_file" | $tap_filter 2>&1 | wc -l
             echo "output file, tap_filtered: "
             cat "$output_file" 2>&1
 
