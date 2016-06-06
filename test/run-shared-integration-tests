@@ -98,9 +98,12 @@ run-test-for-cluster-size() {
             echo -n "Line count in ${output_file} tap_filtered: "
             cat "$output_file" | $tap_filter 2>&1 | wc -l
             echo "output file, tap_filtered: "
-            cat "$output_file" 2>&1
+            cat "$output_file" | $tap_filter 2>&1
 
         } | prefix "test-errors-${cluster_size}" >&2
+
+        echo "output file, tap_filtered, without prefix:"
+        cat "$output_file" | $tap_filter 2>&1
 
         return 1
     fi
