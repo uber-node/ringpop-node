@@ -3,6 +3,7 @@
 # Run integration tests for ringpop-node.
 #
 set -eo pipefail
+set -x
 
 declare project_root="${0%/*}/.."
 declare ringpop_common_dir="${0%/*}/ringpop-common"
@@ -93,7 +94,7 @@ run-test-for-cluster-size() {
         {
             echo "FAIL: Test failed for cluster size $cluster_size"
             # Output the test data through tap-filter, which discards success
-            cat "$output_file" |$tap_filter 2>&1
+            cat "$output_file" 2>&1
 
         } | prefix "test-errors-${cluster_size}" >&2
 
@@ -109,7 +110,7 @@ run-tests() {
 
     for cluster_size in $test_cluster_sizes; do
         echo "Running test for cluster size ${cluster_size}..." |prefix "test-runner"
-        run-test-for-cluster-size $cluster_size || exit_code=1
+        run-test-for-cluster-size $cluster_size
     done
 
     return $exit_code
