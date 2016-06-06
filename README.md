@@ -25,12 +25,13 @@ ulimit -n 4096
 ```
 
 # Tick Cluster
-An example application `scripts/tick-cluster.js` is included to this
+An example application `tools/tick-cluster.js` is included in ringpop-common
 repository. It just launches a ringpop cluster of a given size. Using this
 application is the quickest way to start a ringpop cluster.
 
 ```
-./scripts/tick-cluster.js --interpreter node main.js
+git clone https://github.com/uber/ringpop-common.git
+./ringpop-common/tools/tick-cluster.js --interpreter node main.js
 ```
 
 # Example
