@@ -52,11 +52,11 @@ function main(args) {
 
         .option('--stats-file <stats-file>',
             'Enable stats emitting to a file. Stats-file can be a relative or absolute path. '+
-            'Note: this flag is mututally excslusive with --stats-udp and you need to manually install "uber-statsd-client" to be able to emit stats')
+            'Note: this flag is mutually exclusive with --stats-udp and you need to manually install "uber-statsd-client" to be able to emit stats')
 
         .option('--stats-udp <stats-udp>',
             'Enable stats emitting over udp. Destination is in the host-port format (e.g. localhost:8125 or 127.0.0.1:8125) ' +
-            'Note: this flag is mututally excslusive with --stats-udp and you need to manually install "uber-statsd-client" to be able to emit stats',
+            'Note: this flag is mutually exclusive with --stats-file and you need to manually install "uber-statsd-client" to be able to emit stats',
             /^(.+):(\d+)$/)
 
         .parse(args);
@@ -122,6 +122,8 @@ function createStatsClient(program) {
     } else if (program.statsFile) {
         var file = path.resolve(program.statsFile);
         opts = {
+            // passing in our own 'socket' implementation here so we can write to file instead.
+            // note: this is non-public api and could change without warning.
             _ephemeralSocket: new FileStatsLogger(file)
         };
     }
