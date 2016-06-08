@@ -514,8 +514,10 @@ RingPop.prototype.lookupN = function lookupN(key, n) {
 
     var dests = this.ring.lookupN(key + '', n);
 
+    var timing = Date.now() - startTime;
+    this.stat('timing', 'lookupn.' + n, timing);
     this.emit('lookupN', {
-        timing: Date.now() - startTime
+        timing: timing
     });
 
     if (!dests || dests.length === 0) {
