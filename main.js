@@ -19,6 +19,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+var fs = require('fs');
+var path = require('path');
+
 var program = require('commander');
 var RingPop = require('./index');
 var TChannel = require('tchannel');
@@ -28,7 +31,7 @@ function main(args) {
         .version(require('./package.json').version)
 
         .usage('[options]')
-
+        
         .option('-l, --listen <listen>',
             'Host and port on which server listens (also node\'s identity in cluster)')
 
@@ -47,6 +50,15 @@ function main(args) {
             'The lifetime of a tombstone member in ms. After that the member is removed from the membership.',
             parseInt10, 5000)
 
+        .option('--stats-file <stats-file>',
+            'Enable stats emitting to a file. Stats-file can be a relative or absolute path. '+
+            'Note: this flag is mutually exclusive with --stats-udp and you need to manually install "uber-statsd-client" to be able to emit stats')
+
+        .option('--stats-udp <stats-udp>',
+            'Enable stats emitting over udp. Destination is in the host-port format (e.g. localhost:8125 or 127.0.0.1:8125) ' +
+            'Note: this flag is mutually exclusive with --stats-file and you need to manually install "uber-statsd-client" to be able to emit stats',
+            /^(.+):(\d+)$/)
+
         .parse(args);
 
     var listen = program.listen;
@@ -55,6 +67,8 @@ function main(args) {
         program.outputHelp();
         process.exit(1);
     }
+
+    var stats = createStatsClient(program);
 
     var tchannel = new TChannel({
     });
@@ -72,7 +86,8 @@ function main(args) {
             suspect: program.suspectPeriod,
             faulty: program.faultyPeriod,
             tombstone: program.tombstonePeriod,
-        }
+        },
+        statsd: stats
     });
 
     ringpop.setupChannel();
@@ -86,6 +101,82 @@ function main(args) {
         ringpop.bootstrap(program.hosts);
     }
 }
+
+function createStatsClient(program) {
+    if (!program.statsUdp && !program.statsFile) {
+        return null;
+    }
+    if (program.statsUdp && program.statsFile) {
+        console.error("--stats-udp and --stats-file are mutually exclusive.");
+        console.error("Please specify only one of the two options!");
+        process.exit(1);
+    }
+
+    var opts = null;
+    if (program.statsUdp) {
+        var matchesHostPort = program.statsUdp.match(/^(.+):(\d+)$/);
+        opts = {
+            host: matchesHostPort[1],
+            port: parseInt(matchesHostPort[2])
+        };
+    } else if (program.statsFile) {
+        var file = path.resolve(program.statsFile);
+        opts = {
+            // passing in our own 'socket' implementation here so we can write to file instead.
+            // note: this is non-public api and could change without warning.
+            _ephemeralSocket: new FileStatsLogger(file)
+        };
+    }
+
+    var createStatsdClient;
+
+    // Wrap the require in a try/catch so we're don't have to add uber-statsd-client
+    // as a dependency but fail gracefully when not available.
+    try {
+        createStatsdClient = require('uber-statsd-client');
+    } catch (e) {
+        if (e.code !== "MODULE_NOT_FOUND") {
+            throw e;
+        }
+
+        console.error("To be able to emit stats you need to have uber-statsd-client installed.");
+        console.error("Please run \"npm install uber-statsd-client\" and try again!");
+        process.exit(1);
+    }
+
+    return createStatsdClient(opts);
+}
+
+function FileStatsLogger(file) {
+    if (!(this instanceof FileStatsLogger)) {
+        return new FileStatsLogger(file);
+    }
+
+    this.file = file;
+    this.stream = null;
+    this.ensureStream();
+}
+
+FileStatsLogger.prototype.ensureStream = function ensureStream() {
+    if (this.stream) {
+        return;
+    }
+    this.stream = fs.createWriteStream(this.file, {flags: 'a'});
+};
+
+FileStatsLogger.prototype.close = function close() {
+    if (this.stream) {
+        this.stream.end();
+        this.stream = null;
+    }
+};
+
+FileStatsLogger.prototype._writeToSocket = function _writeToSocket(data, cb) {
+    this.ensureStream();
+    this.stream.write(new Date().toISOString() + ': ' + data + '\n', cb);
+};
+
+FileStatsLogger.prototype.send = FileStatsLogger.prototype._writeToSocket;
 
 function parseInt10(str) {
     return parseInt(str, 10);
