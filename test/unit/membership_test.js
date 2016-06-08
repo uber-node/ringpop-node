@@ -75,12 +75,15 @@ testRingpop('change with higher incarnation number results in leave override', f
 testRingpop('change that overrides the local status should be overwritten to a change that reincarnates the node', function t(deps, assert) {
     var ringpop = deps.ringpop;
     var membership = deps.membership;
+    var source = "192.0.2.1:1234";
+
+    assert.doesNotEqual(ringpop.whoami(), source, 'this test relies on the source and the target of the change to be different');
 
     var member = membership.findMemberByAddress(ringpop.whoami());
     assert.equals(member.status, Member.Status.alive, 'member starts alive');
 
     var applied = membership.update([{
-        source: "192.0.2.1:1234",
+        source: source,
         sourceIncarnationNumber: 1337,
 
         address: ringpop.whoami(),
