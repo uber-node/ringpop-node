@@ -72,6 +72,36 @@ testRingpop('change with higher incarnation number results in leave override', f
     assert.equals(member.status, Member.Status.leave, 'results in leave');
 });
 
+testRingpop('change that overrides the local status should be overwritten to a change that reincarnates the node', function t(deps, assert) {
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
+    var source = "192.0.2.1:1234";
+
+    assert.doesNotEqual(ringpop.whoami(), source, 'this test relies on the source and the target of the change to be different');
+
+    var member = membership.findMemberByAddress(ringpop.whoami());
+    assert.equals(member.status, Member.Status.alive, 'member starts alive');
+
+    var applied = membership.update([{
+        source: source,
+        sourceIncarnationNumber: 1337,
+
+        address: ringpop.whoami(),
+        status: Member.Status.suspect,
+        incarnationNumber: member.incarnationNumber
+    }]);
+
+    member = membership.findMemberByAddress(ringpop.whoami());
+
+    assert.equals(applied.length, 1, 'expected 1 applied update');
+    var change = applied[0];
+    assert.equals(change.status, Member.Status.alive, 'expected the status of the applied update to be overriden to alive');
+    assert.equals(change.incarnationNumber, member.incarnationNumber, 'expected the incarnation number of the change be equal to the incarnation number of the local member');
+    assert.equals(change.sourceIncarnationNumber, member.incarnationNumber, 'expected the source incarnation number be equal the the incarnation number of the local member');
+    assert.equals(change.source, ringpop.whoami(), 'expected the source to be the address of the local node');
+    assert.equals(member.status, Member.Status.alive, 'the status of the member should stay alive');
+});
+
 testRingpop('change with same incarnation number does not result in leave override', function t(deps, assert) {
     var ringpop = deps.ringpop;
     var membership = deps.membership;
