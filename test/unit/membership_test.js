@@ -102,12 +102,9 @@ testRingpop('change that overrides the local status should be overwritten to a c
     assert.equals(member.status, Member.Status.alive, 'the status of the member should stay alive');
 });
 
-testRingpop('change that does not overrides the local status should not cause a reincarnation', function t(deps, assert) {
+testRingpop('change that does not override the local status should not cause a reincarnation', function t(deps, assert) {
     var ringpop = deps.ringpop;
     var membership = deps.membership;
-    var source = "192.0.2.1:1234";
-
-    assert.doesNotEqual(ringpop.whoami(), source, 'this test relies on the source and the target of the change to be different');
 
     var member = membership.findMemberByAddress(ringpop.whoami());
     assert.equals(member.status, Member.Status.alive, 'member starts alive');
