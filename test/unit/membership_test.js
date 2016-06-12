@@ -31,7 +31,7 @@ function assertIncarnationNumber(deps, assert, memberStatus) {
     membership.update({
         address: local.address,
         status: memberStatus,
-        incarnationNumber: local.incarnatioNumber
+        incarnationNumber: local.incarnationNumber
     });
 
     assert.ok(prevInc, 'prev incarnation number is truthy');
