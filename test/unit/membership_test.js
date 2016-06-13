@@ -102,6 +102,26 @@ testRingpop('change that overrides the local status should be overwritten to a c
     assert.equals(member.status, Member.Status.alive, 'the status of the member should stay alive');
 });
 
+testRingpop('change that does not override the local status should not cause a reincarnation', function t(deps, assert) {
+    var ringpop = deps.ringpop;
+    var membership = deps.membership;
+
+    var member = membership.findMemberByAddress(ringpop.whoami());
+    assert.equals(member.status, Member.Status.alive, 'member starts alive');
+
+    var applied = membership.update([{
+        address: ringpop.whoami(),
+        status: Member.Status.suspect,
+        incarnationNumber: member.incarnationNumber - 1
+    }]);
+
+    member = membership.findMemberByAddress(ringpop.whoami());
+
+    assert.equals(applied.length, 0, 'expected 0 applied updates');
+    var change = applied[0];
+    assert.doesNotEqual(member.status, Member.Status.suspect, 'the status of the member should not transistion to suspect');
+});
+
 testRingpop('change with same incarnation number does not result in leave override', function t(deps, assert) {
     var ringpop = deps.ringpop;
     var membership = deps.membership;
