@@ -23,28 +23,6 @@
 var Member = require('../../lib/membership/member.js');
 var testRingpop = require('../lib/test-ringpop.js');
 
-function assertIncarnationNumber(deps, assert, memberStatus) {
-    var membership = deps.membership;
-    var local = membership.localMember;
-    var prevInc = local.incarnationNumber - 1;
-
-    membership.update({
-        address: local.address,
-        status: memberStatus,
-        incarnationNumber: local.incarnatioNumber
-    });
-
-    assert.ok(prevInc, 'prev incarnation number is truthy');
-}
-
-testRingpop('suspect update does not bump local incarnation number', function t(deps, assert) {
-    assertIncarnationNumber(deps, assert, Member.Status.suspect);
-});
-
-testRingpop('faulty update does not bump local incarnation number', function t(deps, assert) {
-    assertIncarnationNumber(deps, assert, Member.Status.faulty);
-});
-
 testRingpop('checksum is changed when membership is updated', function t(deps, assert) {
     var membership = deps.membership;
 
