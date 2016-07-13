@@ -4,6 +4,10 @@ applications. It maintains a consistent hash ring on top of a membership protoco
 and provides request forwarding as a routing convenience. It can be used to
 shard your application in a way that's scalable and fault tolerant.
 
+# Requirements
+
+* Node 0.10 (0.10.32 or higher)
+
 # Installation
 To install Ringpop for usage as a library:
 

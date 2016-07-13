@@ -12,6 +12,9 @@
     "Mark Yen <mark@uber.com>"
   ],
   "version": "10.15.0",
+  "engines": {
+    "node": "^0.10.32"
+  },
   "repository": "git://github.com/uber/ringpop.git",
   "bin": {
     "ringpop": "./main.js"
