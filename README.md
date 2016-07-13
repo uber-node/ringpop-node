@@ -6,7 +6,7 @@ shard your application in a way that's scalable and fault tolerant.
 
 # Requirements
 
-* Node 0.10.x
+* Node 0.10 (0.10.32 or higher)
 
 # Installation
 To install Ringpop for usage as a library:
