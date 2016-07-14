@@ -324,7 +324,7 @@ RingPop.prototype.bootstrap = function bootstrap(opts, callback) {
         checkForHostnameIpMismatch();
 
         // Add local member to membership.
-        self.membership.makeAlive(self.whoami(), Date.now());
+        self.membership.makeLocalAlive();
 
         var joinTime = Date.now();
 

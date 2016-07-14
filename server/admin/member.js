@@ -32,18 +32,11 @@ var RedundantLeaveError = TypedError({
 
 function createJoinHandler(ringpop) {
     return function handleJoin(arg1, arg2, hostInfo, callback) {
-        if (!ringpop.membership.localMember) {
-            process.nextTick(function() {
-                callback(errors.InvalidLocalMemberError());
-            });
-            return;
-        }
-
         // Handle rejoin for member that left.
         var localStatus = ringpop.membership.localMember.status;
         if (localStatus === Member.Status.leave) {
             // Assert local member is alive.
-            ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
+            ringpop.membership.makeLocalAlive();
 
             ringpop.gossip.start();
             ringpop.stateTransitions.enable();
@@ -90,8 +83,7 @@ function createLeaveHandler(ringpop) {
         }
 
         // TODO Explicitly infect other members (like admin join)?
-        ringpop.membership.makeLeave(ringpop.whoami(),
-            ringpop.membership.localMember.incarnationNumber);
+        ringpop.membership.setLocalStatus(Member.Status.leave);
 
         process.nextTick(function() {
             callback(null, null, 'ok');

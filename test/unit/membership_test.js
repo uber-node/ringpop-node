@@ -26,28 +26,12 @@ var testRingpop = require('../lib/test-ringpop.js');
 testRingpop('checksum is changed when membership is updated', function t(deps, assert) {
     var membership = deps.membership;
 
-    membership.makeAlive('127.0.0.1:3000', Date.now());
+    membership.makeLocalAlive();
     var prevChecksum = membership.checksum;
 
     membership.makeAlive('127.0.0.1:3001', Date.now());
 
     assert.doesNotEqual(membership.checksum, prevChecksum, 'checksum is changed');
-});
-
-testRingpop('change with higher incarnation number results in leave override', function t(deps, assert) {
-    var ringpop = deps.ringpop;
-    var membership = deps.membership;
-
-    var member = membership.findMemberByAddress(ringpop.whoami());
-    assert.equals(member.status, Member.Status.alive, 'member starts alive');
-
-    membership.update([{
-        address: ringpop.whoami(),
-        status: Member.Status.leave,
-        incarnationNumber: member.incarnationNumber + 1
-    }]);
-
-    assert.equals(member.status, Member.Status.leave, 'results in leave');
 });
 
 testRingpop('change that overrides the local status should be overwritten to a change that reincarnates the node', function t(deps, assert) {
@@ -100,20 +84,21 @@ testRingpop('change that does not override the local status should not cause a r
     assert.doesNotEqual(member.status, Member.Status.suspect, 'the status of the member should not transistion to suspect');
 });
 
-testRingpop('change with same incarnation number does not result in leave override', function t(deps, assert) {
+testRingpop('change with same incarnation number does not result in leave override (reincarnates)', function t(deps, assert) {
     var ringpop = deps.ringpop;
     var membership = deps.membership;
 
     var member = membership.findMemberByAddress(ringpop.whoami());
     assert.equals(member.status, Member.Status.alive, 'member starts alive');
 
-    membership.update([{
+    var applied = membership.update([{
         address: ringpop.whoami(),
-        status: Member.Status.Leave,
+        status: Member.Status.leave,
         incarnationNumber: member.incarnationNumber
     }]);
 
     assert.equals(member.status, Member.Status.alive, 'results in no leave');
+    assert.equals(applied.length, 1, 'change applied');
 });
 
 testRingpop('change with lower incarnation number does not result in leave override', function t(deps, assert) {
@@ -123,13 +108,16 @@ testRingpop('change with lower incarnation number does not result in leave overr
     var member = membership.findMemberByAddress(ringpop.whoami());
     assert.equals(member.status, Member.Status.alive, 'member starts alive');
 
-    membership.update([{
+    var incarnationNumber = member.incarnationNumber;
+    var applied = membership.update([{
         address: ringpop.whoami(),
-        status: Member.Status.Leave,
+        status: Member.Status.leave,
         incarnationNumber: member.incarnationNumber - 1
     }]);
 
     assert.equals(member.status, Member.Status.alive, 'results in no leave');
+    assert.equals(member.incarnationNumber, incarnationNumber, 'incarnation number did not change');
+    assert.equals(applied.length, 0, 'no changes applied');
 });
 
 testRingpop('member is able to go from alive to faulty without going through suspect', function t(deps, assert) {
@@ -193,9 +181,8 @@ testRingpop('cannot evict self', function t(deps, assert) {
     var membership = deps.membership;
 
     var localAddr = '127.0.0.1:3000';
-    var incNo = Date.now();
 
-    membership.makeAlive(localAddr, incNo);
+    membership.makeLocalAlive();
     membership.evict(localAddr);
     assert.ok(membership.getMemberAt(0), 'evict not applied');
     assert.ok(membership.findMemberByAddress(localAddr), 'evict not applied');
@@ -204,7 +191,7 @@ testRingpop('cannot evict self', function t(deps, assert) {
 testRingpop('generate checksums string preserves order of members', function t(deps, assert) {
     var membership = deps.membership;
 
-    for (var i = 0; i < 100; i++) {
+    for (var i = 1; i < 100; i++) {
         membership.makeAlive('127.0.0.1:' + (3000 + i), Date.now());
     }
 
@@ -317,7 +304,11 @@ testRingpop('set does not shuffle member positions', function t(deps, assert) {
 
     // Stash all members
     addresses.forEach(function eachAddr(addr) {
-        membership.makeAlive(addr, Date.now());
+        if (addr === ringpop.whoami()) {
+            membership.makeLocalAlive();
+        } else {
+            membership.makeAlive(addr, Date.now());
+        }
     });
 
     membership.set();

@@ -23,6 +23,7 @@ var AdminMember = require('../../server/admin/member.js');
 var createJoinHandler = require('../../server/protocol/join.js');
 var mock = require('../mock');
 var Ringpop = require('../../index.js');
+var Member = require('../../lib/membership/member.js');
 var test = require('tape');
 var testRingpop = require('../lib/test-ringpop.js');
 var allocRingpop = require('../lib/alloc-ringpop.js');
@@ -64,7 +65,7 @@ test('does not throw when calling lookup with an integer', function t(assert) {
 
 test('key hashes to only server', function t(assert) {
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
+    ringpop.membership.makeLocalAlive();
     assert.equals(ringpop.lookup(12345), ringpop.hostPort, 'hashes to only server');
     ringpop.destroy();
     assert.end();
@@ -75,7 +76,7 @@ test('admin join rejoins if member has previously left', function t(assert) {
 
     var ringpop = createRingpop();
 
-    ringpop.membership.makeAlive(ringpop.whoami(), 1);
+    ringpop.membership.makeLocalAlive();
 
     var handleAdminLeave = createAdminLeaveHandler(ringpop);
     handleAdminLeave(null, null, null, function(err, res1, res2) {
@@ -94,26 +95,11 @@ test('admin join rejoins if member has previously left', function t(assert) {
     });
 });
 
-test('admin join cannot be performed before local member is added to membership', function t(assert) {
-    assert.plan(2);
-
-    var ringpop = createRingpop();
-
-    var handleAdminJoin = createAdminJoinHandler(ringpop);
-    handleAdminJoin(null, null, null, function onAdminJoin(err) {
-        assert.ok(err, 'an error occurred');
-        assert.equals(err.type, 'ringpop.invalid-local-member', 'invalid local member error');
-        ringpop.destroy();
-        assert.end();
-    });
-});
-
 test('admin leave prevents redundant leave', function t(assert) {
     assert.plan(2);
 
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), 1);
-    ringpop.membership.makeLeave(ringpop.whoami(), 1);
+    ringpop.membership.setLocalStatus(Member.Status.leave);
 
     var handleAdminLeave = createAdminLeaveHandler(ringpop);
     handleAdminLeave(null, null, null, function(err) {
@@ -128,7 +114,7 @@ test('admin leave makes local member leave', function t(assert) {
     assert.plan(3);
 
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), 1);
+    ringpop.membership.makeLocalAlive();
 
     var handleAdminLeave = createAdminLeaveHandler(ringpop);
     handleAdminLeave(null, null, null, function(err, _, res2) {
@@ -144,7 +130,7 @@ test('admin leave stops gossip', function t(assert) {
     assert.plan(2);
 
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), 1);
+    ringpop.membership.makeLocalAlive();
     ringpop.gossip.start();
 
     var handleAdminLeave = createAdminLeaveHandler(ringpop);
@@ -160,10 +146,10 @@ test('admin leave stops state transitions', function t(assert) {
     assert.plan(2);
 
     var ringpopRemote = createRemoteRingpop();
-    ringpopRemote.membership.makeAlive(ringpopRemote.whoami(), Date.now());
+    ringpopRemote.membership.makeLocalAlive();
 
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), 1);
+    ringpop.membership.makeLocalAlive();
     ringpop.membership.makeAlive(ringpopRemote.whoami(), Date.now());
     ringpop.stateTransitions.scheduleSuspectToFaulty(ringpopRemote.hostPort);
 
@@ -173,20 +159,6 @@ test('admin leave stops state transitions', function t(assert) {
         assert.notok(ringpop.stateTransitions.enabled, 'state transitions is stopped');
         ringpop.destroy();
         ringpopRemote.destroy();
-        assert.end();
-    });
-});
-
-test('admin leave cannot be attempted before local member is added', function t(assert) {
-    assert.plan(2);
-
-    var ringpop = createRingpop();
-
-    var handleAdminLeave = createAdminLeaveHandler(ringpop);
-    handleAdminLeave(null, null, null, function(err) {
-        assert.ok(err, 'an error occurred');
-        assert.equals(err.type, 'ringpop.invalid-local-member', 'an invalid leave occurred');
-        ringpop.destroy();
         assert.end();
     });
 });
@@ -349,7 +321,7 @@ test('emits membership changed event', function t(assert) {
     var node1Addr = '127.0.0.1:3001';
 
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
+    ringpop.membership.makeLocalAlive();
     ringpop.membership.makeAlive(node1Addr, Date.now());
 
     assertChanged();
@@ -380,7 +352,7 @@ test('emits ring changed event', function t(assert) {
     var magicIncNo = incNo +  123456;
 
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), incNo);
+    ringpop.membership.makeLocalAlive();
     ringpop.membership.makeAlive(node1Addr, incNo);
 
     function assertChanged(changer, intent) {
@@ -467,7 +439,7 @@ testRingpop('max piggyback adjusted on new members', function t(deps, assert) {
 
 test('first time member, not alive', function t(assert) {
     var ringpop = createRingpop();
-    ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
+    ringpop.membership.makeLocalAlive();
 
     var faultyAddr = '127.0.0.1:3001';
     ringpop.membership.makeFaulty(faultyAddr, Date.now());
