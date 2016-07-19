@@ -391,3 +391,36 @@ testRingpop('decayer decays all damp scores', function t(deps, assert) {
         };
     }
 });
+
+testRingpop('update happens synchronously or not at all', function t(deps, assert) {
+    var membership = deps.membership;
+    var address = '127.0.0.1:3001';
+    var incarnationNumber = Date.now();
+
+    membership.update([{
+        address: address,
+        status: Member.Status.alive,
+        incarnationNumber: incarnationNumber
+    }]);
+
+    var emitted = false;
+    membership.on('updated', function onUpdated() {
+        emitted = true;
+    });
+
+    var update = {
+        address: address,
+        status: Member.Status.suspect,
+        incarnationNumber: incarnationNumber+1
+    };
+
+    var updates = membership.update(update);
+    assert.equal(updates.length, 1, 'update is applied');
+    assert.true(emitted, 'event is emitted');
+
+    // Reset and try the same (redundant) update again
+    emitted = false;
+    updates = membership.update(update);
+    assert.equal(updates.length, 0, 'update is not applied');
+    assert.false(emitted, 'event is not emitted');
+});
