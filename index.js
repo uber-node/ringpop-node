@@ -37,7 +37,7 @@ var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var farmhash = require('farmhash');
 var timers = require('timers');
-var hammock = require('uber-hammock');
+var hammock = require('hammock');
 var metrics = require('metrics');
 var packageJSON = require('./package.json');
 
@@ -120,7 +120,7 @@ function RingPop(options) {
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
-    this.maxReverseFullSyncJobs = options.maxReverseFullSyncJobs || 
+    this.maxReverseFullSyncJobs = options.maxReverseFullSyncJobs ||
         MAX_REVERSE_FULL_SYNC_JOBS;
 
     // Initialize Config before all other gossip, membership, forwarding,
