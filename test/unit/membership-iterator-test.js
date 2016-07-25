@@ -18,14 +18,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+var Member = require('../../lib/membership/member.js');
+
 var testRingpop = require('../lib/test-ringpop.js');
 
 testRingpop('iterates over two members correctly', function t(deps, assert) {
     var membership = deps.membership;
     var iterator = deps.iterator;
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
-    membership.makeAlive('127.0.0.1:3002', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
+    membership.makeChange('127.0.0.1:3002', Date.now(), Member.Status.alive);
 
     var iterated = {};
     iterated[iterator.next().address] = true;
@@ -38,9 +40,9 @@ testRingpop('iterates over three members correctly', function t(deps, assert) {
     var membership = deps.membership;
     var iterator = deps.iterator;
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
-    membership.makeAlive('127.0.0.1:3002', Date.now());
-    membership.makeAlive('127.0.0.1:3003', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
+    membership.makeChange('127.0.0.1:3002', Date.now(), Member.Status.alive);
+    membership.makeChange('127.0.0.1:3003', Date.now(), Member.Status.alive);
 
     var iterated = {};
     iterated[iterator.next().address] = true;
@@ -54,9 +56,9 @@ testRingpop('skips over faulty member and 1 local member', function t(deps, asse
     var membership = deps.membership;
     var iterator = deps.iterator;
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
     membership.makeFaulty('127.0.0.1:3002', Date.now());
-    membership.makeAlive('127.0.0.1:3003', Date.now());
+    membership.makeChange('127.0.0.1:3003', Date.now(), Member.Status.alive);
 
     var iterated = {};
     iterated[iterator.next().address] = true;

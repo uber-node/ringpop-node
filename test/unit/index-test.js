@@ -150,7 +150,7 @@ test('admin leave stops state transitions', function t(assert) {
 
     var ringpop = createRingpop();
     ringpop.membership.makeLocalAlive();
-    ringpop.membership.makeAlive(ringpopRemote.whoami(), Date.now());
+    ringpop.membership.makeChange(ringpopRemote.whoami(), Date.now(), Member.Status.alive);
     ringpop.stateTransitions.scheduleSuspectToFaulty(ringpopRemote.hostPort);
 
     var handleAdminLeave = createAdminLeaveHandler(ringpop);
@@ -322,7 +322,7 @@ test('emits membership changed event', function t(assert) {
 
     var ringpop = createRingpop();
     ringpop.membership.makeLocalAlive();
-    ringpop.membership.makeAlive(node1Addr, Date.now());
+    ringpop.membership.makeChange(node1Addr, Date.now(), Member.Status.alive);
 
     assertChanged();
 
@@ -353,7 +353,7 @@ test('emits ring changed event', function t(assert) {
 
     var ringpop = createRingpop();
     ringpop.membership.makeLocalAlive();
-    ringpop.membership.makeAlive(node1Addr, incNo);
+    ringpop.membership.makeChange(node1Addr, incNo, Member.Status.alive);
 
     function assertChanged(changer, intent) {
         ringpop.once('membershipChanged', function onMembershipChanged() {
@@ -377,7 +377,7 @@ test('emits ring changed event', function t(assert) {
     });
 
     assertChanged(function assertIt() {
-        ringpop.membership.makeAlive(node1Addr, magicIncNo);
+        ringpop.membership.makeChange(node1Addr, magicIncNo, Member.Status.alive);
     }, {
         adding: [node1Addr],
         removing: []
@@ -391,7 +391,7 @@ test('emits ring changed event', function t(assert) {
     });
 
     assertChanged(function assertIt() {
-        ringpop.membership.makeAlive(node2Addr, Date.now());
+        ringpop.membership.makeChange(node2Addr, Date.now(), Member.Status.alive);
     }, {
         adding: [node2Addr],
         removing: []
@@ -434,7 +434,7 @@ testRingpop('max piggyback adjusted on new members', function t(deps, assert) {
 
     var address = '127.0.0.1:3002';
     var incarnationNumber = Date.now();
-    membership.makeAlive(address, incarnationNumber);
+    membership.makeChange(address, incarnationNumber, Member.Status.alive);
 });
 
 test('first time member, not alive', function t(assert) {
