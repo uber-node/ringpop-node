@@ -384,7 +384,7 @@ test('emits ring changed event', function t(assert) {
     });
 
     assertChanged(function assertIt() {
-        ringpop.membership.makeLeave(node1Addr, magicIncNo);
+        ringpop.membership.makeChange(node1Addr, magicIncNo, Member.Status.leave);
     }, {
         adding: [],
         removing: [node1Addr]

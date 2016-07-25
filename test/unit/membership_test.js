@@ -155,10 +155,10 @@ testRingpop('leave does not cause neverending updates', function t(deps, assert)
     var updates = membership.makeChange(addr, incNo, Member.Status.alive);
     assert.equals(updates.length, 1, 'alive update applied');
 
-    updates = membership.makeLeave(addr, incNo);
+    updates = membership.makeChange(addr, incNo, Member.Status.leave);
     assert.equals(updates.length, 1, 'leave update applied');
 
-    updates = membership.makeLeave(addr, incNo);
+    updates = membership.makeChange(addr, incNo, Member.Status.leave);
     assert.equals(updates.length, 0, 'no leave update applied');
 });
 
