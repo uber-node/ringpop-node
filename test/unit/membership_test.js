@@ -191,6 +191,7 @@ testRingpop('cannot evict self', function t(deps, assert) {
 testRingpop('generate checksums string preserves order of members', function t(deps, assert) {
     var membership = deps.membership;
 
+    // Start with 1 to skip over the local (that's already alive) member.
     for (var i = 1; i < 100; i++) {
         membership.makeAlive('127.0.0.1:' + (3000 + i), Date.now());
     }
