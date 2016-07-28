@@ -188,7 +188,7 @@ test('DiscoverProviderHeal.heal - only attempt to heal faulty (or worse) nodes',
         hostPort: '127.0.0.1:3000',
         discoverProviderHealerMaxFailures: maxFailures
     });
-    ringpop.membership.makeLocalAlive(ringpop.whoami(), Date.now());
+    ringpop.membership.makeLocalAlive();
     ringpop.isReady = true;
 
     var statuses = _.values(Member.Status);
