@@ -20,8 +20,10 @@
 
 'use strict';
 
+var Membership = require('../../lib/membership');
 var Member = require('../../lib/membership/member.js');
 var testRingpop = require('../lib/test-ringpop.js');
+var _ = require ('underscore');
 
 testRingpop('checksum is changed when membership is updated', function t(deps, assert) {
     var membership = deps.membership;
@@ -208,6 +210,50 @@ testRingpop('generate checksums string preserves order of members', function t(d
 
     assert.deepEqual(membership.members, prevMembers, 'preserves order');
 });
+
+testRingpop('generate checksum string is consistent', function t(deps, assert) {
+    var membership = deps.membership;
+
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
+    membership.makeChange('127.0.0.1:3002', Date.now(), Member.Status.alive);
+    membership.makeChange('127.0.0.1:3003', Date.now(), Member.Status.alive);
+
+    var expectedChecksumString = _.chain(membership.members)
+        .sort(sortMembers)
+        .map(function(member) {return member.checksumString();})
+        .value()
+        .join(';');
+
+    // test 5 times to validate consistency
+    _.times(5, function test() {
+        membership.shuffle();
+        assert.equal(membership.generateChecksumString(), expectedChecksumString);
+    });
+
+    function sortMembers(a, b) {
+        if (a.address < b.address) {
+            return -1;
+        } else if (a.address > b.address) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+});
+
+testRingpop('generate checksum string excludes tombstones', function t(deps, assert) {
+    var membership = deps.membership;
+
+    var address = '127.0.0.1:3001';
+    membership.makeChange(address, Date.now(), Member.Status.alive);
+
+    assert.true(membership.generateChecksumString().indexOf(address)>-1, 'member is included when alive');
+
+    membership.makeTombstone(address, Date.now());
+    assert.false(membership.generateChecksumString().indexOf(address)>-1, 'member is included when alive');
+});
+
+
 
 testRingpop('sets previously stashed updates', function t(deps, assert) {
     var address = '127.0.0.1:3001';
@@ -412,7 +458,7 @@ testRingpop('update happens synchronously or not at all', function t(deps, asser
     var update = {
         address: address,
         status: Member.Status.suspect,
-        incarnationNumber: incarnationNumber+1
+        incarnationNumber: incarnationNumber + 1
     };
 
     var updates = membership.update(update);

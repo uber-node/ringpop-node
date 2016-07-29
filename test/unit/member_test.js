@@ -208,3 +208,14 @@ testRingpop('member ID is its address', function t(deps, assert) {
     });
     assert.equals(member.id, address, 'ID is address');
 });
+
+testRingpop('member.checksumString() is correct', function t(deps, assert) {
+    var address = '127.0.0.1:3000';
+    var member = new Member(deps.ringpop, {
+        address: address,
+        status : Member.Status.alive,
+        incarnationNumber: 1337
+    });
+
+    assert.equal(member.checksumString(), '127.0.0.1:3000alive1337');
+});
