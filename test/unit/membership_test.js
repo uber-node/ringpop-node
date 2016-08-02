@@ -29,7 +29,7 @@ testRingpop('checksum is changed when membership is updated', function t(deps, a
     membership.makeLocalAlive();
     var prevChecksum = membership.checksum;
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
 
     assert.doesNotEqual(membership.checksum, prevChecksum, 'checksum is changed');
 });
@@ -124,7 +124,7 @@ testRingpop('member is able to go from alive to faulty without going through sus
     var membership = deps.membership;
 
     var newMemberAddr = '127.0.0.1:3001';
-    membership.makeAlive(newMemberAddr, Date.now());
+    membership.makeChange(newMemberAddr, Date.now(), Member.Status.alive);
 
     var newMember = membership.findMemberByAddress(newMemberAddr);
     assert.equals(newMember.status, Member.Status.alive, 'member starts alive');
@@ -152,13 +152,13 @@ testRingpop('leave does not cause neverending updates', function t(deps, assert)
     var addr = '127.0.0.1:3001';
     var incNo = Date.now();
 
-    var updates = membership.makeAlive(addr, incNo);
+    var updates = membership.makeChange(addr, incNo, Member.Status.alive);
     assert.equals(updates.length, 1, 'alive update applied');
 
-    updates = membership.makeLeave(addr, incNo);
+    updates = membership.makeChange(addr, incNo, Member.Status.leave);
     assert.equals(updates.length, 1, 'leave update applied');
 
-    updates = membership.makeLeave(addr, incNo);
+    updates = membership.makeChange(addr, incNo, Member.Status.leave);
     assert.equals(updates.length, 0, 'no leave update applied');
 });
 
@@ -168,7 +168,7 @@ testRingpop('evict removes a member', function t(deps, assert) {
     var addr = '127.0.0.1:3001';
     var incNo = Date.now();
 
-    membership.makeAlive(addr, incNo);
+    membership.makeChange(addr, incNo, Member.Status.alive);
     assert.ok(membership.getMemberAt(1), 'alive applied');
     assert.ok(membership.findMemberByAddress(addr), 'alive applied');
 
@@ -193,7 +193,7 @@ testRingpop('generate checksums string preserves order of members', function t(d
 
     // Start with 1 to skip over the local (that's already alive) member.
     for (var i = 1; i < 100; i++) {
-        membership.makeAlive('127.0.0.1:' + (3000 + i), Date.now());
+        membership.makeChange('127.0.0.1:' + (3000 + i), Date.now(), Member.Status.alive);
     }
 
     // Make sure they're out of order
@@ -217,7 +217,7 @@ testRingpop('sets previously stashed updates', function t(deps, assert) {
     // Make sure updates are stashed -- make ringpop non-ready.
     ringpop.isReady = false;
 
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
     assert.notok(membership.findMemberByAddress(address), 'member is not found');
 
     membership.set();
@@ -238,7 +238,7 @@ testRingpop('set adds all members', function t(deps, assert) {
 
     // Stash all members
     addresses.forEach(function eachAddr(addr) {
-        membership.makeAlive(addr, Date.now());
+        membership.makeChange(addr, Date.now(), Member.Status.alive);
     });
 
     addresses.forEach(function eachAddr(addr) {
@@ -276,7 +276,7 @@ testRingpop('set emits an event', function t(deps, assert) {
         assert.pass('membership set');
     });
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
     membership.set();
 });
 
@@ -291,7 +291,7 @@ testRingpop('set computes a checksum once', function t(deps, assert) {
         assert.pass('checksum computed');
     });
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
     membership.set();
 });
 
@@ -308,7 +308,7 @@ testRingpop('set does not shuffle member positions', function t(deps, assert) {
         if (addr === ringpop.whoami()) {
             membership.makeLocalAlive();
         } else {
-            membership.makeAlive(addr, Date.now());
+            membership.makeChange(addr, Date.now(), Member.Status.alive);
         }
     });
 

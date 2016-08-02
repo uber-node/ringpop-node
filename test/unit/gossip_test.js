@@ -62,7 +62,7 @@ testRingpop('suspect period for member is started', function t(deps, assert) {
     var stateTransitions = deps.stateTransitions;
 
     var address = '127.0.0.1:3001';
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
 
     var member = membership.findMemberByAddress(address);
     stateTransitions.scheduleSuspectToFaulty(member);
@@ -87,7 +87,7 @@ testRingpop('suspect period cannot be started for local member', function t(deps
 testRingpop('starting the same state transition for a member is a noop', function t(deps, assert) {
     var membership = deps.membership;
     var address = '127.0.0.1:3001';
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
 
     var stateTransitions = deps.stateTransitions;
 
@@ -106,7 +106,7 @@ testRingpop('starting a new state transition for a member stops the previous one
 
     var membership = deps.membership;
     var address = '127.0.0.1:3001';
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
 
     var stateTransitions = deps.stateTransitions;
 
@@ -129,7 +129,7 @@ testRingpop('suspect period can\'t be started until enabled', function t(deps, a
     var stateTransitions = deps.stateTransitions;
 
     var address = '127.0.0.1:3001';
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
 
     stateTransitions.disable();
 
@@ -149,8 +149,8 @@ testRingpop('state transition stop all clears all timers', function t(deps, asse
     var addr2 = '127.0.0.1:3002';
 
     var membership = deps.membership;
-    membership.makeAlive(addr1, Date.now());
-    membership.makeAlive(addr2, Date.now());
+    membership.makeChange(addr1, Date.now(), Member.Status.alive);
+    membership.makeChange(addr2, Date.now(), Member.Status.alive);
 
     var remoteMember = membership.findMemberByAddress(addr1);
     var remoteMember2 = membership.findMemberByAddress(addr2);
@@ -185,7 +185,7 @@ testRingpop({
     var stateTransitions = deps.stateTransitions;
 
     var address = '127.0.0.1:3001';
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
 
     var member = membership.findMemberByAddress(address);
 
@@ -207,7 +207,7 @@ testRingpop({
     var stateTransitions = deps.stateTransitions;
 
     var address = '127.0.0.1:3001';
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
 
     var member = membership.findMemberByAddress(address);
 
@@ -229,7 +229,7 @@ testRingpop({
     var stateTransitions = deps.stateTransitions;
 
     var address = '127.0.0.1:3001';
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
 
     var member = membership.findMemberByAddress(address);
 
