@@ -197,7 +197,11 @@ test('DiscoverProviderHeal.heal - only attempt to heal faulty (or worse) nodes',
     for(var i=0; i<statuses.length; i++) {
         var address = '127.0.0.1:'+ (3100 +i);
         var status = statuses[i];
-        ringpop.membership.update(new Update(address, Date.now(), status));
+        ringpop.membership.update(new Update({
+            address: address,
+            incarnationNumber: Date.now(),
+            status: status
+        }));
         nodes[address] = {
             healAllowed: Member.statusPrecedence(status) >= Member.statusPrecedence(Member.Status.faulty),
             status: status
