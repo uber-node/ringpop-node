@@ -80,7 +80,7 @@ test('status precedence with unknown state never takes precedence', function t(a
     assert.end()
 });
 
-function testOtherOverride(currentState, expectedOverridingStatuses) {
+function testShouldProcessChange(currentState, expectedOverridingStatuses) {
     test('test other override (' + currentState + ')', function t(assert) {
         var ringpop = new Ringpop({app: 'test', hostPort: '127.0.0.1:3000'});
 
@@ -93,10 +93,10 @@ function testOtherOverride(currentState, expectedOverridingStatuses) {
 
         for (var i = 0; i < ALL_STATUSES.length; i++) {
             var status = ALL_STATUSES[i];
-            if(member._isOtherOverride({incarnationNumber: 1, status: status})){
+            if(Member.shouldProcessGossip(member, {incarnationNumber: 1, status: status})){
                 overridingStatuses.push(status);
             }
-            assert.true(member._isOtherOverride({incarnationNumber: 2, status: status}), 'newer incarnation always overrides');
+            assert.true(Member.shouldProcessGossip(member, {incarnationNumber: 2, status: status}), 'newer incarnation should always be processed');
         }
 
         assert.deepEqual(overridingStatuses.sort(), expectedOverridingStatuses.sort());
@@ -106,8 +106,8 @@ function testOtherOverride(currentState, expectedOverridingStatuses) {
     });
 }
 
-testOtherOverride('alive', ['suspect', 'faulty', 'leave', 'tombstone']);
-testOtherOverride('suspect', ['faulty', 'leave', 'tombstone']);
-testOtherOverride('faulty', ['leave', 'tombstone']);
-testOtherOverride('leave', ['tombstone']);
-testOtherOverride('tombstone', []);
+testShouldProcessChange('alive', ['suspect', 'faulty', 'leave', 'tombstone']);
+testShouldProcessChange('suspect', ['faulty', 'leave', 'tombstone']);
+testShouldProcessChange('faulty', ['leave', 'tombstone']);
+testShouldProcessChange('leave', ['tombstone']);
+testShouldProcessChange('tombstone', []);

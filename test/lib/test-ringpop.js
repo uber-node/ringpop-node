@@ -38,7 +38,7 @@ function testRingpop(opts, name, test) {
 
         ringpop.isReady = true;
 
-        ringpop.membership.makeAlive(ringpop.whoami(), Date.now());
+        ringpop.membership.makeLocalAlive();
 
         // These are made top-level dependencies as a mere
         // convenience to users of the test suite.

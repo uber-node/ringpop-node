@@ -25,6 +25,7 @@ var Damper = require('../../lib/gossip/damper.js');
 var DampReqRequest = require('../../request_response.js').DampReqRequest;
 var DampReqResponse = require('../../request_response.js').DampReqResponse;
 var makeTimersMock = require('../lib/timers-mock');
+var Member = require('../../lib/membership/member.js');
 var MemberDampScore = require('../../lib/membership/member_damp_score.js');
 var testRingpop = require('../lib/test-ringpop.js');
 var timers = require('timer-shim');
@@ -39,7 +40,7 @@ function setupMembership(deps, numMembers) {
     var members = [];
     for (var i = 0; i < numMembers; i++) {
         var member = memberGen();
-        membership.makeAlive(member.address, member.incarnationNumber);
+        membership.makeChange(member.address, member.incarnationNumber, Member.Status.alive);
         members.push(member);
     }
     return members;
@@ -238,7 +239,7 @@ testRingpop('damping member starts expiration', function t(deps, assert) {
     assert.false(damper.dampMember(member1.address), 'cannot damp member');
 
     var membership = deps.membership;
-    membership.makeAlive(member1.address, member1.incarnationNumber);
+    membership.makeChange(member1.address, member1.incarnationNumber, Member.Status.alive);
     assert.false(damper.dampMember(member1.address), 'cannot damp member');
 
     assert.false(damper.expirationTimer, 'expiration timer not started');
@@ -266,7 +267,7 @@ testRingpop('expires damped members', function t(deps, assert) {
     assert.false(damper.dampMember(member1.address), 'cannot damp member');
 
     var membership = deps.membership;
-    membership.makeAlive(member1.address, member1.incarnationNumber);
+    membership.makeChange(member1.address, member1.incarnationNumber, Member.Status.alive);
     assert.false(damper.dampMember(member1.address), 'member is not damped');
 
     damper.addFlapper(member1);

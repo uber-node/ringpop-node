@@ -26,28 +26,12 @@ var testRingpop = require('../lib/test-ringpop.js');
 testRingpop('checksum is changed when membership is updated', function t(deps, assert) {
     var membership = deps.membership;
 
-    membership.makeAlive('127.0.0.1:3000', Date.now());
+    membership.makeLocalAlive();
     var prevChecksum = membership.checksum;
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
 
     assert.doesNotEqual(membership.checksum, prevChecksum, 'checksum is changed');
-});
-
-testRingpop('change with higher incarnation number results in leave override', function t(deps, assert) {
-    var ringpop = deps.ringpop;
-    var membership = deps.membership;
-
-    var member = membership.findMemberByAddress(ringpop.whoami());
-    assert.equals(member.status, Member.Status.alive, 'member starts alive');
-
-    membership.update([{
-        address: ringpop.whoami(),
-        status: Member.Status.leave,
-        incarnationNumber: member.incarnationNumber + 1
-    }]);
-
-    assert.equals(member.status, Member.Status.leave, 'results in leave');
 });
 
 testRingpop('change that overrides the local status should be overwritten to a change that reincarnates the node', function t(deps, assert) {
@@ -100,20 +84,21 @@ testRingpop('change that does not override the local status should not cause a r
     assert.doesNotEqual(member.status, Member.Status.suspect, 'the status of the member should not transistion to suspect');
 });
 
-testRingpop('change with same incarnation number does not result in leave override', function t(deps, assert) {
+testRingpop('change with same incarnation number does not result in leave override (reincarnates)', function t(deps, assert) {
     var ringpop = deps.ringpop;
     var membership = deps.membership;
 
     var member = membership.findMemberByAddress(ringpop.whoami());
     assert.equals(member.status, Member.Status.alive, 'member starts alive');
 
-    membership.update([{
+    var applied = membership.update([{
         address: ringpop.whoami(),
-        status: Member.Status.Leave,
+        status: Member.Status.leave,
         incarnationNumber: member.incarnationNumber
     }]);
 
     assert.equals(member.status, Member.Status.alive, 'results in no leave');
+    assert.equals(applied.length, 1, 'change applied');
 });
 
 testRingpop('change with lower incarnation number does not result in leave override', function t(deps, assert) {
@@ -123,20 +108,23 @@ testRingpop('change with lower incarnation number does not result in leave overr
     var member = membership.findMemberByAddress(ringpop.whoami());
     assert.equals(member.status, Member.Status.alive, 'member starts alive');
 
-    membership.update([{
+    var incarnationNumber = member.incarnationNumber;
+    var applied = membership.update([{
         address: ringpop.whoami(),
-        status: Member.Status.Leave,
+        status: Member.Status.leave,
         incarnationNumber: member.incarnationNumber - 1
     }]);
 
     assert.equals(member.status, Member.Status.alive, 'results in no leave');
+    assert.equals(member.incarnationNumber, incarnationNumber, 'incarnation number did not change');
+    assert.equals(applied.length, 0, 'no changes applied');
 });
 
 testRingpop('member is able to go from alive to faulty without going through suspect', function t(deps, assert) {
     var membership = deps.membership;
 
     var newMemberAddr = '127.0.0.1:3001';
-    membership.makeAlive(newMemberAddr, Date.now());
+    membership.makeChange(newMemberAddr, Date.now(), Member.Status.alive);
 
     var newMember = membership.findMemberByAddress(newMemberAddr);
     assert.equals(newMember.status, Member.Status.alive, 'member starts alive');
@@ -164,13 +152,13 @@ testRingpop('leave does not cause neverending updates', function t(deps, assert)
     var addr = '127.0.0.1:3001';
     var incNo = Date.now();
 
-    var updates = membership.makeAlive(addr, incNo);
+    var updates = membership.makeChange(addr, incNo, Member.Status.alive);
     assert.equals(updates.length, 1, 'alive update applied');
 
-    updates = membership.makeLeave(addr, incNo);
+    updates = membership.makeChange(addr, incNo, Member.Status.leave);
     assert.equals(updates.length, 1, 'leave update applied');
 
-    updates = membership.makeLeave(addr, incNo);
+    updates = membership.makeChange(addr, incNo, Member.Status.leave);
     assert.equals(updates.length, 0, 'no leave update applied');
 });
 
@@ -180,7 +168,7 @@ testRingpop('evict removes a member', function t(deps, assert) {
     var addr = '127.0.0.1:3001';
     var incNo = Date.now();
 
-    membership.makeAlive(addr, incNo);
+    membership.makeChange(addr, incNo, Member.Status.alive);
     assert.ok(membership.getMemberAt(1), 'alive applied');
     assert.ok(membership.findMemberByAddress(addr), 'alive applied');
 
@@ -193,9 +181,8 @@ testRingpop('cannot evict self', function t(deps, assert) {
     var membership = deps.membership;
 
     var localAddr = '127.0.0.1:3000';
-    var incNo = Date.now();
 
-    membership.makeAlive(localAddr, incNo);
+    membership.makeLocalAlive();
     membership.evict(localAddr);
     assert.ok(membership.getMemberAt(0), 'evict not applied');
     assert.ok(membership.findMemberByAddress(localAddr), 'evict not applied');
@@ -204,8 +191,9 @@ testRingpop('cannot evict self', function t(deps, assert) {
 testRingpop('generate checksums string preserves order of members', function t(deps, assert) {
     var membership = deps.membership;
 
-    for (var i = 0; i < 100; i++) {
-        membership.makeAlive('127.0.0.1:' + (3000 + i), Date.now());
+    // Start with 1 to skip over the local (that's already alive) member.
+    for (var i = 1; i < 100; i++) {
+        membership.makeChange('127.0.0.1:' + (3000 + i), Date.now(), Member.Status.alive);
     }
 
     // Make sure they're out of order
@@ -229,7 +217,7 @@ testRingpop('sets previously stashed updates', function t(deps, assert) {
     // Make sure updates are stashed -- make ringpop non-ready.
     ringpop.isReady = false;
 
-    membership.makeAlive(address, Date.now());
+    membership.makeChange(address, Date.now(), Member.Status.alive);
     assert.notok(membership.findMemberByAddress(address), 'member is not found');
 
     membership.set();
@@ -250,7 +238,7 @@ testRingpop('set adds all members', function t(deps, assert) {
 
     // Stash all members
     addresses.forEach(function eachAddr(addr) {
-        membership.makeAlive(addr, Date.now());
+        membership.makeChange(addr, Date.now(), Member.Status.alive);
     });
 
     addresses.forEach(function eachAddr(addr) {
@@ -288,7 +276,7 @@ testRingpop('set emits an event', function t(deps, assert) {
         assert.pass('membership set');
     });
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
     membership.set();
 });
 
@@ -303,7 +291,7 @@ testRingpop('set computes a checksum once', function t(deps, assert) {
         assert.pass('checksum computed');
     });
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
     membership.set();
 });
 
@@ -317,7 +305,11 @@ testRingpop('set does not shuffle member positions', function t(deps, assert) {
 
     // Stash all members
     addresses.forEach(function eachAddr(addr) {
-        membership.makeAlive(addr, Date.now());
+        if (addr === ringpop.whoami()) {
+            membership.makeLocalAlive();
+        } else {
+            membership.makeChange(addr, Date.now(), Member.Status.alive);
+        }
     });
 
     membership.set();
@@ -399,4 +391,37 @@ testRingpop('decayer decays all damp scores', function t(deps, assert) {
             }
         };
     }
+});
+
+testRingpop('update happens synchronously or not at all', function t(deps, assert) {
+    var membership = deps.membership;
+    var address = '127.0.0.1:3001';
+    var incarnationNumber = Date.now();
+
+    membership.update([{
+        address: address,
+        status: Member.Status.alive,
+        incarnationNumber: incarnationNumber
+    }]);
+
+    var emitted = false;
+    membership.on('updated', function onUpdated() {
+        emitted = true;
+    });
+
+    var update = {
+        address: address,
+        status: Member.Status.suspect,
+        incarnationNumber: incarnationNumber+1
+    };
+
+    var updates = membership.update(update);
+    assert.equal(updates.length, 1, 'update is applied');
+    assert.true(emitted, 'event is emitted');
+
+    // Reset and try the same (redundant) update again
+    emitted = false;
+    updates = membership.update(update);
+    assert.equal(updates.length, 0, 'update is not applied');
+    assert.false(emitted, 'event is not emitted');
 });

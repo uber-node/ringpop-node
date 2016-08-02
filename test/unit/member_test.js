@@ -44,7 +44,7 @@ testRingpop('damp score intialized', function t(deps, assert) {
 testRingpop('penalized for update', function t(deps, assert) {
     var membership = deps.membership;
     var member2 = addSecondMember(membership, '127.0.0.1:3001');
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 1
     });
@@ -64,11 +64,11 @@ testRingpop('flaps until exceeds suppress limit', function t(deps, assert) {
     var membership = deps.membership;
     var member2 = addSecondMember(membership, '127.0.0.1:3001');
     member2.on('memberSuppressLimitExceeded', onExceeded);
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 1
     });
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.faulty,
         incarnationNumber: Date.now() + 2
     });
@@ -88,7 +88,7 @@ testRingpop('damp score never exceeds max', function t(deps, assert) {
 
     var membership = deps.membership;
     var member2 = addSecondMember(membership, '127.0.0.1:3001');
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 1
     });
@@ -105,7 +105,7 @@ testRingpop('penalized in penalty increments', function t(deps, assert) {
     var member2 = addSecondMember(membership, '127.0.0.1:3001');
 
     // First penalty
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 1
     });
@@ -113,7 +113,7 @@ testRingpop('penalized in penalty increments', function t(deps, assert) {
         'damp score is penalty');
 
     // Second
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 2
     });
@@ -121,7 +121,7 @@ testRingpop('penalized in penalty increments', function t(deps, assert) {
         'damp score is multiple of penalty');
 
     // Third
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 3
     });
@@ -143,7 +143,7 @@ function decayBy(member, term) {
 testRingpop('decays by some arbitrary amount', function t(deps, assert) {
     var membership = deps.membership;
     var member2 = addSecondMember(membership, '127.0.0.1:3001');
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 1
     });
@@ -158,7 +158,7 @@ testRingpop('decays by some arbitrary amount', function t(deps, assert) {
 testRingpop('decayed by half', function t(deps, assert) {
     var membership = deps.membership;
     var member2 = addSecondMember(membership, '127.0.0.1:3001');
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 1
     });
@@ -179,7 +179,7 @@ testRingpop('never decays below min', function t(deps, assert) {
 
     var membership = deps.membership;
     var member2 = addSecondMember(membership, '127.0.0.1:3001');
-    member2.evaluateUpdate({
+    member2.applyUpdate({
         status: Member.Status.suspect,
         incarnationNumber: Date.now() + 1
     });
@@ -187,7 +187,7 @@ testRingpop('never decays below min', function t(deps, assert) {
     // Penalize until max reached
     var i = 1;
     while (member2.dampScore < config.get('dampScoringMax')) {
-        member2.evaluateUpdate({
+        member2.applyUpdate({
             status: Member.Status.suspect,
             incarnationNumber: Date.now() + i
         });
@@ -207,33 +207,4 @@ testRingpop('member ID is its address', function t(deps, assert) {
         address: address
     });
     assert.equals(member.id, address, 'ID is address');
-});
-
-testRingpop('update happens synchronously or not at all', function t(deps, assert) {
-    var address = '127.0.0.1:3001';
-    var incarnationNumber = Date.now();
-    var member = new Member(deps.ringpop, {
-        address: address,
-        incarnationNumber: incarnationNumber,
-        status: Member.Status.alive
-    });
-    var emitted = false;
-    member.on('updated', function onUpdated() {
-        emitted = true;
-    });
-    makeUpdate();
-    assert.true(emitted, 'event is emitted');
-
-    // Reset and try the same (redundant) update again
-    emitted = false;
-    makeUpdate();
-    assert.false(emitted, 'event is not emitted');
-
-    function makeUpdate() {
-        member.evaluateUpdate({
-            address: address,
-            status: Member.Status.suspect,
-            incarnationNumber: incarnationNumber + 1
-        });
-    }
 });
