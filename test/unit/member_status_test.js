@@ -93,10 +93,10 @@ function testShouldProcessChange(currentState, expectedOverridingStatuses) {
 
         for (var i = 0; i < ALL_STATUSES.length; i++) {
             var status = ALL_STATUSES[i];
-            if(Member.shouldProcessChange(member, {incarnationNumber: 1, status: status})){
+            if(Member.shouldProcessGossip(member, {incarnationNumber: 1, status: status})){
                 overridingStatuses.push(status);
             }
-            assert.true(Member.shouldProcessChange(member, {incarnationNumber: 2, status: status}), 'newer incarnation should always be processed');
+            assert.true(Member.shouldProcessGossip(member, {incarnationNumber: 2, status: status}), 'newer incarnation should always be processed');
         }
 
         assert.deepEqual(overridingStatuses.sort(), expectedOverridingStatuses.sort());
