@@ -23,6 +23,7 @@
 var _ = require('underscore');
 var after = require('after');
 var createDampReqHandler = require('../../../../server/protocol/damp_req.js');
+var Member = require('../../../../lib/membership/member.js');
 var fixtures = require('../../../fixtures.js');
 var testRingpop = require('../../../lib/test-ringpop.js');
 
@@ -64,8 +65,10 @@ testRingpop('responds with damp scores', function t(deps, assert) {
         return genMember();
     });
     members.forEach(function each(member) {
-        ringpop.membership.makeAlive(member.address,
-            member.incarnationNumber);
+        ringpop.membership.makeChange(
+            member.address,
+            member.incarnationNumber,
+            Member.Status.alive);
     });
 
     // Clear changes from the dissemination component to

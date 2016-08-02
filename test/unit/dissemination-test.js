@@ -20,6 +20,8 @@
 
 'use strict';
 
+var Member = require('../../lib/membership/member.js');
+
 var testRingpop = require('../lib/test-ringpop');
 var mock = require('../mock');
 
@@ -27,8 +29,8 @@ testRingpop('member ship as changes includes all members', function t(deps, asse
     var membership = deps.membership;
     var dissemination = deps.dissemination;
 
-    membership.makeAlive('127.0.0.1:3001', Date.now());
-    membership.makeAlive('127.0.0.1:3002', Date.now());
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
+    membership.makeChange('127.0.0.1:3002', Date.now(), Member.Status.alive);
 
     var membershipAsChanges = dissemination.membershipAsChanges();
     var addrs = membershipAsChanges.map(function mapMember(member) {
@@ -58,7 +60,7 @@ testRingpop('avoids redundant dissemination by filtering changes from source', f
     // recorded during bootstrap phase would have been issued.
     dissemination.clearChanges();
 
-    membership.makeAlive(addrAlive, incNo);
+    membership.makeChange(addrAlive, incNo, Member.Status.alive);
     membership.makeSuspect(addrSuspect, incNo);
     membership.makeFaulty(addrFaulty, incNo);
 
@@ -87,7 +89,7 @@ testRingpop('raise piggyback counter on issueAsReceiver', function t(deps, asser
     // recorded during bootstrap phase would have been issued.
     dissemination.clearChanges();
 
-    membership.makeAlive(addrAlive, incNo);
+    membership.makeChange(addrAlive, incNo, Member.Status.alive);
     membership.makeSuspect(addrSuspect, incNo);
     membership.makeFaulty(addrFaulty, incNo);
 
@@ -120,7 +122,7 @@ testRingpop('raise piggyback counter on issueAsSender', function t(deps, assert)
     // recorded during bootstrap phase would have been issued.
     dissemination.clearChanges();
 
-    membership.makeAlive(addrAlive, incNo);
+    membership.makeChange(addrAlive, incNo, Member.Status.alive);
     membership.makeSuspect(addrSuspect, incNo);
     membership.makeFaulty(addrFaulty, incNo);
 
@@ -166,7 +168,7 @@ testRingpop('tombstone has priority vs other states', function t(deps, assert) {
     // recorded during bootstrap phase would have been issued.
     dissemination.clearChanges();
 
-    membership.makeAlive(addrAlive, incNo);
+    membership.makeChange(addrAlive, incNo, Member.Status.alive);
     membership.makeSuspect(addrSuspect, incNo);
     membership.makeFaulty(addrFaulty, incNo);
     membership.makeTombstone(addrAlive, incNo);
