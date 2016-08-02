@@ -1,11 +1,19 @@
 language: node_js
 node_js:
   - "0.10"
+  - "4.4.7"
 before_install: npm i npm@latest -g
 
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+
 env:
-  - RUN="npm run travis"
-  - RUN="npm run test-shared-integration-tests"
+  - CXX=g++-4.8 RUN="npm run travis"
+  - CXX=g++-4.8 RUN="npm run test-shared-integration-tests"
 
 matrix:
   fast_finish: true
