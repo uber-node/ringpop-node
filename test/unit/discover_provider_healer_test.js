@@ -27,7 +27,7 @@ var DiscoverProviderHealer = require('../../lib/partition_healing/discover_provi
 var Healer = require('../../lib/partition_healing/healer');
 var Ringpop = require('../../index');
 var Member = require('../../lib/membership/member');
-var Update = require('../../lib/membership/update').Update;
+var Update = require('../../lib/membership/update');
 
 /**
  * Small util function to generate a number of fake hosts.
