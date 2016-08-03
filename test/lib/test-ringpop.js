@@ -23,22 +23,48 @@
 var Ringpop = require('../../index.js');
 var tape = require('tape');
 
-function testRingpop(opts, name, test) {
+/**
+ * @callback testRingpopCallback
+ * @param {object} deps top-level dependencies made available for convenience.
+ * @param {tape.Test} assert The assert
+ * @param {testRingpopCleanupCallback} [cleanup] The callback to call when done. Only available on async tests.
+ */
+
+/**
+ * @callback testRingpopCleanupCallback
+ */
+
+/**
+ * A util function to test ringpop.
+ * @param {object} opts the options
+ * @param {string} [opts.app=test] The app-name passed into ringpop.
+ * @param {boolean} [opts.async] start a async test. An async test will not clean-up itself automatically. The callback should call the clean-up argument when done.
+ * @param {string} [opts.hostPort=127.0.01:3000] the hostPort passed into ringpop
+ * @param {boolean} [opts.makeAlive=true] configure if ringpop should be made alive and ready or not.
+ * @param {tape.Test} [opts.test] when used as a sub-test, pass in the parent test. When not given, create a new root-level test.
+ * @param {string} name the name of the (sub) test
+ * @param cb
+ */
+function testRingpop(opts, name, cb) {
     if (typeof opts === 'string' && typeof name === 'function') {
-        test = name;
+        cb = name;
         name = opts;
         opts = {};
     }
 
-    tape(name, function onTest(assert) {
+    var test = opts.test || tape;
+    test(name, function onTest(assert) {
         var ringpop = new Ringpop({
             app: opts.app || 'test',
             hostPort: opts.hostPort || '127.0.0.1:3000'
         });
 
-        ringpop.isReady = true;
+        // default to true when not defined
+        if (opts.makeAlive !== false) {
+            ringpop.isReady = true;
 
-        ringpop.membership.makeLocalAlive();
+            ringpop.membership.makeLocalAlive();
+        }
 
         // These are made top-level dependencies as a mere
         // convenience to users of the test suite.
@@ -58,9 +84,9 @@ function testRingpop(opts, name, test) {
         };
 
         if (opts.async) {
-            test(deps, assert, cleanup);
+            cb(deps, assert, cleanup);
         } else {
-            test(deps, assert);
+            cb(deps, assert);
             cleanup();
         }
 
