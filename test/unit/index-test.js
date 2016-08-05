@@ -481,3 +481,39 @@ test('suspicionTimeout backward compatibility', function t(assert) {
     ringpop.destroy();
     assert.end();
 });
+
+test('registerSelfEvictHook registers hook in self evicter', function t(assert) {
+    var ringpop = createRingpop();
+
+    var hookFixture = {};
+
+    ringpop.selfEvicter= {
+        registerHooks: function(hook) {
+            assert.pass('registerHooks called');
+            assert.equal(hook, hookFixture);
+        }
+    };
+    assert.plan(2);
+    ringpop.registerSelfEvictHook(hookFixture);
+
+    ringpop.destroy();
+    assert.end();
+});
+
+test('selfEvict initiates self evict sequence', function t(assert) {
+    var ringpop = createRingpop();
+
+    var cbFixture = function(){};
+
+    ringpop.selfEvicter= {
+        initiate: function(cb) {
+            assert.pass('initiate');
+            assert.equal(cb, cbFixture);
+        }
+    };
+    assert.plan(2);
+    ringpop.selfEvict(cbFixture);
+
+    ringpop.destroy();
+    assert.end();
+});

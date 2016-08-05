@@ -68,6 +68,7 @@ var RingpopClient = require('./client.js');
 var RingpopServer = require('./server');
 var validateHostPort = require('./lib/util').validateHostPort;
 var sendJoin = require('./lib/gossip/joiner.js').joinCluster;
+var SelfEvict = require('./lib/self-evict');
 var TracerStore = require('./lib/trace/store.js');
 var middleware = require('./lib/middleware');
 var DiscoverProviderHealer = require('./lib/partition_healing').DiscoverProviderHealer;
@@ -208,6 +209,8 @@ function RingPop(options) {
     this.ringpopVersion = packageJSON.version;
 
     this.healer = new DiscoverProviderHealer(this);
+
+    this.selfEvicter = new SelfEvict(this);
 }
 
 require('util').inherits(RingPop, EventEmitter);
@@ -703,6 +706,14 @@ RingPop.prototype.handleOrProxyAll =
             }
         }
     };
+
+RingPop.prototype.registerSelfEvictHook = function registerSelfEvictHook(hook) {
+    this.selfEvicter.registerHooks(hook);
+};
+
+RingPop.prototype.selfEvict = function selfEvict(cb) {
+    this.selfEvicter.initiate(cb);
+};
 
 // This function is defined for testing purposes only.
 RingPop.prototype.allowJoins = function allowJoins() {
