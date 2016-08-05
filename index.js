@@ -208,12 +208,7 @@ function RingPop(options) {
 
     this.healer = new DiscoverProviderHealer(this);
 
-    /**
-     * Provide Self Eviction
-     * @public
-     * @type {SelfEvict}
-     */
-    this.selfEvict = new SelfEvict(this);
+    this.selfEvicter = new SelfEvict(this);
 }
 
 require('util').inherits(RingPop, EventEmitter);
@@ -702,6 +697,14 @@ RingPop.prototype.handleOrProxyAll =
             }
         }
     };
+
+RingPop.prototype.registerSelfEvictHook = function registerSelfEvictHook(hook) {
+    this.selfEvicter.registerHooks(hook);
+};
+
+RingPop.prototype.selfEvict = function selfEvict(cb) {
+    this.selfEvicter.initiate(cb);
+};
 
 // This function is defined for testing purposes only.
 RingPop.prototype.allowJoins = function allowJoins() {

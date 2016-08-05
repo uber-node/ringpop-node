@@ -54,7 +54,7 @@ test('register hooks', function t(assert) {
         hostPort: '127.0.0.1:3000'
     });
 
-    var selfEvict = ringpop.selfEvict;
+    var selfEvict = ringpop.selfEvicter;
 
     var testTable = [
         [null, {type: 'ringpop.argument-required', argument: 'hooks'}],
