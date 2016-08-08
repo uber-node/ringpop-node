@@ -58,8 +58,16 @@ test('register hooks', function t(assert) {
 
     var testTable = [
         [null, {type: 'ringpop.argument-required', argument: 'hooks'}],
-        [{}, {type: 'ringpop.field-required', field: 'name', argument: 'hooks'}],
-        [{name:'test'}, {type: 'ringpop.method-required', argument: 'hooks', method: 'preEvict and/or postEvict'}]
+        [{}, {
+            type: 'ringpop.field-required',
+            field: 'name',
+            argument: 'hooks'
+        }],
+        [{name: 'test'}, {
+            type: 'ringpop.method-required',
+            argument: 'hooks',
+            method: 'preEvict and/or postEvict'
+        }]
     ];
 
     // assert all the errors
@@ -74,8 +82,10 @@ test('register hooks', function t(assert) {
 
     var hooks = {
         name: 'test',
-        preEvict: function preEvict() {},
-        postEvict: function postEvict() {}
+        preEvict: function preEvict() {
+        },
+        postEvict: function postEvict() {
+        }
     };
 
     assert.doesNotThrow(selfEvict.registerHooks.bind(selfEvict, hooks));
@@ -137,7 +147,7 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
 
     selfEvict.registerHooks({
         name: 'onlyPreEvictHook',
-        preEvict: function(cb){
+        preEvict: function(cb) {
             assert.pass('onlyPreEvictHook.preEvict called');
             cb();
         }
@@ -145,7 +155,7 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
 
     selfEvict.registerHooks({
         name: 'onlyPostEvictHook',
-        postEvict: function(cb){
+        postEvict: function(cb) {
             assert.pass('onlyPostEvictHook.postEvict called');
             cb();
         }
@@ -153,12 +163,12 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
 
     selfEvict.registerHooks({
         name: 'bothHook',
-        preEvict: function(cb){
+        preEvict: function(cb) {
             assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PreEvict);
             assert.pass('bothHook.preEvict called');
             cb();
         },
-        postEvict: function(cb){
+        postEvict: function(cb) {
             assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PostEvict);
             assert.pass('bothHook.postEvict called');
             cb();
@@ -166,6 +176,76 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
     });
 
     selfEvict.initiate(cleanup);
+});
+
+testRingpop({async: true}, 'self evict ticks membership to speed up gossip', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+    ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
+
+    assert.plan(1);
+
+    ringpop.gossip.tick = function tick(cb) {
+        assert.ok('gossip ticked!');
+        cb();
+    };
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(cleanup);
+});
+
+testRingpop({async: true}, 'self evict does not ticks membership when "selfEvictionPingEnabled" is disabled', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+    ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
+    ringpop.config.set('selfEvictionPingEnabled', false);
+
+    ringpop.gossip.tick = function tick(cb) {
+        assert.fail('gossip should not tick!');
+        cb();
+    };
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(cleanup);
+});
+
+testRingpop({async: true}, 'self evict stops and restarts gossip and waits until not pinging', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+    var gossip = ringpop.gossip;
+    var membership = ringpop.membership;
+
+    gossip.stop = wrapOnceWithAssertion(gossip, gossip.stop, function(){
+        assert.pass('gossip stopped');
+    });
+
+    gossip.start = wrapOnceWithAssertion(gossip, gossip.start, function(){
+        assert.pass('gossip restarted');
+    });
+
+    gossip.isPinging = true;
+    gossip.isStopped = false;
+
+    membership.setLocalStatus = wrapOnceWithAssertion(membership, membership.setLocalStatus, function() {
+        assert.equal(gossip.isPinging, false);
+        assert.equal(gossip.isStopped, true);
+    });
+
+    assert.plan(4);
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(cleanup);
+
+    setTimeout(function(){
+        gossip.isPinging = false;
+    }, 10);
+
+
+    function wrapOnceWithAssertion(self, func, assertion) {
+        var invoked = false;
+
+        return function(){
+            if(!invoked) {
+                assertion.apply(self, arguments);
+                invoked = true;
+            }
+            func.apply(self, arguments);
+        }
+    }
 });
 
 testRingpop({async: true}, 'initiate multiple times returns error', function t(deps, assert, cleanup) {
