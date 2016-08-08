@@ -192,7 +192,7 @@ testRingpop({async: true}, 'self evict ticks membership to speed up gossip', fun
     selfEvict.initiate(cleanup);
 });
 
-testRingpop({async: true}, 'self evict does not ticks membership when "selfEvictionPingEnabled" is disabled', function t(deps, assert, cleanup) {
+testRingpop({async: true}, 'self evict does not tick membership when "selfEvictionPingEnabled" is disabled', function t(deps, assert, cleanup) {
     var ringpop = deps.ringpop;
     ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
     ringpop.config.set('selfEvictionPingEnabled', false);
