@@ -224,11 +224,41 @@ testRingpop({async: true}, 'self evict ping count is correct', function t(deps, 
         }
     };
     var selfEvict = new SelfEvict(ringpop);
-    selfEvict.initiate(function afterEvict(){
-        var evictingPhase= _.findWhere(selfEvict.phases, {phase:SelfEvict.PhaseNames.Evicting});
+    selfEvict.initiate(function afterEvict() {
+        var evictingPhase = _.findWhere(selfEvict.phases, {phase: SelfEvict.PhaseNames.Evicting});
 
         assert.equal(evictingPhase.numberOfPings, 2, 'number of pings is correct');
-        assert.equal(evictingPhase.numberOfSuccessfullPings, 1, 'successfull pings is correct');
+        assert.equal(evictingPhase.numberOfSuccessfulPings, 1, 'successful pings is correct');
+
+        cleanup();
+    });
+});
+
+testRingpop({async: true}, 'self evict does not ping more than number of members', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+    ringpop.config.set('selfEvictionMaxPingRatio', 2.0); //set above 1 on purpose
+
+    ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
+    ringpop.membership.makeChange('127.0.0.1:30003', Date.now(), Member.Status.alive);
+
+    assert.plan(3);
+
+    var numberOfPings = 0;
+    ringpop.client = {
+        protocolPing: function(opts, body, cb) {
+            numberOfPings++;
+            cb(null, {changes: []});
+        },
+        destroy: function noop() {
+        }
+    };
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(function afterEvict() {
+        var evictingPhase = _.findWhere(selfEvict.phases, {phase: SelfEvict.PhaseNames.Evicting});
+
+        assert.equal(evictingPhase.numberOfPings, 2, 'number of pings is correct');
+        assert.equal(evictingPhase.numberOfSuccessfulPings, 2, 'successful pings is correct');
+        assert.equal(numberOfPings, 2, 'does not ping more than number of members');
 
         cleanup();
     });
