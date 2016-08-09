@@ -92,13 +92,18 @@ function main(args) {
 
     ringpop.setupChannel();
 
-    var shuttingDown = false;
-    process.on('SIGTERM', signalHandler);
-    process.on('SIGINT', signalHandler);
+    process.once('SIGTERM', signalHandler(false));
+    process.once('SIGINT', signalHandler(true));
 
-    function signalHandler() {
-        if (!shuttingDown) {
-            shuttingDown = true;
+    function signalHandler(interactive) {
+        return function() {
+            if (interactive) {
+                console.error('triggered graceful shutdown. Press Ctrl+C again to force exit.');
+                process.on('SIGINT', function forceExit() {
+                    console.error('Force exiting...');
+                    process.exit(1);
+                });
+            }
             ringpop.selfEvict(function afterSelfEvict(err) {
                 if (err) {
                     console.error('Failure during selfEvict: ' + err);
@@ -107,9 +112,7 @@ function main(args) {
                 }
                 process.exit(0);
             });
-        } else {
-            process.exit(1);
-        }
+        };
     }
 
     var listenParts = listen.split(':');
