@@ -167,7 +167,7 @@ test('DiscoverProviderHeal.heal - max failures', function t(assert) {
     var healAttempts = 0;
     discoverProviderHealer.attemptHeal = function mockedAttemptHeal(target, cb) {
         healAttempts += 1;
-        assert.ok(healAttempts<= maxFailures, 'exceeded maximum failures');
+        assert.ok(healAttempts <= maxFailures, 'exceeded maximum failures');
         cb('error');
     };
 
@@ -194,8 +194,8 @@ test('DiscoverProviderHeal.heal - only attempt to heal faulty (or worse) nodes',
     var statuses = _.values(Member.Status);
 
     var nodes = {};
-    for(var i=0; i<statuses.length; i++) {
-        var address = '127.0.0.1:'+ (3100 +i);
+    for (var i = 0; i < statuses.length; i++) {
+        var address = '127.0.0.1:' + (3100 + i);
         var status = statuses[i];
         ringpop.membership.update(new Update({
             address: address,
@@ -214,7 +214,7 @@ test('DiscoverProviderHeal.heal - only attempt to heal faulty (or worse) nodes',
     };
 
     discoverProviderHealer.attemptHeal = function mockedAttemptHeal(target, cb) {
-        assert.ok(nodes[target].healAllowed, 'heal allowed for '+nodes[target].status);
+        assert.ok(nodes[target].healAllowed, 'heal allowed for ' + nodes[target].status);
         cb(null, [target]);
     };
 
@@ -222,6 +222,39 @@ test('DiscoverProviderHeal.heal - only attempt to heal faulty (or worse) nodes',
 
     function onHeal(err) {
         assert.notok(err, 'no error');
+        assert.end();
+        ringpop.destroy();
+    }
+});
+
+test('DiscoverProviderHeal.heal - never attempt to heal on self', function t(assert) {
+    var maxFailures = 2;
+    var ringpop = new Ringpop({
+        app: 'ringpop',
+        hostPort: '127.0.0.1:3000',
+        discoverProviderHealerMaxFailures: maxFailures
+    });
+    ringpop.membership.makeLocalAlive();
+    ringpop.isReady = true;
+
+    var discoverProviderHealer = new DiscoverProviderHealer(ringpop);
+    ringpop.discoverProvider = function mockedDiscoverProvider(cb) {
+        cb(null, ['127.0.0.1:3000']);
+    };
+
+    discoverProviderHealer.attemptHeal = function mockedAttemptHeal(target, cb) {
+        assert.fail('attempt heal on self is not allowed!');
+        cb(null, [target]);
+    };
+
+    // make self faulty
+    ringpop.membership.setLocalStatus(Member.Status.faulty);
+
+    discoverProviderHealer.heal(onHeal);
+
+    function onHeal(err, targets) {
+        assert.notok(err, 'no error');
+        assert.deepEqual(targets, []);
         assert.end();
         ringpop.destroy();
     }
@@ -239,25 +272,25 @@ test('DiscoverProviderHealer - timers', function t(assert) {
     });
 
     var discoverProviderHealer = ringpop.healer;
-    discoverProviderHealer.heal = function mockedHeal(cb){
+    discoverProviderHealer.heal = function mockedHeal(cb) {
         assert.fail('heal called without start');
         cb(null);
     };
 
-    timers.advance(periodTime+1);
+    timers.advance(periodTime + 1);
 
-    discoverProviderHealer.heal = function mockedHeal(cb){
+    discoverProviderHealer.heal = function mockedHeal(cb) {
         assert.pass('heal called after start');
         cb(null);
     };
     discoverProviderHealer.start();
-    timers.advance(periodTime+1);
+    timers.advance(periodTime + 1);
 
     discoverProviderHealer.stop();
-    discoverProviderHealer.heal = function mockedHeal(){
+    discoverProviderHealer.heal = function mockedHeal() {
         assert.fail('heal called after stop');
     };
-    timers.advance(periodTime+1);
+    timers.advance(periodTime + 1);
 
     discoverProviderHealer._run();
 
@@ -272,7 +305,7 @@ test('DiscoverProviderHealer - starts on ready', function t(assert) {
     });
 
     var discoverProviderHealer = ringpop.healer;
-    discoverProviderHealer.start = function mockedStart(){
+    discoverProviderHealer.start = function mockedStart() {
         assert.pass('started!');
     };
 
