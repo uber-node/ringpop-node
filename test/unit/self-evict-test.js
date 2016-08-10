@@ -133,7 +133,7 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
     var ringpop = deps.ringpop;
     var selfEvict = new SelfEvict(ringpop);
 
-    assert.plan(6);
+    assert.plan(10);
 
     selfEvict.registerHooks({
         name: 'onlyPreEvictHook',
@@ -154,16 +154,36 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
     selfEvict.registerHooks({
         name: 'bothHook',
         preEvict: function(cb){
-            assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PreEvict);
             assert.pass('bothHook.preEvict called');
             cb();
         },
         postEvict: function(cb){
-            assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PostEvict);
             assert.pass('bothHook.postEvict called');
             cb();
         }
     });
+
+    var ExampleHook = function ExampleHook(name){
+        this.name = name;
+
+        var self = this;
+        this.preEvict = function preEvict(cb){
+            assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PreEvict);
+            assert.pass('exampleHook.preEvict called');
+            assert.equal(this, self, 'context is correct');
+            cb();
+        };
+
+        this.postEvict = function(cb){
+            assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PostEvict);
+            assert.pass('exampleHook.postEvict called');
+            assert.equal(this, self, 'context is correct');
+
+            cb();
+        };
+    };
+
+    selfEvict.registerHooks(new ExampleHook('InstanceExample'));
 
     selfEvict.initiate(cleanup);
 });
