@@ -198,7 +198,23 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
     selfEvict.initiate(cleanup);
 });
 
-testRingpop({async: true}, 'self evict ping members to speed up gossip', function t(deps, assert, cleanup) {
+testRingpop({async: true}, 'self evict completes when membership is empty', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(function afterSelfEvict(err){
+        assert.notOk(err);
+
+        var evictingPhase = _.findWhere(selfEvict.phases, {phase: SelfEvict.PhaseNames.Evicting});
+
+        assert.equal(evictingPhase.numberOfPings, 0, 'number of pings is correct');
+        assert.equal(evictingPhase.numberOfSuccessfulPings, 0, 'successful pings is correct');
+
+        cleanup();
+    });
+});
+
+testRingpop({async: true}, 'self evict pings members to speed up gossip', function t(deps, assert, cleanup) {
     var ringpop = deps.ringpop;
     ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
 
