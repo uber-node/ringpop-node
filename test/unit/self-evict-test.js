@@ -198,7 +198,7 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
     selfEvict.initiate(cleanup);
 });
 
-testRingpop({async: true}, 'self evict ticks membership to speed up gossip', function t(deps, assert, cleanup) {
+testRingpop({async: true}, 'self evict ping members to speed up gossip', function t(deps, assert, cleanup) {
     var ringpop = deps.ringpop;
     ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
 
