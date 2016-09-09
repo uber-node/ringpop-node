@@ -82,6 +82,7 @@ function main(args) {
             trace: false
         }),
         isCrossPlatform: true,
+        useLatestHash32: false,
         stateTimeouts: {
             suspect: program.suspectPeriod,
             faulty: program.faultyPeriod,
