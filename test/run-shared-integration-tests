@@ -6,7 +6,7 @@ set -eo pipefail
 
 declare project_root="${0%/*}/.."
 declare ringpop_common_dir="${0%/*}/ringpop-common"
-declare ringpop_common_branch="menno/node-4-compat"
+declare ringpop_common_branch="master"
 declare tap_filter="${ringpop_common_dir}/test/tap-filter"
 
 declare test_cluster_sizes="1 2 3 4 5 10"
