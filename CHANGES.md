@@ -1,9 +1,17 @@
 ringpop-node release notes
 ==========================
 
-Future
+10.16.0
 -------
+* Support node4 [#304](https://github.com/uber/ringpop-node/pull/304)
+* Emit stats for LookupN comparable to Lookup [#283](https://github.com/uber/ringpop-node/pull/283)
+* Make JSON discovery provider non-blocking [#277](https://github.com/uber/ringpop-node/pull/277)
+* Optimize reincarnation for faster convergence [#284](https://github.com/uber/ringpop-node/pull/284) [#282](https://github.com/uber/ringpop-node/pull/282)
+* Refactored internal representation of member state for more flexible reincarnation and state change of a member [#291](https://github.com/uber/ringpop-node/pull/291) [#292](https://github.com/uber/ringpop-node/pull/292) [#293](https://github.com/uber/ringpop-node/pull/293) [#294](https://github.com/uber/ringpop-node/pull/294) [#296](https://github.com/uber/ringpop-node/pull/296)
 * Remove tick-cluster.js, the version from ringpop-common should be used [#278](https://github.com/uber/ringpop-node/pull/278)
+* Emit stats from testpop for test validation purposes [#271](https://github.com/uber/ringpop-node/pull/271)
+* Make state transition timers configurable in testpop [#280](https://github.com/uber/ringpop-node/pull/280)
+* Remove unused tests [#286](https://github.com/uber/ringpop-node/pull/286)
 
 10.15.0
 -------
