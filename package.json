@@ -35,11 +35,11 @@
   "dependencies": {
     "body": "^5.0.0",
     "error": "^5.0.0",
-    "farmhash": "^0.2.0",
+    "farmhash": "^1.2.0",
     "metrics": "^0.1.8",
     "node-uuid": "^1.4.3",
-    "toobusy": "^0.2.4",
-    "uber-hammock": "^1.0.0",
+    "toobusy-js": "^0.5.0",
+    "hammock": "^1.1.0",
     "underscore": "^1.5.2"
   },
   "devDependencies": {
