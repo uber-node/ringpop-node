@@ -37,7 +37,7 @@ var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var farmhash = require('farmhash');
 var timers = require('timers');
-var hammock = require('uber-hammock');
+var hammock = require('hammock');
 var metrics = require('metrics');
 var packageJSON = require('./package.json');
 

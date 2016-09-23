@@ -33,10 +33,10 @@
     "body": "^5.0.0",
     "error": "^5.0.0",
     "farmhash": "^0.2.0",
+    "hammock": "^1.1.1",
     "metrics": "^0.1.8",
     "node-uuid": "^1.4.3",
     "toobusy": "^0.2.4",
-    "uber-hammock": "^1.0.0",
     "underscore": "^1.5.2"
   },
   "devDependencies": {
