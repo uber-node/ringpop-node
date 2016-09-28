@@ -36,7 +36,7 @@
     "body": "^5.0.0",
     "error": "^5.0.0",
     "farmhash": "^1.2.0",
-    "hammock": "^1.1.1",
+    "hammock": "^2.0.1",
     "metrics": "^0.1.8",
     "node-uuid": "^1.4.3",
     "toobusy-js": "^0.5.0",

@@ -715,7 +715,11 @@ test('reroutes retry to remote', function t(assert) {
             retrySchedule: [1]
         }, function onRequest(err, res) {
             assert.ifError(err, 'no error occurs');
-            assert.equal(res.body.toString(), 'rerouted', 'response from rerouted request is correct');
+            assert.equal(
+                res.body.toString('hex'),
+                new Buffer('rerouted').toString('hex'),
+                'response from rerouted request is correct'
+            );
 
             cluster.destroy();
             assert.end();
@@ -896,7 +900,10 @@ test('can serialize response body', function t(assert) {
             assert.ifError(err);
 
             assert.equal(resp.statusCode, 200);
-            assert.equal(resp.body.toString(), 'hello');
+            assert.equal(
+                resp.body.toString('hex'),
+                new Buffer('hello').toString('hex')
+            );
 
             cluster.destroy();
             assert.end();
