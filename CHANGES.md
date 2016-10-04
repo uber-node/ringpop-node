@@ -1,6 +1,10 @@
 ringpop-node release notes
 ==========================
 
+10.16.1
+-------
+* Performance improvements in forwarding path by upgrading hammock [#306](https://github.com/uber/ringpop-node/pull/306)
+
 10.16.0
 -------
 * Support node4 [#304](https://github.com/uber/ringpop-node/pull/304)
