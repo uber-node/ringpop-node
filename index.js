@@ -694,6 +694,13 @@ RingPop.prototype.handleOrProxyAll =
                 keys: keysByDest[dest]
             });
             if ((--pending === 0 || err) && cb) {
+                for (var i = 0; i < responses.length; i++) {
+                    var r = responses[i];
+                    if (Buffer.isBuffer(r.body)) {
+                        r.body = r.body.toString('utf8');
+                    }
+                }
+
                 cb(err, responses);
                 cb = null;
             }
