@@ -37,7 +37,7 @@ var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var farmhash = require('farmhash');
 var timers = require('timers');
-var hammock = require('uber-hammock');
+var hammock = require('hammock');
 var metrics = require('metrics');
 var packageJSON = require('./package.json');
 
@@ -121,7 +121,7 @@ function RingPop(options) {
     this.proxyReqTimeout = options.proxyReqTimeout || 30000;
     this.membershipUpdateFlushInterval = options.membershipUpdateFlushInterval ||
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
-    this.maxReverseFullSyncJobs = options.maxReverseFullSyncJobs || 
+    this.maxReverseFullSyncJobs = options.maxReverseFullSyncJobs ||
         MAX_REVERSE_FULL_SYNC_JOBS;
 
     // Initialize Config before all other gossip, membership, forwarding,
@@ -134,8 +134,10 @@ function RingPop(options) {
     // use fingerprint if ringpop needs to function cross different platforms
     if (this.config.get('isCrossPlatform')) {
         this.hashFunc = farmhash.fingerprint32;
-    } else {
+    } else if (this.config.get('useLatestHash32')) {
         this.hashFunc = farmhash.hash32;
+    } else {
+        this.hashFunc = farmhash.hash32v1;
     }
 
     this.lagSampler = new LagSampler({
@@ -692,6 +694,13 @@ RingPop.prototype.handleOrProxyAll =
                 keys: keysByDest[dest]
             });
             if ((--pending === 0 || err) && cb) {
+                for (var i = 0; i < responses.length; i++) {
+                    var r = responses[i];
+                    if (Buffer.isBuffer(r.body)) {
+                        r.body = r.body.toString('utf8');
+                    }
+                }
+
                 cb(err, responses);
                 cb = null;
             }

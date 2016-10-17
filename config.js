@@ -84,6 +84,7 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('autoGossip', true);
 
     seedOrDefault('isCrossPlatform', false);
+    seedOrDefault('useLatestHash32', false);
     seedOrDefault('dampedErrorLoggingEnabled', false);
     seedOrDefault('dampedMaxPercentage', 10);
     seedOrDefault('dampedMemberExpirationInterval', 60000);
