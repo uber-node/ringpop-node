@@ -67,6 +67,16 @@ test('register hooks', function t(assert) {
             type: 'ringpop.method-required',
             argument: 'hooks',
             method: 'preEvict and/or postEvict'
+        }],
+        [{name: 'test', preEvict: 'non-function'}, {
+            type: 'ringpop.invalid-option',
+            option: 'preEvict',
+            reason: 'it is not a function'
+        }],
+        [{name: 'test', postEvict: 'non-function'}, {
+            type: 'ringpop.invalid-option',
+            option: 'postEvict',
+            reason: 'it is not a function'
         }]
     ];
 
