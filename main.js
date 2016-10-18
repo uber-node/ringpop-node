@@ -31,7 +31,7 @@ function main(args) {
         .version(require('./package.json').version)
 
         .usage('[options]')
-        
+
         .option('-l, --listen <listen>',
             'Host and port on which server listens (also node\'s identity in cluster)')
 
@@ -92,6 +92,29 @@ function main(args) {
     });
 
     ringpop.setupChannel();
+
+    process.once('SIGTERM', signalHandler(false));
+    process.once('SIGINT', signalHandler(true));
+
+    function signalHandler(interactive) {
+        return function() {
+            if (interactive) {
+                console.error('triggered graceful shutdown. Press Ctrl+C again to force exit.');
+                process.on('SIGINT', function forceExit() {
+                    console.error('Force exiting...');
+                    process.exit(1);
+                });
+            }
+            ringpop.selfEvict(function afterSelfEvict(err) {
+                if (err) {
+                    console.error('Failure during selfEvict: ' + err);
+                    process.exit(1);
+                    return;
+                }
+                process.exit(0);
+            });
+        };
+    }
 
     var listenParts = listen.split(':');
     var port = Number(listenParts[1]);
