@@ -145,6 +145,12 @@ Config.prototype._seed = function _seed(seed) {
     // Enable the period healer.
     seedOrDefault('discoverProviderHealerPeriodicEnabled', true);
 
+    // Self Eviction config
+    // Enable pinging
+    seedOrDefault('selfEvictionPingEnabled', true);
+    // Ping a maximum ratio of the pingable members on self eviction
+    seedOrDefault('selfEvictionMaxPingRatio', 0.4);
+
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];
         if (typeof seedVal === 'undefined') {
