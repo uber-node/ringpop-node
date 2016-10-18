@@ -67,6 +67,16 @@ test('register hooks', function t(assert) {
             type: 'ringpop.method-required',
             argument: 'hooks',
             method: 'preEvict and/or postEvict'
+        }],
+        [{name: 'test', preEvict: 'non-function'}, {
+            type: 'ringpop.invalid-option',
+            option: 'preEvict',
+            reason: 'it is not a function'
+        }],
+        [{name: 'test', postEvict: 'non-function'}, {
+            type: 'ringpop.invalid-option',
+            option: 'postEvict',
+            reason: 'it is not a function'
         }]
     ];
 
@@ -173,6 +183,7 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
         }
     });
 
+    var exampleHook;
     var ExampleHook = function ExampleHook(name){
         this.name = name;
 
@@ -183,17 +194,24 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
             assert.equal(this, self, 'context is correct');
             cb();
         };
-
-        this.postEvict = function(cb){
-            assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PostEvict);
-            assert.pass('exampleHook.postEvict called');
-            assert.equal(this, self, 'context is correct');
-
-            cb();
-        };
+    };
+    ExampleHook.prototype.preEvict = function preEvict(cb){
+        assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PreEvict);
+        assert.pass('exampleHook.preEvict called');
+        assert.equal(this, exampleHook, 'context is correct');
+        cb();
     };
 
-    selfEvict.registerHooks(new ExampleHook('InstanceExample'));
+    ExampleHook.prototype.postEvict = function postEvict(cb){
+        assert.equal(selfEvict.currentPhase().phase, SelfEvict.PhaseNames.PostEvict);
+        assert.pass('exampleHook.postEvict called');
+        assert.equal(this, exampleHook, 'context is correct');
+
+        cb();
+    };
+
+    exampleHook = new ExampleHook('InstanceExample');
+    selfEvict.registerHooks(exampleHook);
 
     selfEvict.initiate(cleanup);
 });
