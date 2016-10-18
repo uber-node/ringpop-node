@@ -148,7 +148,7 @@ Config.prototype._seed = function _seed(seed) {
     // Self Eviction config
     // Enable pinging
     seedOrDefault('selfEvictionPingEnabled', true);
-    // Ping a maximum of 40% of the pingable members on self eviction
+    // Ping a maximum ratio of the pingable members on self eviction
     seedOrDefault('selfEvictionMaxPingRatio', 0.4);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
