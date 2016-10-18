@@ -58,8 +58,16 @@ test('register hooks', function t(assert) {
 
     var testTable = [
         [null, {type: 'ringpop.argument-required', argument: 'hooks'}],
-        [{}, {type: 'ringpop.field-required', field: 'name', argument: 'hooks'}],
-        [{name:'test'}, {type: 'ringpop.method-required', argument: 'hooks', method: 'preEvict and/or postEvict'}]
+        [{}, {
+            type: 'ringpop.field-required',
+            field: 'name',
+            argument: 'hooks'
+        }],
+        [{name: 'test'}, {
+            type: 'ringpop.method-required',
+            argument: 'hooks',
+            method: 'preEvict and/or postEvict'
+        }]
     ];
 
     // assert all the errors
@@ -74,8 +82,10 @@ test('register hooks', function t(assert) {
 
     var hooks = {
         name: 'test',
-        preEvict: function preEvict() {},
-        postEvict: function postEvict() {}
+        preEvict: function preEvict() {
+        },
+        postEvict: function postEvict() {
+        }
     };
 
     assert.doesNotThrow(selfEvict.registerHooks.bind(selfEvict, hooks));
@@ -137,7 +147,7 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
 
     selfEvict.registerHooks({
         name: 'onlyPreEvictHook',
-        preEvict: function(cb){
+        preEvict: function(cb) {
             assert.pass('onlyPreEvictHook.preEvict called');
             cb();
         }
@@ -145,7 +155,7 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
 
     selfEvict.registerHooks({
         name: 'onlyPostEvictHook',
-        postEvict: function(cb){
+        postEvict: function(cb) {
             assert.pass('onlyPostEvictHook.postEvict called');
             cb();
         }
@@ -185,6 +195,126 @@ testRingpop({async: true}, 'self evict sequence invokes hooks', function t(deps,
 
     selfEvict.registerHooks(new ExampleHook('InstanceExample'));
 
+    selfEvict.initiate(cleanup);
+});
+
+testRingpop({async: true}, 'self evict completes when membership is empty', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(function afterSelfEvict(err){
+        assert.notOk(err);
+
+        var evictingPhase = _.findWhere(selfEvict.phases, {phase: SelfEvict.PhaseNames.Evicting});
+
+        assert.equal(evictingPhase.numberOfPings, 0, 'number of pings is correct');
+        assert.equal(evictingPhase.numberOfSuccessfulPings, 0, 'successful pings is correct');
+
+        cleanup();
+    });
+});
+
+testRingpop({async: true}, 'self evict pings members to speed up gossip', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+    ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
+
+    assert.plan(1);
+
+    ringpop.client = {
+        protocolPing: function(opts, body, cb) {
+            assert.ok('gossip ticked!');
+            cb(null, {});
+        },
+        destroy: function noop() {
+        }
+    };
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(cleanup);
+});
+
+testRingpop({async: true}, 'self evict ping count is correct', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+    ringpop.config.set('selfEvictionMaxPingRatio', 1.0);
+
+    ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
+    ringpop.membership.makeChange('127.0.0.1:30003', Date.now(), Member.Status.alive);
+    ringpop.membership.makeChange('127.0.0.1:30004', Date.now(), Member.Status.faulty);
+
+    assert.plan(4);
+
+    ringpop.client = {
+        protocolPing: function(opts, body, cb) {
+            var target = opts.host;
+            if (target === '127.0.0.1:30002') {
+                assert.ok('127.0.0.1:30002 is pinged!');
+                cb(null, {changes: []});
+            } else if (target === '127.0.0.1:30003') {
+                assert.ok('127.0.0.1:30003 is pinged!');
+                cb('error', null);
+            } else {
+                assert.fail('incorrect target');
+                cb(null, {changes: []});
+            }
+        },
+        destroy: function noop() {
+        }
+    };
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(function afterEvict() {
+        var evictingPhase = _.findWhere(selfEvict.phases, {phase: SelfEvict.PhaseNames.Evicting});
+
+        assert.equal(evictingPhase.numberOfPings, 2, 'number of pings is correct');
+        assert.equal(evictingPhase.numberOfSuccessfulPings, 1, 'successful pings is correct');
+
+        cleanup();
+    });
+});
+
+testRingpop({async: true}, 'self evict does not ping more than number of members', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+    ringpop.config.set('selfEvictionMaxPingRatio', 2.0); //set above 1 on purpose
+
+    ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
+    ringpop.membership.makeChange('127.0.0.1:30003', Date.now(), Member.Status.alive);
+
+    assert.plan(3);
+
+    var numberOfPings = 0;
+    ringpop.client = {
+        protocolPing: function(opts, body, cb) {
+            numberOfPings++;
+            cb(null, {changes: []});
+        },
+        destroy: function noop() {
+        }
+    };
+    var selfEvict = new SelfEvict(ringpop);
+    selfEvict.initiate(function afterEvict() {
+        var evictingPhase = _.findWhere(selfEvict.phases, {phase: SelfEvict.PhaseNames.Evicting});
+
+        assert.equal(evictingPhase.numberOfPings, 2, 'number of pings is correct');
+        assert.equal(evictingPhase.numberOfSuccessfulPings, 2, 'successful pings is correct');
+        assert.equal(numberOfPings, 2, 'does not ping more than number of members');
+
+        cleanup();
+    });
+});
+
+testRingpop({async: true}, 'self evict does not tick membership when "selfEvictionPingEnabled" is disabled', function t(deps, assert, cleanup) {
+    var ringpop = deps.ringpop;
+    ringpop.membership.makeChange('127.0.0.1:30002', Date.now(), Member.Status.alive);
+    ringpop.config.set('selfEvictionPingEnabled', false);
+
+    ringpop.client = {
+        protocolPing: function(opts, body, cb) {
+            assert.fail('gossip should not tick!');
+            cb(null, {});
+        },
+        destroy: function noop() {
+        }
+    };
+
+    var selfEvict = new SelfEvict(ringpop);
     selfEvict.initiate(cleanup);
 });
 
