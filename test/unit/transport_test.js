@@ -85,3 +85,16 @@ test('res2 is not JSON encoded if string', function t(assert) {
         assert.equals(res2, 'string');
     });
 });
+
+test('buffer-res2 is not JSON encoded if string', function t(assert) {
+    assert.plan(3);
+    var req = {};
+    var error = null;
+    var res1 = null;
+    var res2 = new Buffer('string');
+    transportMiddleware.response(req, error, res1, res2, function(err, res1, res2) {
+        assert.equals(err, null);
+        assert.equals(res1, null);
+        assert.deepEquals(res2, new Buffer('string'));
+    });
+});

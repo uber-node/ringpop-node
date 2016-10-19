@@ -911,6 +911,31 @@ test('can serialize response body', function t(assert) {
     });
 });
 
+test('proxies buffer responses', function t(assert) {
+    var cluster = allocCluster({
+        createHandler: function createHandler() {
+            return function handle(req, res) {
+                res.end(new Buffer('hello'));
+            };
+        }
+    }, function onReady() {
+        cluster.request({
+            host: 'one', key: cluster.keys.two
+        }, function onResponse(err, resp) {
+            assert.ifError(err);
+
+            assert.equal(resp.statusCode, 200);
+            assert.equal(
+                resp.body.toString('hex'),
+                new Buffer('hello').toString('hex')
+            );
+
+            cluster.destroy();
+            assert.end();
+        });
+    });
+});
+
 // new features
 test('can handle errors differently');
 test('adds forwarding header');
