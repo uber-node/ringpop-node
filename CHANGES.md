@@ -3,7 +3,7 @@ ringpop-node release notes
 
 10.16.2
 -------
-* Fix a bug in the serialization of forwarded requests when data is a `Buffer` [#308](https://github.com/uber/ringpop-node/pull/306)
+* Fix a bug in the serialization of forwarded requests when data is a `Buffer` [#308](https://github.com/uber/ringpop-node/pull/308)
 
 10.16.1
 -------
