@@ -32,10 +32,13 @@ function createRingpop() {
     });
 }
 
-function createRequestProxy() {
-    return new RequestProxy({
-        ringpop: createRingpop()
-    });
+function createRequestProxy(opts) {
+    opts = opts || {};
+
+    if (!opts.ringpop) {
+        opts.ringpop = createRingpop();
+    }
+    return new RequestProxy(opts);
 }
 
 test('request proxy sends custom ringpop metadata in head', function t(assert) {
@@ -112,5 +115,197 @@ test('request proxy passes down skipLookupOnRetry correctly', function t(assert)
         dest: dest,
         res: {},
         skipLookupOnRetry: true
+    });
+});
+
+test('request proxy consistency defaults', function t(assert) {
+    var proxy = createRequestProxy();
+    assert.equal(proxy.enforceConsistency, true);
+    assert.equal(proxy.enforceKeyConsistency, false);
+
+    proxy.ringpop.destroy();
+    assert.end();
+});
+
+test('request proxy - ring consistency: enabled', function t(assert) {
+    assert.plan(2);
+
+    assert.test('returns error on invalid checksum', function st(assert) {
+        assert.plan(5);
+
+        var proxy = createRequestProxy({enforceConsistency: true});
+        var ringpop = proxy.ringpop;
+
+        ringpop.on('requestProxy.checksumsDiffer', function() {
+            assert.pass('requestProxy.checksumsDiffer emitted');
+        });
+        var headExpected = {
+            ringpopChecksum: ringpop.membership.checksum + 1,
+            ringpopKeys: ['KEY0']
+        };
+
+        proxy.ringpop.on('request', function onRequest() {
+            assert.fail('request should be dropped')
+        });
+        proxy.handleRequest(headExpected, null, function requestHandled(err, head, body) {
+            assert.notok(head, 'head should be null');
+            assert.notok(body, 'body should be null');
+
+            assert.notEqual(err, null);
+            assert.equal(err.type, 'ringpop.request-proxy.invalid-checksum');
+
+            ringpop.destroy();
+            assert.end();
+        });
+    });
+
+    assert.test('handles on valid checksum', function st(assert) {
+        assert.plan(6);
+
+        var proxy = createRequestProxy({enforceConsistency: true});
+        var ringpop = proxy.ringpop;
+        var headExpected = {
+            ringpopChecksum: ringpop.membership.checksum,
+            ringpopKeys: ['KEY0']
+        };
+
+        var respBody = {test: 'done'};
+
+        ringpop.on('requestProxy.checksumsDiffer', function() {
+            assert.fail('requestProxy.checksumsDiffer emitted');
+        });
+
+        ringpop.on('request', function(req, res, head) {
+            assert.ok(req, 'req exists');
+            assert.ok(res, 'res exists');
+            assert.equals(head, headExpected, 'head is emitted');
+
+            res.end(respBody);
+        });
+
+        proxy.handleRequest(headExpected, null, function requestHandled(err, head, body) {
+            assert.notok(err);
+            assert.ok(head);
+            assert.equal(body, respBody);
+
+            ringpop.destroy();
+            assert.end();
+        });
+    });
+});
+
+test('request proxy - handles request with invalid checksum and ring consistency disabled', function t(assert) {
+    assert.plan(7);
+
+    var proxy = createRequestProxy({enforceConsistency: false});
+    var ringpop = proxy.ringpop;
+    var headExpected = {
+        ringpopChecksum: ringpop.membership.checksum + 1,
+        ringpopKeys: ['KEY0']
+    };
+
+    var respBody = {test: 'done'};
+
+    ringpop.on('requestProxy.checksumsDiffer', function() {
+        assert.pass('requestProxy.checksumsDiffer emitted');
+    });
+
+    ringpop.on('request', function(req, res, head) {
+        assert.ok(req, 'req exists');
+        assert.ok(res, 'res exists');
+        assert.equals(head, headExpected, 'head is emitted');
+
+        res.end(respBody);
+    });
+
+    proxy.handleRequest(headExpected, null, function requestHandled(err, head, body) {
+        assert.notok(err);
+        assert.ok(head);
+        assert.equal(body, respBody);
+
+        ringpop.destroy();
+        assert.end();
+    });
+});
+
+test('request proxy - key consistency - returns error when key not owned by node', function t(assert) {
+    assert.plan(5);
+
+    var proxy = createRequestProxy({
+        enforceConsistency: false,
+        enforceKeyConsistency: true
+    });
+    var ringpop = proxy.ringpop;
+
+    // force lookup to a different node
+    ringpop.lookup = function() {
+        return 'not me';
+    };
+
+    var headExpected = {
+        ringpopChecksum: ringpop.membership.checksum + 1,
+        ringpopKeys: ['KEY0']
+    };
+
+    ringpop.on('requestProxy.keysDiffer', function() {
+        assert.pass('requestProxy.keysDiffer emitted');
+    });
+
+    ringpop.on('request', function(req, res, head) {
+        assert.fail('request should not be handled');
+    });
+
+    proxy.handleRequest(headExpected, null, function requestHandled(err, head, body) {
+        assert.notok(head, 'head should be null');
+        assert.notok(body, 'body should be null');
+
+        assert.notEqual(err, null);
+        assert.equal(err.type, 'ringpop.request-proxy.invalid-key');
+
+        ringpop.destroy();
+        assert.end();
+    });
+});
+
+test('request proxy - key consistency - emit stat once', function t(assert) {
+    assert.plan(5);
+
+    var proxy = createRequestProxy({
+        enforceConsistency: false,
+        enforceKeyConsistency: false
+    });
+    var ringpop = proxy.ringpop;
+
+    // force lookup to a different node
+    ringpop.lookup = function() {
+        return 'not me';
+    };
+
+    var headExpected = {
+        ringpopChecksum: ringpop.membership.checksum + 1,
+        ringpopKeys: ['KEY0', 'KEY1']
+    };
+
+    ringpop.once('requestProxy.keysDiffer', function() {
+        assert.pass('requestProxy.keysDiffer emitted first time');
+
+        // fail next time:
+        ringpop.on('requestProxy.keysDiffer', function(){
+            assert.fail('requestProxy.keysDiffer emitted again');
+        });
+    });
+
+    ringpop.on('request', function(req, res, head) {
+        assert.pass('request handled');
+        res.end('done');
+    });
+
+    proxy.handleRequest(headExpected, null, function requestHandled(err, head, body) {
+        assert.notok(err);
+        assert.ok(head);
+        assert.equal(body, 'done');
+
+        ringpop.destroy();
+        assert.end();
     });
 });
