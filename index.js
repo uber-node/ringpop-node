@@ -148,7 +148,8 @@ function RingPop(options) {
         ringpop: this,
         maxRetries: options.requestProxyMaxRetries,
         retrySchedule: options.requestProxyRetrySchedule,
-        enforceConsistency: options.enforceConsistency
+        enforceConsistency: options.enforceConsistency,
+        enforceKeyConsistency: options.enforceKeyConsistency
     });
 
     this.ring = new this.Ring({
