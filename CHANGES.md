@@ -1,6 +1,30 @@
 ringpop-node release notes
 ==========================
+10.17.0
+-------
+* Feature: Self eviction. [#299](https://github.com/uber/ringpop-node/pull/299), [#300](https://github.com/uber/ringpop-node/pull/300), [#301](https://github.com/uber/ringpop-node/pull/301), [#302](https://github.com/uber/ringpop-node/pull/302), [#307](https://github.com/uber/ringpop-node/pull/307)
+* Feature: Key consistent forwarding [#310](https://github.com/uber/ringpop-node/pull/310)
 
+### Release notes
+
+* **Self eviction**
+
+    If a member disappears, it will become a suspect for a period (defaults to 5 seconds) before it's marked as faulty and removed from the ring.
+    
+    In the case of an expected shutdown this causes a time window where a member is still considered part of the ring but not responding to (forwarded) requests anymore; causing unnecessary impact on SLA's.  
+    
+    By exposing a `selfEvict`-function, ringpop allows a member to update its own state to faulty and gossip this update around as part of a graceful shutdown.  
+    
+* **Key consistent forwarding**
+   
+    When a forwarded request is received, the default setting is that ringpop compares the full ring checksum of the receiving and sending member to confirm consistency. 
+   
+    "Key consistent forwarding" adds support for a looser consistency check; instead of comparing the checksum, ringpop only double-checks if the receiving member really owns the key(s) of the forwarded request. 
+   
+    The idea behind this approach is that if the two members agree that the receiving member is the owner, it doesn't really matter if other parts of the hash ring are not in sync. 
+   
+    Note: the default behaviour _did not_ change! Key consistent forwarding can be enabled by disabling `enforceConsistency` and enabling `enforceKeyConsistency` when initializing ringpop.
+   
 10.16.2
 -------
 * Fix a bug in the serialization of forwarded requests when data is a `Buffer` [#308](https://github.com/uber/ringpop-node/pull/308)
