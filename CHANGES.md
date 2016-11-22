@@ -11,17 +11,17 @@ ringpop-node release notes
 
     If a member disappears, it will become a suspect for a period (defaults to 5 seconds) before it's marked as faulty and removed from the ring.
     
-    In the case of an expected shutdown this causes a time window where a member is still considered part of the ring but not responding to (forwarded) requests anymore; causing unnecessary impact on SLA's.  
+    In the case of an expected shutdown, this causes a time window where a member is still considered part of the ring but not responding to (forwarded) requests anymore; causing unnecessary impact on SLA's.  
     
     By exposing a `selfEvict`-function, ringpop allows a member to update its own state to faulty and gossip this update around as part of a graceful shutdown.  
     
 * **Key consistent forwarding**
    
-    When a forwarded request is received, the default setting is that ringpop compares the full ring checksum of the receiving and sending member to confirm consistency. 
+    When receiving a forwarded request from another member, the full ring checksum of sender and receiver will be compared, to confirm consistency. This is the default behavior.     
    
-    "Key consistent forwarding" adds support for a looser consistency check; instead of comparing the checksum, ringpop only double-checks if the receiving member really owns the key(s) of the forwarded request. 
+    "Key consistent forwarding" adds support for a looser consistency check; instead of comparing the full ring checksum, ringpop only checks whether if the receiving member owns the key(s) of the forwarded request. 
    
-    The idea behind this approach is that if the two members agree that the receiving member is the owner, it doesn't really matter if other parts of the hash ring are not in sync. 
+    The idea behind this approach is that if both members agree that the receiving member is the owner, it doesn't really matter if other parts of the hash ring are not in sync. 
    
     Note: the default behaviour _did not_ change! Key consistent forwarding can be enabled by disabling `enforceConsistency` and enabling `enforceKeyConsistency` when initializing ringpop.
    
