@@ -2,7 +2,7 @@ ringpop-node release notes
 ==========================
 10.17.0
 -------
-* Feature: Self eviction. [#299](https://github.com/uber/ringpop-node/pull/299), [#300](https://github.com/uber/ringpop-node/pull/300), [#301](https://github.com/uber/ringpop-node/pull/301), [#302](https://github.com/uber/ringpop-node/pull/302), [#307](https://github.com/uber/ringpop-node/pull/307)
+* Feature: Self eviction [#299](https://github.com/uber/ringpop-node/pull/299), [#300](https://github.com/uber/ringpop-node/pull/300), [#301](https://github.com/uber/ringpop-node/pull/301), [#302](https://github.com/uber/ringpop-node/pull/302), [#307](https://github.com/uber/ringpop-node/pull/307)
 * Feature: Key consistent forwarding [#310](https://github.com/uber/ringpop-node/pull/310)
 
 ### Release notes
