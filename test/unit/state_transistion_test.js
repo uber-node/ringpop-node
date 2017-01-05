@@ -61,7 +61,6 @@ function handleUpdateSchedulesTimer(state, shouldSchedule) {
             assert.notok(stateTransitions.timers[address], 'timer not scheduled');
         }
 
-
         assert.end();
         ringpop.destroy();
     });
