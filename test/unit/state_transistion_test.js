@@ -40,7 +40,7 @@ handleUpdateSchedulesTimer(Member.Status.suspect,true);
 handleUpdateSchedulesTimer(Member.Status.tombstone,true);
 
 function handleUpdateSchedulesTimer(state, shouldSchedule) {
-    test('handleUpdate schedules timers ', function t(assert) {
+    test('handleUpdate schedules timers for state: ' + state, function t(assert) {
         var ringpop = createRingpop();
         var stateTransitions = ringpop.stateTransitions;
         var address = '127.0.0.1:3001';
@@ -56,7 +56,7 @@ function handleUpdateSchedulesTimer(state, shouldSchedule) {
         });
         if (shouldSchedule) {
             assert.ok(stateTransitions.timers[address], 'timer scheduled');
-            assert.equal(stateTransitions.timers[address].state, state, 'suspect timer scheduled');
+            assert.equal(stateTransitions.timers[address].state, state, 'timer scheduled');
         } else {
             assert.notok(stateTransitions.timers[address], 'timer not scheduled');
         }
