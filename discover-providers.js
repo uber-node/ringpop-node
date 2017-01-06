@@ -20,6 +20,10 @@
 
 'use strict';
 
+var _ = require('underscore');
+
+var Backoff = require('./lib/backoff');
+
 /**
  * A DiscoverProvider provides a list of peers for a ringpop.
  * @typedef {function} DiscoverProvider
@@ -73,13 +77,63 @@ function createJsonFileDiscoverProvider(hostsFile) {
 }
 
 /**
+ * Wrap a innerDiscoverProvider with a retrying mechanism.
+ *
+ * @param {Object} opts the options used as a Backoff policy {@see Backoff}
+ * @param {Object} [opts.backoff] a mocked backoff for testing
+ * @param {DiscoverProvider} innerDiscoverProvider The discover provider to wrap
+ *
+ * @returns {DiscoverProvider} The retrying discover provider.
+ */
+function retryDiscoverProvider(opts, innerDiscoverProvider) {
+    if (!opts) {
+        return innerDiscoverProvider;
+    }
+
+    return function retryingDiscoverProvider(callback) {
+        var policy;
+        var defaultPolicy = {
+            minDelay: 500,
+            maxDelay: 15000,
+            timeout: 60000
+        };
+
+        if (opts === true) {
+            policy = defaultPolicy;
+        } else {
+            policy = _.defaults({}, opts, defaultPolicy);
+        }
+        var backoff = opts.backoff || new Backoff(policy);
+        var lastError = null;
+
+        attempt(null);
+
+        function attempt(fail) {
+            if (fail) {
+                return setImmediate(callback, lastError);
+            }
+
+            innerDiscoverProvider(function onTry(err, hosts) {
+                // We got results!
+                if (!err && hosts !== null && hosts.length > 0) {
+                    return setImmediate(callback, null, hosts);
+                }
+
+                lastError = err;
+                backoff.retry(attempt);
+            });
+        }
+    };
+}
+
+/**
  * Creates a DiscoverProvider from the provided options.
  *
  * @param opts: an object configuring the DiscoverProvider:
  *          - if opts or opts.discoverProvider is a function, it's returned as the {DiscoverProvider}.
  *          - if opts or opts.hosts is an array, a static hosts discover provider is returned (see {createStaticHostsProvider})
  *          - if opts or opts.bootstrapFile is a string, a json file discover provider is returned (see {createJsonFileDiscoverProvider})
- *
+ *          - if opts.retry is set, the discover provider is wrapped using retryDiscoverProvider (see {retryDiscoverProvider}).
  *
  * @returns {DiscoverProvider} The discover provider.
  */
@@ -96,27 +150,29 @@ function createFromOpts(opts) {
         return createStaticHostsProvider(opts);
     }
 
+    var discoverProvider;
     if (opts.discoverProvider) {
-        return opts.discoverProvider;
+        discoverProvider = opts.discoverProvider;
+    } else if (opts.hosts) {
+        discoverProvider = createStaticHostsProvider(opts.hosts);
+    } else if (opts.bootstrapFile && typeof opts.bootstrapFile === 'string') {
+        discoverProvider = createJsonFileDiscoverProvider(opts.bootstrapFile);
+    } else if (opts.bootstrapFile && Array.isArray(opts.bootstrapFile)) {
+        /* This weird case is added for backwards compatibility :( */
+        discoverProvider = createStaticHostsProvider(opts.bootstrapFile);
+    } else {
+        return null;
     }
 
-    if (opts.hosts) {
-        return createStaticHostsProvider(opts.hosts);
+    if (opts.retry) {
+        discoverProvider = retryDiscoverProvider(opts.retry, discoverProvider);
     }
-    if (opts.bootstrapFile && typeof opts.bootstrapFile === 'string') {
-        return createJsonFileDiscoverProvider(opts.bootstrapFile);
-    }
-
-    /* This weird case is added for backwards compatibility :( */
-    if (opts.bootstrapFile && Array.isArray(opts.bootstrapFile)) {
-        return createStaticHostsProvider(opts.bootstrapFile);
-    }
-
-    return null;
+    return discoverProvider;
 }
 
 module.exports = {
     createFromOpts: createFromOpts,
     createStaticHostsProvider: createStaticHostsProvider,
-    createJsonFileDiscoverProvider: createJsonFileDiscoverProvider
+    createJsonFileDiscoverProvider: createJsonFileDiscoverProvider,
+    retryDiscoverProvider: retryDiscoverProvider
 };
