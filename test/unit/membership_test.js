@@ -280,6 +280,21 @@ testRingpop('set emits an event', function t(deps, assert) {
     membership.set();
 });
 
+testRingpop('set handle updates for state transitions', function t(deps, assert) {
+    assert.plan(1);
+
+    var ringpop = deps.ringpop;
+    ringpop.isReady = false;
+
+    var membership = deps.membership;
+    ringpop.stateTransitions.handleUpdate = function() {
+        assert.pass('state transitions scheduled')
+    };
+
+    membership.makeChange('127.0.0.1:3001', Date.now(), Member.Status.alive);
+    membership.set();
+});
+
 testRingpop('set computes a checksum once', function t(deps, assert) {
     assert.plan(1);
 
