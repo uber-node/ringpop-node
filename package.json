@@ -66,6 +66,7 @@
     "tchannel": "^3.6.13",
     "tcurl": "^4.11.1",
     "timer-shim": "^0.3.0",
+    "tmp": "0.0.31",
     "tryit": "^1.0.1",
     "uber-licence": "^2.0.1",
     "winston": "^1.0.1"

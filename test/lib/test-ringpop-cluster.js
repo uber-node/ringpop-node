@@ -207,4 +207,5 @@ function testRingpopCluster(opts, name, test) {
     });
 }
 
+testRingpopCluster.createRingpop = createRingpop;
 module.exports = testRingpopCluster;

@@ -28,3 +28,4 @@ require('./gossip_test.js');
 require('./tchannel-proxy-test.js');
 require('./not-ready-test.js');
 require('./piggyback-test.js');
+require('./discover-provider-retry-test.js');
