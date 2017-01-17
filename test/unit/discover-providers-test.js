@@ -151,7 +151,7 @@ test('retrying discover provider - returns last error after retries', function t
     var innerDiscoverProvider = function(cb){
         count++;
         assert.pass('discover provider called: '+ count);
-        cb('error ' + count);
+        cb(new Error('error ' + count));
     };
     var discoverProvider = discoverProviderFactory.retryDiscoverProvider(
         {backoff: {
@@ -159,14 +159,14 @@ test('retrying discover provider - returns last error after retries', function t
                 if (count === 1) {
                     cb(null); //retry first time;
                 } else {
-                    cb('out of retries');
+                    cb(new Error('out of retries'));
                 }
             }
         }},
         innerDiscoverProvider);
 
     discoverProvider(function(err, hosts) {
-        assert.equals(err, 'error 2');
+        assert.equals(err.lastError.message, 'error 2');
         assert.notok(hosts);
         assert.end();
     });

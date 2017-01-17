@@ -110,7 +110,8 @@ function retryDiscoverProvider(opts, innerDiscoverProvider) {
 
         function attempt(fail) {
             if (fail) {
-                return setImmediate(callback, lastError);
+                fail.lastError = lastError;
+                return setImmediate(callback, fail);
             }
 
             innerDiscoverProvider(function onTry(err, hosts) {
