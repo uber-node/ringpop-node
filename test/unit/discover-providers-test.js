@@ -225,14 +225,18 @@ test('discoverProvider createFromOpts', function t(assert) {
     });
 
     assert.test('opts with retry - returns retrying discover provider', function t(assert) {
-        assert.plan(5);
+        assert.plan(6);
 
-        var first = true;
+        var count = 0;
         var fn = function exampleDiscoverProvider(cb) {
-            if(first) {
-                first = false;
+            if (count === 0) {
+                count++;
                 assert.pass('inner provider called once');
                 cb(null, null);
+            } else if (count === 1) {
+                count++;
+                assert.pass('inner provider called again');
+                cb(null, []);
             } else {
                 assert.pass('inner provider retried');
                 cb(null, exampleHosts);

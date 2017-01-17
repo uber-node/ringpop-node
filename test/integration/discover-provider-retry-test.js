@@ -44,7 +44,6 @@ testRingpopCluster('ringpop without retry fails to join cluster when bootstrap f
         });
 });
 
-
 testRingpopCluster('ringpop with retry can join cluster after file is created',
     function t(bootRes, cluster, assert) {
         var ringpop = testRingpopCluster.createRingpop({
