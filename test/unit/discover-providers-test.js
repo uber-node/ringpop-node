@@ -26,6 +26,8 @@ var test = require('tape');
 
 var discoverProviderFactory = require('../../discover-providers');
 
+var exampleHosts = ['127.0.0.1:3000'];
+
 function assertDiscoverProvider(assert, discoverProvider, expectedHosts) {
     assert.equal(typeof discoverProvider, 'function');
     discoverProvider(function onHosts(err, hosts) {
@@ -45,7 +47,6 @@ function assertDiscoverProviderError(assert, discoverProvider) {
 }
 
 test('static host list discover provider', function t(assert) {
-    var exampleHosts = ['127.0.0.1:3000'];
     var discoverProvider = discoverProviderFactory.createStaticHostsProvider(exampleHosts);
 
     assertDiscoverProvider(assert, discoverProvider, exampleHosts);
@@ -73,6 +74,104 @@ test('json file discover provider - error: non json file', function t(assert) {
     assertDiscoverProviderError(assert, discoverProvider);
 });
 
+
+test('retrying discover provider - does not wrap when retry is false', function t(assert) {
+    var innerDiscoverProvider = discoverProviderFactory.createStaticHostsProvider(exampleHosts);
+    var discoverProvider = discoverProviderFactory.retryDiscoverProvider(
+        false,
+        innerDiscoverProvider);
+
+    assert.equal(discoverProvider, innerDiscoverProvider);
+    assert.end();
+});
+
+test('retrying discover provider - does not retry on success', function t(assert) {
+    var innerDiscoverProvider = discoverProviderFactory.createStaticHostsProvider(exampleHosts);
+    var discoverProvider = discoverProviderFactory.retryDiscoverProvider(
+        {backoff: {
+            retry: function(){
+                assert.fail('should not retry on success!');
+            }
+        }},
+        innerDiscoverProvider);
+
+    assertDiscoverProvider(assert, discoverProvider, exampleHosts);
+});
+
+test('retrying discover provider - retries when host list is empty', function t(assert) {
+    assert.plan(1);
+    var innerDiscoverProvider = discoverProviderFactory.createStaticHostsProvider([]);
+    var discoverProvider = discoverProviderFactory.retryDiscoverProvider(
+        {backoff: {
+            retry: function(){
+                assert.pass('should retry on empty hosts!');
+                assert.end();
+            }
+        }},
+        innerDiscoverProvider);
+
+    discoverProvider();
+});
+
+test('retrying discover provider - retries when hosts is null', function t(assert) {
+    assert.plan(1);
+    var innerDiscoverProvider = discoverProviderFactory.createStaticHostsProvider(null);
+    var discoverProvider = discoverProviderFactory.retryDiscoverProvider(
+        {backoff: {
+            retry: function(){
+                assert.pass('should retry on null hosts!');
+                assert.end();
+            }
+        }},
+        innerDiscoverProvider);
+
+    discoverProvider();
+});
+
+test('retrying discover provider - retries on error', function t(assert) {
+    var innerDiscoverProvider = function(cb){
+        cb('error');
+    };
+    var discoverProvider = discoverProviderFactory.retryDiscoverProvider(
+        {backoff: {
+            retry: function(){
+                assert.pass('should retry on error!');
+                assert.end();
+            }
+        }},
+        innerDiscoverProvider);
+
+    discoverProvider();
+});
+
+test('retrying discover provider - returns last error after retries', function t(assert) {
+    assert.plan(4);
+
+    var count = 0;
+    var innerDiscoverProvider = function(cb){
+        count++;
+        assert.pass('discover provider called: '+ count);
+        cb(new Error('error ' + count));
+    };
+    var discoverProvider = discoverProviderFactory.retryDiscoverProvider(
+        {backoff: {
+            retry: function(cb){
+                if (count === 1) {
+                    cb(null); //retry first time;
+                } else {
+                    cb(new Error('out of retries'));
+                }
+            }
+        }},
+        innerDiscoverProvider);
+
+    discoverProvider(function(err, hosts) {
+        assert.equals(err.lastError.message, 'error 2');
+        assert.notok(hosts);
+        assert.end();
+    });
+});
+
 /**
  * Create a sub-test suite for create from opts.
  */
@@ -94,14 +193,12 @@ test('discoverProvider createFromOpts', function t(assert) {
     });
 
     assert.test('with array-argument - uses static hosts', function t(assert) {
-        var exampleHosts = ['127.0.0.1:3000'];
         var discoverProvider = discoverProviderFactory.createFromOpts(exampleHosts);
 
         assertDiscoverProvider(assert, discoverProvider, exampleHosts);
     });
 
     assert.test('opts with hosts - uses static hosts', function t(assert) {
-        var exampleHosts = ['127.0.0.1:3000'];
         var discoverProvider = discoverProviderFactory.createFromOpts({hosts: exampleHosts});
 
         assertDiscoverProvider(assert, discoverProvider, exampleHosts);
@@ -125,5 +222,33 @@ test('discoverProvider createFromOpts', function t(assert) {
         var discoverProvider = discoverProviderFactory.createFromOpts();
         assert.equal(discoverProvider, null);
         assert.end();
-    })
+    });
+
+    assert.test('opts with retry - returns retrying discover provider', function t(assert) {
+        assert.plan(6);
+
+        var count = 0;
+        var fn = function exampleDiscoverProvider(cb) {
+            if (count === 0) {
+                count++;
+                assert.pass('inner provider called once');
+                cb(null, null);
+            } else if (count === 1) {
+                count++;
+                assert.pass('inner provider called again');
+                cb(null, []);
+            } else {
+                assert.pass('inner provider retried');
+                cb(null, exampleHosts);
+            }
+        };
+        var discoverProvider = discoverProviderFactory.createFromOpts({discoverProvider: fn, retry: true});
+        assert.notEqual(discoverProvider, fn);
+
+        discoverProvider(function onHosts(err, hosts) {
+            assert.equal(err, null);
+            assert.deepEqual(hosts, exampleHosts);
+            assert.end();
+        });
+    });
 });
