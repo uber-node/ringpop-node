@@ -32,19 +32,19 @@ test('construct a new RBIterator', function t(assert) {
     assert.end();
 });
 
-test('RBIterator.val and RBIterator.str', function t(assert) {
+test('RBIterator.key and RBIterator.str', function t(assert) {
     var tree = new RBTree();
     var iterator = new RBIterator(tree);
 
-    assert.strictEquals(iterator.val(), null, 'val on empty tree is null');
+    assert.strictEquals(iterator.key(), null, 'key on empty tree is null');
     assert.strictEquals(iterator.str(), null, 'str on empty tree is null');
 
     iterator.cursor = {
-        val: 1234,
+        key: 1234,
         str: '1234'
     };
 
-    assert.strictEquals(iterator.val(), 1234, 'val returns cursor val');
+    assert.strictEquals(iterator.key(), 1234, 'key returns cursor key');
     assert.strictEquals(iterator.str(), '1234', 'str returns cursor str');
 
     assert.end();
@@ -78,15 +78,15 @@ test('RBIterator.minNode', function t(assert) {
     var iterator = new RBIterator(tree);
 
     iterator.minNode(tree.root);
-    assert.strictEquals(iterator.val(), 1, 'val min from root is 1');
+    assert.strictEquals(iterator.key(), 1, 'key min from root is 1');
     assert.strictEquals(iterator.str(), 'one', 'str min from root is one');
 
     iterator.minNode(tree.root.left.left);
-    assert.strictEquals(iterator.val(), 1, 'val min from 1 is 1');
+    assert.strictEquals(iterator.key(), 1, 'key min from 1 is 1');
     assert.strictEquals(iterator.str(), 'one', 'str min from 1 is one');
 
     iterator.minNode(tree.root.right);
-    assert.strictEquals(iterator.val(), 5, 'val min from 6 is 5');
+    assert.strictEquals(iterator.key(), 5, 'key min from 6 is 5');
     assert.strictEquals(iterator.str(), 'five', 'str min from 6 is five');
 
     assert.end();
@@ -96,15 +96,15 @@ test('RBIterator.next walk the entire tree', function t(assert) {
     var tree = makeTree();
     var iterator = new RBIterator(tree);
 
-    assert.strictEquals(iterator.next(), 1, 'val is 1');
-    assert.strictEquals(iterator.next(), 2, 'val is 2');
-    assert.strictEquals(iterator.next(), 3, 'val is 3');
-    assert.strictEquals(iterator.next(), 4, 'val is 4');
-    assert.strictEquals(iterator.next(), 5, 'val is 5');
-    assert.strictEquals(iterator.next(), 6, 'val is 6');
-    assert.strictEquals(iterator.next(), 7, 'val is 7');
-    assert.strictEquals(iterator.next(), 8, 'val is 8');
-    assert.strictEquals(iterator.next(), null, 'val is null');
+    assert.strictEquals(iterator.next(), 1, 'key is 1');
+    assert.strictEquals(iterator.next(), 2, 'key is 2');
+    assert.strictEquals(iterator.next(), 3, 'key is 3');
+    assert.strictEquals(iterator.next(), 4, 'key is 4');
+    assert.strictEquals(iterator.next(), 5, 'key is 5');
+    assert.strictEquals(iterator.next(), 6, 'key is 6');
+    assert.strictEquals(iterator.next(), 7, 'key is 7');
+    assert.strictEquals(iterator.next(), 8, 'key is 8');
+    assert.strictEquals(iterator.next(), null, 'key is null');
 
     assert.end();
 });

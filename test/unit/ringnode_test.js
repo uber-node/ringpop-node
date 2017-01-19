@@ -26,7 +26,7 @@ test('construct a new red node with supplied values', function t(assert) {
     var str = 'just in time';
     var node = new RingNode(val, str);
 
-    assert.strictEquals(node.val, val, 'val set to supplied val');
+    assert.strictEquals(node.key, val, 'key set to supplied key');
     assert.strictEquals(node.str, str, 'str set to supplied str');
 
     assert.strictEquals(node.left, null, 'left is null');
