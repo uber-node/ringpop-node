@@ -105,7 +105,7 @@ test('RBTree.insert', function t(assert) {
 
     var node = tree.root;
     assert.strictEquals(node.key, 4, 'tree root key is 4');
-    assert.strictEquals(node.str, 'four', 'tree root str is four');
+    assert.strictEquals(node.value, 'four', 'tree root value is four');
     assert.strictEquals(node.red, false, 'tree root is black');
     assert.strictEquals(node.left instanceof RingNode, true, 'tree root left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'tree root right points to a RingNode');
@@ -113,7 +113,7 @@ test('RBTree.insert', function t(assert) {
     // 1,B
     node = tree.root.left.left;
     assert.strictEquals(node.key, 1, 'node key is correct');
-    assert.strictEquals(node.str, 'one', 'node str is correct');
+    assert.strictEquals(node.value, 'one', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -121,7 +121,7 @@ test('RBTree.insert', function t(assert) {
     // 2,R
     node = tree.root.left;
     assert.strictEquals(node.key, 2, 'tree node key is correct');
-    assert.strictEquals(node.str, 'two', 'tree node str is correct');
+    assert.strictEquals(node.value, 'two', 'tree node value is correct');
     assert.strictEquals(node.red, true, 'tree node color is correct');
     assert.strictEquals(node.left instanceof RingNode, true, 'node left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -129,7 +129,7 @@ test('RBTree.insert', function t(assert) {
     // 3,B
     node = tree.root.left.right;
     assert.strictEquals(node.key, 3, 'node key is correct');
-    assert.strictEquals(node.str, 'three', 'node str is correct');
+    assert.strictEquals(node.value, 'three', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -137,7 +137,7 @@ test('RBTree.insert', function t(assert) {
     // 6,R
     node = tree.root.right;
     assert.strictEquals(node.key, 6, 'tree node key is correct');
-    assert.strictEquals(node.str, 'six', 'tree node str is correct');
+    assert.strictEquals(node.value, 'six', 'tree node value is correct');
     assert.strictEquals(node.red, true, 'tree node color is correct');
     assert.strictEquals(node.left instanceof RingNode, true, 'node left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -145,7 +145,7 @@ test('RBTree.insert', function t(assert) {
     // 5,B
     node = tree.root.right.left;
     assert.strictEquals(node.key, 5, 'node key is correct');
-    assert.strictEquals(node.str, 'five', 'node str is correct');
+    assert.strictEquals(node.value, 'five', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -153,7 +153,7 @@ test('RBTree.insert', function t(assert) {
     // 7,B
     node = tree.root.right.right;
     assert.strictEquals(node.key, 7, 'node key is correct');
-    assert.strictEquals(node.str, 'seven', 'node str is correct');
+    assert.strictEquals(node.value, 'seven', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'node has no left pointer');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -161,7 +161,7 @@ test('RBTree.insert', function t(assert) {
     // 8,R
     node = tree.root.right.right.right;
     assert.strictEquals(node.key, 8, 'node key is correct');
-    assert.strictEquals(node.str, 'eight', 'node str is correct');
+    assert.strictEquals(node.value, 'eight', 'node value is correct');
     assert.strictEquals(node.red, true, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -194,7 +194,7 @@ test('RBTree.remove', function t(assert) {
     // 4,B
     var node = tree.root;
     assert.strictEquals(node.key, 4, 'tree root key is 4');
-    assert.strictEquals(node.str, 'four', 'tree root str is four');
+    assert.strictEquals(node.value, 'four', 'tree root value is four');
     assert.strictEquals(node.red, false, 'tree root is black');
     assert.strictEquals(node.left instanceof RingNode, true, 'tree root left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'tree root right points to a RingNode');
@@ -202,7 +202,7 @@ test('RBTree.remove', function t(assert) {
     // 2,R
     node = tree.root.left;
     assert.strictEquals(node.key, 2, 'tree node key is correct');
-    assert.strictEquals(node.str, 'two', 'tree node str is correct');
+    assert.strictEquals(node.value, 'two', 'tree node value is correct');
     assert.strictEquals(node.red, false, 'tree node color is correct');
     assert.strictEquals(node.left, null, 'node left points to null');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -210,7 +210,7 @@ test('RBTree.remove', function t(assert) {
     // 3,B
     node = tree.root.left.right;
     assert.strictEquals(node.key, 3, 'node key is correct');
-    assert.strictEquals(node.str, 'three', 'node str is correct');
+    assert.strictEquals(node.value, 'three', 'node value is correct');
     assert.strictEquals(node.red, true, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -218,7 +218,7 @@ test('RBTree.remove', function t(assert) {
     // 6,R
     node = tree.root.right;
     assert.strictEquals(node.key, 6, 'tree node key is correct');
-    assert.strictEquals(node.str, 'six', 'tree node str is correct');
+    assert.strictEquals(node.value, 'six', 'tree node value is correct');
     assert.strictEquals(node.red, true, 'tree node color is correct');
     assert.strictEquals(node.left instanceof RingNode, true, 'node left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -226,7 +226,7 @@ test('RBTree.remove', function t(assert) {
     // 5,B
     node = tree.root.right.left;
     assert.strictEquals(node.key, 5, 'node key is correct');
-    assert.strictEquals(node.str, 'five', 'node str is correct');
+    assert.strictEquals(node.value, 'five', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -234,7 +234,7 @@ test('RBTree.remove', function t(assert) {
     // 7,B
     node = tree.root.right.right;
     assert.strictEquals(node.key, 7, 'node key is correct');
-    assert.strictEquals(node.str, 'seven', 'node str is correct');
+    assert.strictEquals(node.value, 'seven', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'node has no left pointer');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -242,7 +242,7 @@ test('RBTree.remove', function t(assert) {
     // 8,R
     node = tree.root.right.right.right;
     assert.strictEquals(node.key, 8, 'node key is correct');
-    assert.strictEquals(node.str, 'eight', 'node str is correct');
+    assert.strictEquals(node.value, 'eight', 'node value is correct');
     assert.strictEquals(node.red, true, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -263,7 +263,7 @@ test('RBTree.remove', function t(assert) {
     // 6,B
     var node = tree.root;
     assert.strictEquals(node.key, 6, 'tree root key is 6');
-    assert.strictEquals(node.str, 'six', 'tree root str is six');
+    assert.strictEquals(node.value, 'six', 'tree root value is six');
     assert.strictEquals(node.red, false, 'tree root is black');
     assert.strictEquals(node.left instanceof RingNode, true, 'tree root left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'tree root right points to a RingNode');
@@ -271,7 +271,7 @@ test('RBTree.remove', function t(assert) {
     // 3,B
     node = tree.root.left.left;
     assert.strictEquals(node.key, 3, 'node key is correct');
-    assert.strictEquals(node.str, 'three', 'node str is correct');
+    assert.strictEquals(node.value, 'three', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -279,7 +279,7 @@ test('RBTree.remove', function t(assert) {
     // 4,B
     node = tree.root.left;
     assert.strictEquals(node.key, 4, 'node key is correct');
-    assert.strictEquals(node.str, 'four', 'node str is correct');
+    assert.strictEquals(node.value, 'four', 'node value is correct');
     assert.strictEquals(node.red, true, 'node color is correct');
     assert.strictEquals(node.left instanceof RingNode, true, 'left pointer is RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'right pointer is RingNode');
@@ -287,7 +287,7 @@ test('RBTree.remove', function t(assert) {
     // 5,R
     node = tree.root.left.right;
     assert.strictEquals(node.key, 5, 'tree node key is correct');
-    assert.strictEquals(node.str, 'five', 'tree node str is correct');
+    assert.strictEquals(node.value, 'five', 'tree node value is correct');
     assert.strictEquals(node.red, false, 'tree node color is correct');
     assert.strictEquals(node.left, null, 'node left points to null');
     assert.strictEquals(node.right, null, 'node right points to null');
@@ -295,7 +295,7 @@ test('RBTree.remove', function t(assert) {
     // 7,B
     node = tree.root.right;
     assert.strictEquals(node.key, 7, 'node key is correct');
-    assert.strictEquals(node.str, 'seven', 'node str is correct');
+    assert.strictEquals(node.value, 'seven', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'node has no left pointer');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -303,7 +303,7 @@ test('RBTree.remove', function t(assert) {
     // 8,R
     node = tree.root.right.right;
     assert.strictEquals(node.key, 8, 'node key is correct');
-    assert.strictEquals(node.str, 'eight', 'node str is correct');
+    assert.strictEquals(node.value, 'eight', 'node value is correct');
     assert.strictEquals(node.red, true, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -324,7 +324,7 @@ test('RBTree.remove', function t(assert) {
     // 6,B
     var node = tree.root;
     assert.strictEquals(node.key, 6, 'tree root key is 6');
-    assert.strictEquals(node.str, 'six', 'tree root str is six');
+    assert.strictEquals(node.value, 'six', 'tree root value is six');
     assert.strictEquals(node.red, false, 'tree root is black');
     assert.strictEquals(node.left instanceof RingNode, true, 'tree root left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'tree root right points to a RingNode');
@@ -332,7 +332,7 @@ test('RBTree.remove', function t(assert) {
     // 4,B
     node = tree.root.left;
     assert.strictEquals(node.key, 4, 'node key is correct');
-    assert.strictEquals(node.str, 'four', 'node str is correct');
+    assert.strictEquals(node.value, 'four', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'left pointer is null');
     assert.strictEquals(node.right instanceof RingNode, true, 'right pointer is RingNode');
@@ -340,7 +340,7 @@ test('RBTree.remove', function t(assert) {
     // 5,R
     node = tree.root.left.right;
     assert.strictEquals(node.key, 5, 'tree node key is correct');
-    assert.strictEquals(node.str, 'five', 'tree node str is correct');
+    assert.strictEquals(node.value, 'five', 'tree node value is correct');
     assert.strictEquals(node.red, true, 'tree node color is correct');
     assert.strictEquals(node.left, null, 'node left points to null');
     assert.strictEquals(node.right, null, 'node right points to null');
@@ -348,7 +348,7 @@ test('RBTree.remove', function t(assert) {
     // 7,B
     node = tree.root.right;
     assert.strictEquals(node.key, 7, 'node key is correct');
-    assert.strictEquals(node.str, 'seven', 'node str is correct');
+    assert.strictEquals(node.value, 'seven', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'node has no left pointer');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -356,7 +356,7 @@ test('RBTree.remove', function t(assert) {
     // 8,R
     node = tree.root.right.right;
     assert.strictEquals(node.key, 8, 'node key is correct');
-    assert.strictEquals(node.str, 'eight', 'node str is correct');
+    assert.strictEquals(node.value, 'eight', 'node value is correct');
     assert.strictEquals(node.red, true, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -377,7 +377,7 @@ test('RBTree.remove', function t(assert) {
     // 6,B
     var node = tree.root;
     assert.strictEquals(node.key, 6, 'tree root key is 6');
-    assert.strictEquals(node.str, 'six', 'tree root str is six');
+    assert.strictEquals(node.value, 'six', 'tree root value is six');
     assert.strictEquals(node.red, false, 'tree root is black');
     assert.strictEquals(node.left instanceof RingNode, true, 'tree root left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'tree root right points to a RingNode');
@@ -385,7 +385,7 @@ test('RBTree.remove', function t(assert) {
     // 5,B
     node = tree.root.left;
     assert.strictEquals(node.key, 5, 'tree node key is correct');
-    assert.strictEquals(node.str, 'five', 'tree node str is correct');
+    assert.strictEquals(node.value, 'five', 'tree node value is correct');
     assert.strictEquals(node.red, false, 'tree node color is correct');
     assert.strictEquals(node.left, null, 'node left points to null');
     assert.strictEquals(node.right, null, 'node right points to null');
@@ -393,7 +393,7 @@ test('RBTree.remove', function t(assert) {
     // 7,B
     node = tree.root.right;
     assert.strictEquals(node.key, 7, 'node key is correct');
-    assert.strictEquals(node.str, 'seven', 'node str is correct');
+    assert.strictEquals(node.value, 'seven', 'node value is correct');
     assert.strictEquals(node.red, false, 'node color is correct');
     assert.strictEquals(node.left, null, 'node has no left pointer');
     assert.strictEquals(node.right instanceof RingNode, true, 'node right points to a RingNode');
@@ -401,7 +401,7 @@ test('RBTree.remove', function t(assert) {
     // 8,R
     node = tree.root.right.right;
     assert.strictEquals(node.key, 8, 'node key is correct');
-    assert.strictEquals(node.str, 'eight', 'node str is correct');
+    assert.strictEquals(node.value, 'eight', 'node value is correct');
     assert.strictEquals(node.red, true, 'node color is correct');
     assert.strictEquals(node.left, null, 'leaf node has no left pointer');
     assert.strictEquals(node.right, null, 'leaf node has no right pointer');
@@ -420,7 +420,7 @@ test('RBTree.remove', function t(assert) {
     // 7,B
     var node = tree.root;
     assert.strictEquals(node.key, 7, 'tree root key is 7');
-    assert.strictEquals(node.str, 'seven', 'tree root str is seven');
+    assert.strictEquals(node.value, 'seven', 'tree root value is seven');
     assert.strictEquals(node.red, false, 'tree root is black');
     assert.strictEquals(node.left instanceof RingNode, true, 'tree root left points to a RingNode');
     assert.strictEquals(node.right instanceof RingNode, true, 'tree root right points to a RingNode');
@@ -428,7 +428,7 @@ test('RBTree.remove', function t(assert) {
     // 6,B
     node = tree.root.left;
     assert.strictEquals(node.key, 6, 'tree node key is correct');
-    assert.strictEquals(node.str, 'six', 'tree node str is correct');
+    assert.strictEquals(node.value, 'six', 'tree node value is correct');
     assert.strictEquals(node.red, false, 'tree node color is correct');
     assert.strictEquals(node.left, null, 'node left points to null');
     assert.strictEquals(node.right, null, 'node right points to null');
@@ -436,7 +436,7 @@ test('RBTree.remove', function t(assert) {
     // 8,B
     node = tree.root.right;
     assert.strictEquals(node.key, 8, 'tree node key is correct');
-    assert.strictEquals(node.str, 'eight', 'tree node str is correct');
+    assert.strictEquals(node.value, 'eight', 'tree node value is correct');
     assert.strictEquals(node.red, false, 'tree node color is correct');
     assert.strictEquals(node.left, null, 'node left is null');
     assert.strictEquals(node.right, null, 'node right is null');
@@ -455,7 +455,7 @@ test('RBTree.remove', function t(assert) {
     // 7,B
     var node = tree.root;
     assert.strictEquals(node.key, 7, 'tree root key is 7');
-    assert.strictEquals(node.str, 'seven', 'tree root str is seven');
+    assert.strictEquals(node.value, 'seven', 'tree root value is seven');
     assert.strictEquals(node.red, false, 'tree root is black');
     assert.strictEquals(node.left, null, 'tree root left is null');
     assert.strictEquals(node.right instanceof RingNode, true, 'tree root right points to a RingNode');
@@ -463,7 +463,7 @@ test('RBTree.remove', function t(assert) {
     // 8,R
     node = tree.root.right;
     assert.strictEquals(node.key, 8, 'tree node key is correct');
-    assert.strictEquals(node.str, 'eight', 'tree node str is correct');
+    assert.strictEquals(node.value, 'eight', 'tree node value is correct');
     assert.strictEquals(node.red, true, 'tree node color is correct');
     assert.strictEquals(node.left, null, 'node left points to null');
     assert.strictEquals(node.right, null, 'node right points to null');
@@ -480,7 +480,7 @@ test('RBTree.remove', function t(assert) {
     // 7,B
     var node = tree.root;
     assert.strictEquals(node.key, 8, 'tree root key is 8');
-    assert.strictEquals(node.str, 'eight', 'tree root str is eight');
+    assert.strictEquals(node.value, 'eight', 'tree root value is eight');
     assert.strictEquals(node.red, false, 'tree root is black');
     assert.strictEquals(node.left, null, 'tree root left is null');
     assert.strictEquals(node.right, null, 'tree root right is null');
@@ -605,7 +605,7 @@ test('RBTree payload copy bug', function t(assert) {
 
     var iter = tree.iterator();
     while (iter.next() !== null) {
-        assert.strictEquals(iter.key(), Number(iter.str()), 'node payloads match');
+        assert.strictEquals(iter.key(), Number(iter.value()), 'node payloads match');
     }
 
     assert.end();

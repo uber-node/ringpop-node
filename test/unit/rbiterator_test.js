@@ -32,20 +32,20 @@ test('construct a new RBIterator', function t(assert) {
     assert.end();
 });
 
-test('RBIterator.key and RBIterator.str', function t(assert) {
+test('RBIterator.key and RBIterator.value', function t(assert) {
     var tree = new RBTree();
     var iterator = new RBIterator(tree);
 
     assert.strictEquals(iterator.key(), null, 'key on empty tree is null');
-    assert.strictEquals(iterator.str(), null, 'str on empty tree is null');
+    assert.strictEquals(iterator.value(), null, 'value on empty tree is null');
 
     iterator.cursor = {
         key: 1234,
-        str: '1234'
+        value: '1234'
     };
 
     assert.strictEquals(iterator.key(), 1234, 'key returns cursor key');
-    assert.strictEquals(iterator.str(), '1234', 'str returns cursor str');
+    assert.strictEquals(iterator.value(), '1234', 'value returns cursor value');
 
     assert.end();
 });
@@ -79,15 +79,15 @@ test('RBIterator.minNode', function t(assert) {
 
     iterator.minNode(tree.root);
     assert.strictEquals(iterator.key(), 1, 'key min from root is 1');
-    assert.strictEquals(iterator.str(), 'one', 'str min from root is one');
+    assert.strictEquals(iterator.value(), 'one', 'value min from root is one');
 
     iterator.minNode(tree.root.left.left);
     assert.strictEquals(iterator.key(), 1, 'key min from 1 is 1');
-    assert.strictEquals(iterator.str(), 'one', 'str min from 1 is one');
+    assert.strictEquals(iterator.value(), 'one', 'value min from 1 is one');
 
     iterator.minNode(tree.root.right);
     assert.strictEquals(iterator.key(), 5, 'key min from 6 is 5');
-    assert.strictEquals(iterator.str(), 'five', 'str min from 6 is five');
+    assert.strictEquals(iterator.value(), 'five', 'value min from 6 is five');
 
     assert.end();
 });
