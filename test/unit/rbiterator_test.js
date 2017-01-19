@@ -20,10 +20,12 @@
 
 var RBTree = require('../../lib/ring/rbtree').RBTree;
 var RBIterator = require('../../lib/ring/rbtree').RBIterator;
+var comparator = require('../../lib/ring').comparator;
+
 var test = require('tape');
 
 test('construct a new RBIterator', function t(assert) {
-    var tree = new RBTree();
+    var tree = new RBTree(comparator);
     var iterator = new RBIterator(tree);
 
     assert.strictEquals(iterator.tree, tree, 'tree is set to supplied tree');
@@ -33,7 +35,7 @@ test('construct a new RBIterator', function t(assert) {
 });
 
 test('RBIterator.key and RBIterator.value', function t(assert) {
-    var tree = new RBTree();
+    var tree = new RBTree(comparator);
     var iterator = new RBIterator(tree);
 
     assert.strictEquals(iterator.key(), null, 'key on empty tree is null');
@@ -51,7 +53,7 @@ test('RBIterator.key and RBIterator.value', function t(assert) {
 });
 
 function makeTree() {
-    var tree = new RBTree();
+    var tree = new RBTree(comparator);
 
     tree.insert(1, 'one');
     tree.insert(2, 'two');

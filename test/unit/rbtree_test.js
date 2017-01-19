@@ -20,10 +20,11 @@
 
 var RBTree = require('../../lib/ring/rbtree').RBTree;
 var RingNode = require('../../lib/ring/rbtree').RingNode;
+var comparator = require('../../lib/ring').comparator;
 var test = require('tape');
 
 test('construct a new RBTree', function t(assert) {
-    var tree = new RBTree();
+    var tree = new RBTree(comparator);
 
     assert.strictEquals(tree.root, null, 'root is null');
     assert.strictEquals(tree.size, 0, 'size is 0');
@@ -32,7 +33,7 @@ test('construct a new RBTree', function t(assert) {
 });
 
 function makeTree() {
-    var tree = new RBTree();
+    var tree = new RBTree(comparator);
 
     tree.insert(1, 'one');
     tree.insert(2, 'two');
@@ -593,7 +594,7 @@ test('RBTree upperBound', function t(assert) {
 });
 
 test('RBTree payload copy bug', function t(assert) {
-    var tree = new RBTree();
+    var tree = new RBTree(comparator);
 
     for (var i = 0; i < 2000; i++) {
         tree.insert(i, String(i));
