@@ -184,7 +184,8 @@ test('hashring consistent lookups on collision - synthetic collision', function 
     ring2.addServer(serverB);
     ring2.addServer(serverA);
 
-    assert.equal(ring1.lookup(key), ring2.lookup(key));
+    assert.equal(ring1.lookup(key), serverA);
+    assert.equal(ring2.lookup(key), serverA);
 
     assert.end();
 });
@@ -210,7 +211,8 @@ test('hashring consistent lookups on collision - real collision', function t(ass
     ring2.addServer(serverB);
     ring2.addServer(serverA);
 
-    assert.equal(ring1.lookup(key), ring2.lookup(key));
+    assert.equal(ring1.lookup(key), serverA); // Because '10.66.135.9:31848' < '10.66.3.137:31538'
+    assert.equal(ring2.lookup(key), serverA);
 
     assert.end();
 });
