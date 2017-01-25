@@ -170,7 +170,7 @@ test('hashring consistent lookups on collision - synthetic collision', function 
     var ring1 = new HashRing();
     var ring2 = new HashRing();
 
-    // These 2 host:ports will cause a hash collusion due to the concat of
+    // These 2 host:ports will cause a hash collision due to the concat of
     // replica point index to the host:port. serverA#11 (10.0.0.1:5011) is the
     // same as serverB#1 (10.0.0.1:5011).
     var serverA = '10.0.0.1:50';
