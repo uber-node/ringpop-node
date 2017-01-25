@@ -20,7 +20,7 @@
 
 var RBTree = require('../../lib/ring/rbtree').RBTree;
 var RingNode = require('../../lib/ring/rbtree').RingNode;
-var comparator = require('../../lib/ring').comparator;
+var comparator = require('../lib/int-comparator');
 var test = require('tape');
 
 test('construct a new RBTree', function t(assert) {

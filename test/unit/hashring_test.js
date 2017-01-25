@@ -165,3 +165,16 @@ test('servers removed out of order result in same checksum', function t(assert) 
         }
     }
 });
+
+test('hashring replica point comparator', function t(assert) {
+    var comparator = HashRing.comparator;
+
+    assert.true(comparator({hash: 1}, {hash: 2}) < 0, '1 < 2');
+    assert.true(comparator({hash: -1}, {hash: 1}) < 0, '-1 < 1');
+    assert.true(comparator({hash: 1}, {hash: 1}) == 0, '1 == 1');
+    assert.true(comparator({hash: -1}, {hash: -1}) == 0, '-1 == -1');
+    assert.true(comparator({hash: 2}, {hash: 1}) > 0, '2 > 1');
+    assert.true(comparator({hash: 2}, {hash: -1}) > 0, '2 > -1');
+
+    assert.end();
+});
