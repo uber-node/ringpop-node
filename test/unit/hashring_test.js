@@ -166,6 +166,57 @@ test('servers removed out of order result in same checksum', function t(assert) 
     }
 });
 
+test('hashring consistent lookups on collision - synthetic collision', function t(assert) {
+    var ring1 = new HashRing();
+    var ring2 = new HashRing();
+
+    // These 2 host:ports will cause a hash collision due to the concat of
+    // replica point index to the host:port. serverA#11 (10.0.0.1:5011) is the
+    // same as serverB#1 (10.0.0.1:5011).
+    var serverA = '10.0.0.1:50';
+    var serverB = '10.0.0.1:501';
+    var key = '10.0.0.1:5011';
+
+    ring1.addServer(serverA);
+    ring1.addServer(serverB);
+
+    // Add servers in different order
+    ring2.addServer(serverB);
+    ring2.addServer(serverA);
+
+    assert.equal(ring1.lookup(key), serverA);
+    assert.equal(ring2.lookup(key), serverA);
+
+    assert.end();
+});
+
+test('hashring consistent lookups on collision - real collision', function t(assert) {
+    var ring1 = new HashRing();
+    var ring2 = new HashRing();
+
+    // These ip addresses and lookup key look 'magic' but are actually
+    // the first hash collision we found "in the wild".
+    // Explanation:
+    // server            | replica index | replica name        | hash
+    // 10.66.135.9:31848 | 72            | 10.66.135.9:3184872 | 1477543671
+    // 10.66.3.137:31538 | 39            | 10.66.3.137:3153839 | 1477543671
+    var serverA = '10.66.135.9:31848';
+    var serverB = '10.66.3.137:31538';
+    var key = '10.66.135.9:3184872';
+
+    ring1.addServer(serverA);
+    ring1.addServer(serverB);
+
+    // Add servers in different order
+    ring2.addServer(serverB);
+    ring2.addServer(serverA);
+
+    assert.equal(ring1.lookup(key), serverA); // Because '10.66.135.9:31848' < '10.66.3.137:31538'
+    assert.equal(ring2.lookup(key), serverA);
+
+    assert.end();
+});
+
 test('hashring replica point comparator', function t(assert) {
     var comparator = HashRing.comparator;
 
@@ -175,6 +226,10 @@ test('hashring replica point comparator', function t(assert) {
     assert.true(comparator({hash: -1}, {hash: -1}) == 0, '-1 == -1');
     assert.true(comparator({hash: 2}, {hash: 1}) > 0, '2 > 1');
     assert.true(comparator({hash: 2}, {hash: -1}) > 0, '2 > -1');
+
+    assert.true(comparator({hash:1, address: 'a'}, {hash:1, address:'b'}) < 0, 'hash collision compares on address');
+    assert.true(comparator({hash:1, address: 'b'}, {hash:1, address:'a'}) > 0, 'hash collision compares on address');
+    assert.true(comparator({hash:1, address: 'a'}, {hash:1, address:'a'}) == 0, 'hash collision compares on address');
 
     assert.end();
 });
