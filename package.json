@@ -68,7 +68,7 @@
     "timer-shim": "^0.3.0",
     "tmp": "0.0.31",
     "tryit": "^1.0.1",
-    "uber-licence": "^2.0.1",
+    "uber-licence": "^2.1.3",
     "winston": "^1.0.1"
   },
   "pre-commit": [
