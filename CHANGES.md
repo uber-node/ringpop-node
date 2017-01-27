@@ -1,5 +1,11 @@
 ringpop-node release notes
 ==========================
+10.18.0
+-------
+* Fix: Start state-transition timers on bootstrap [#313](https://github.com/uber/ringpop-node/pull/313)
+* Fix: Make hash ring lookups consistent in case of hash collisions [#315](https://github.com/uber/ringpop-node/pull/315), [#316](https://github.com/uber/ringpop-node/pull/316), [#317](https://github.com/uber/ringpop-node/pull/317)
+* Feature: Support retrying the discover provider [#314](https://github.com/uber/ringpop-node/pull/314)
+
 10.17.0
 -------
 * Feature: Self eviction [#299](https://github.com/uber/ringpop-node/pull/299), [#300](https://github.com/uber/ringpop-node/pull/300), [#301](https://github.com/uber/ringpop-node/pull/301), [#302](https://github.com/uber/ringpop-node/pull/302), [#307](https://github.com/uber/ringpop-node/pull/307)
