@@ -1,3 +1,4 @@
+
 # ringpop-node [![Build Status](https://travis-ci.org/uber/ringpop-node.svg?branch=master)](https://travis-ci.org/uber/ringpop-node)
 Ringpop is a library that brings cooperation and coordination to distributed
 applications. It maintains a consistent hash ring on top of a membership protocol
