@@ -195,9 +195,13 @@ function RingPop(options) {
     this.serverRate = new metrics.Meter();
     this.totalRate = new metrics.Meter();
 
-    // 10.30.8.26:20600 -> 10_30_8_26_20600
-    this.statHostPort = this.hostPort.replace(/\.|:/g, '_');
-    this.statPrefix = 'ringpop.' + this.statHostPort;
+    if (options.statPrefix) {
+        this.statPrefix = options.statPrefix;
+    } else {
+        // 10.30.8.26:20600 -> 10_30_8_26_20600
+        this.statHostPort = this.hostPort.replace(/\.|:/g, '_');
+        this.statPrefix = 'ringpop.' + this.statHostPort;
+    }
     this.statKeys = {};
     this.statsHooks = {};
 
