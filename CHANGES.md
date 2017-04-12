@@ -1,5 +1,9 @@
 ringpop-node release notes
 ==========================
+10.19.0
+-------
+* Feature: Allow overriding the stats-prefix used byt ringpop [#320](https://github.com/uber/ringpop-node/pull/320)
+
 10.18.0
 -------
 * Fix: Start state-transition timers on bootstrap [#313](https://github.com/uber/ringpop-node/pull/313)
