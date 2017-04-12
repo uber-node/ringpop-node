@@ -517,3 +517,17 @@ test('selfEvict initiates self evict sequence', function t(assert) {
     ringpop.destroy();
     assert.end();
 });
+
+test('statPrefix overrides default stats prefix', function t(assert) {
+    var ringpop = createRingpop();
+    assert.equals('ringpop.127_0_0_1_3000', ringpop.statPrefix, 'statPrefix is the default');
+    ringpop.destroy();
+
+    var customPrefix = 'random.prefix';
+    ringpop = createRingpop({
+        statPrefix: customPrefix
+    });
+    assert.equals(customPrefix, ringpop.statPrefix, 'statPrefix is customized');
+    ringpop.destroy();
+    assert.end();
+});
