@@ -1,5 +1,9 @@
 ringpop-node release notes
 ==========================
+10.20.0
+-------
+* Feature: Allow ringpop to reject pings if the ringpop app name differs [#323](https://github.com/uber-node/ringpop-node/pull/323)
+
 10.19.0
 -------
 * Feature: Allow overriding the stats-prefix used byt ringpop [#320](https://github.com/uber/ringpop-node/pull/320)
