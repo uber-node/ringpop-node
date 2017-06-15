@@ -20,6 +20,7 @@
 
 'use strict';
 
+var sendPing = require('../../lib/gossip/ping-sender.js').sendPing;
 var sendPingReqs = require('../../lib/gossip/ping-req-sender.js');
 var testRingpopCluster = require('../lib/test-ringpop-cluster.js');
 var stopGossiping = require('../lib/gossip-utils').stopGossiping;
@@ -205,6 +206,28 @@ testRingpopCluster({
         assert.equal(err.type, 'ringpop.ping-req.inconclusive',
             'ping-req is inconclusive');
         assertAlive(assert, ringpop, unreachableMember.address);
+        assert.end();
+    });
+});
+
+testRingpopCluster({
+    size: 2,
+    tapAfterConvergence: function tapAfterConvergence(cluster) {
+        stopGossiping(cluster);
+    }
+}, 'ping with wrong app name is always rejected', function t(bootRes, cluster, assert) {
+    assert.plan(1);
+
+    var pingSender = cluster[0];
+    var pingTarget = pingSender.membership.findMemberByAddress(cluster[1].whoami());
+
+    pingSender.app = pingSender.app + 'foo';
+
+    sendPing({
+        ringpop: pingSender,
+        target: pingTarget
+    }, function onPing(err, res) {
+        assert.ok(err, 'expects ping error when app name differs');
         assert.end();
     });
 });
