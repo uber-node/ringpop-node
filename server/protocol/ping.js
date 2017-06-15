@@ -40,6 +40,18 @@ module.exports = function createPingHandler(ringpop) {
             return callback(new Error('need req body with source, changes, and checksum'));
         }
 
+        if (body.hasOwnProperty('app')) {
+            if (body.app !== ringpop.app) {
+                ringpop.logger.warn('Rejected ping from wrong ringpop app', body);
+                return callback(new Error('Pinged ringpop has a different app name'));
+            }
+        } else {
+            if (ringpop.requiresAppInPing) {
+                ringpop.logger.warn('Rejected ping from unknown ringpop app', body);
+                return callback(new Error('Pinged ringpop requires app name'));
+            }
+        }
+
         var source = body.source;
         var sourceIncarnationNumber = body.sourceIncarnationNumber;
         var changes = body.changes;
@@ -57,7 +69,7 @@ module.exports = function createPingHandler(ringpop) {
             ringpop.dissemination.tryStartReverseFullSync(source, ringpop.maxJoinDuration);
         }
         callback(null, null, {
-            changes: res.changes,
+            changes: res.changes
         });
     };
 };

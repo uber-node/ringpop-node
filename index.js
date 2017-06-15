@@ -123,6 +123,8 @@ function RingPop(options) {
         MEMBERSHIP_UPDATE_FLUSH_INTERVAL;
     this.maxReverseFullSyncJobs = options.maxReverseFullSyncJobs ||
         MAX_REVERSE_FULL_SYNC_JOBS;
+    // If set to true, ping requests without identical app name return error
+    this.requiresAppInPing = options.requiresAppInPing || false;
 
     // Initialize Config before all other gossip, membership, forwarding,
     // and hash ring dependencies.
