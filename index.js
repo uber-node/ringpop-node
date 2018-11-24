@@ -136,10 +136,8 @@ function RingPop(options) {
     // use fingerprint if ringpop needs to function cross different platforms
     if (this.config.get('isCrossPlatform')) {
         this.hashFunc = farmhash.fingerprint32;
-    } else if (this.config.get('useLatestHash32')) {
-        this.hashFunc = farmhash.hash32;
     } else {
-        this.hashFunc = farmhash.hash32v1;
+        this.hashFunc = farmhash.hash32;
     }
 
     this.lagSampler = new LagSampler({
