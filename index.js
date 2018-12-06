@@ -663,7 +663,7 @@ RingPop.prototype.handleOrProxyAll =
 
         dests.forEach(function(dest) {
             var destKeys = keysByDest[dest];
-            var res = micromock.Response(function(err, resp) {
+            var res = new micromock.Response(function(err, resp) {
                 onResponse(err, resp, dest);
             });
             if (whoami === dest) {

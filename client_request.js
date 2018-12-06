@@ -26,7 +26,7 @@ var EventEmitter = require('events').EventEmitter;
 var LoggingLevels = require('./lib/logging/levels.js');
 var safeParse = require('./lib/util.js').safeParse;
 var validateHostPort = require('./lib/util.js').validateHostPort;
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var util = require('util');
 var middleware = require('./lib/middleware');
 

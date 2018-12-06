@@ -38,9 +38,9 @@
     "error": "^5.0.0",
     "farmhash": "^2.1.0",
     "metrics": "^0.1.8",
-    "node-uuid": "^1.4.3",
     "toobusy-js": "^0.5.0",
-    "underscore": "^1.5.2"
+    "underscore": "^1.5.2",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "after": "^0.8.1",
