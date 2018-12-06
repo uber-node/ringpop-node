@@ -88,6 +88,7 @@ test('handleOrProxy() proxies for not me', function t(assert) {
     var cluster = allocCluster(function onReady() {
         var keyTwo = cluster.keys.two;
 
+        debugger;
         cluster.request({
             key: keyTwo,
             host: 'one',

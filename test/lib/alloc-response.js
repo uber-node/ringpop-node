@@ -20,13 +20,13 @@
 
 'use strict';
 
-var hammock = require('hammock');
+var micromock = require('@esatterwhite/micromock');
 var tryIt = require('tryit');
 
 module.exports = allocResponse;
 
 function allocResponse(opts, cb) {
-    return hammock.Response(onResponse);
+    return new micromock.Response(onResponse);
 
     function onResponse(err, resp) {
         if (err) {

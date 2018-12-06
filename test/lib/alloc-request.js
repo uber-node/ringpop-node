@@ -20,15 +20,15 @@
 
 'use strict';
 
-var hammock = require('hammock');
+var micromock = require('@esatterwhite/micromock');
 
 module.exports = allocRequest;
 
 function allocRequest(opts) {
-    var req = hammock.Request(opts);
+    var req = new micromock.Request(opts);
 
     if ('json' in opts && opts.json !== true) {
-        req.headers['content-type'] = 'application/json';
+        req.setHeader('content-type', 'application/json');
     }
 
     if ('json' in opts && opts.json !== true) {

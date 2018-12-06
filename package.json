@@ -33,10 +33,10 @@
     "view-cover": "opn coverage/index.html"
   },
   "dependencies": {
+    "@esatterwhite/micromock": "^1.1.0",
     "body": "^5.0.0",
     "error": "^5.0.0",
     "farmhash": "^2.1.0",
-    "hammock": "^2.0.1",
     "metrics": "^0.1.8",
     "node-uuid": "^1.4.3",
     "toobusy-js": "^0.5.0",

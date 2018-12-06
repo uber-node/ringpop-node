@@ -37,7 +37,7 @@ var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var farmhash = require('farmhash');
 var timers = require('timers');
-var hammock = require('hammock');
+var micromock = require('@esatterwhite/micromock');
 var metrics = require('metrics');
 var packageJSON = require('./package.json');
 
@@ -663,7 +663,7 @@ RingPop.prototype.handleOrProxyAll =
 
         dests.forEach(function(dest) {
             var destKeys = keysByDest[dest];
-            var res = hammock.Response(function(err, resp) {
+            var res = micromock.Response(function(err, resp) {
                 onResponse(err, resp, dest);
             });
             if (whoami === dest) {
