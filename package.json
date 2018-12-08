@@ -1,5 +1,5 @@
 {
-  "name": "ringpop",
+  "name": "@skyring/ringpop",
   "description": "Scalable, fault-tolerant application-layer sharding",
   "contributors": [
     "ben fleis <ben.fleis@gmail.com>",
@@ -9,13 +9,14 @@
     "Matt Ranney <mranney@uber.com>",
     "Jeff Wolski <wolski@uber.com>",
     "Jake Verbaten <raynos2@gmail.com>",
-    "Mark Yen <mark@uber.com>"
+    "Mark Yen <mark@uber.com>",
+    "Eric Satterwhite <esatterwhite@wi.rr.com>"
   ],
   "version": "10.20.0",
   "engines": {
-    "node": "^0.10.32"
+    "node": ">=7.0"
   },
-  "repository": "git://github.com/uber/ringpop.git",
+  "repository": "https://github.com/esatterwhite/ringpop-node",
   "bin": {
     "ringpop": "./main.js"
   },
@@ -25,8 +26,6 @@
     "test-integration": "node test/integration/index.js | faucet",
     "test-shared-integration-tests": "test/run-shared-integration-tests",
     "test-unit": "node test/unit/index.js | faucet",
-    "add-licence": "uber-licence",
-    "check-licence": "uber-licence --dry",
     "cover": "istanbul cover --print detail --report html test/index.js | faucet",
     "jshint": "jshint --verbose *.js lib/**/*.js server/**/*.js",
     "travis": "npm run jshint && npm run cover -s && istanbul report lcov && ((cat coverage/lcov.info | coveralls) || exit 0)",
@@ -68,11 +67,9 @@
     "timer-shim": "^0.3.0",
     "tmp": "0.0.31",
     "tryit": "^1.0.1",
-    "uber-licence": "^2.1.3",
     "winston": "^1.0.1"
   },
   "pre-commit": [
-    "check-licence",
     "test"
   ],
   "pre-commit.silent": true,

@@ -1,8 +1,9 @@
 language: node_js
 node_js:
-  - "0.10"
-  - "4.4.7"
-before_install: npm i npm@2 -g
+  - "8"
+  - "9"
+  - "10"
+before_install: npm i npm@6 -g
 
 addons:
   apt:
