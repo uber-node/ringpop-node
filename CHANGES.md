@@ -1,5 +1,10 @@
 ringpop-node release notes
 ==========================
+
+10.21.0
+-------
+* Fix: Update hammock for node4+ support [#328](https://github.com/uber-node/ringpop-node/pull/328)
+
 10.20.0
 -------
 * Feature: Allow ringpop to reject pings if the ringpop app name differs [#323](https://github.com/uber-node/ringpop-node/pull/323)
