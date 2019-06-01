@@ -159,6 +159,8 @@ function RingPop(options) {
     if (this.config.get('hashingStrategy') === HashingStrategies.rendezvousHashing) {
         this.Ring = RendezvousHasher;
     }
+    // HACK (always use rendezvousHasher while testing)
+    this.Ring = RendezvousHasher;
 
     this.ring = new this.Ring({
         hashFunc: this.hashFunc
