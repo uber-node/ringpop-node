@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Uber Technologies, Inc.
+// Copyright (c) 2019 Uber Technologies, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-var HashRing = require('../../lib/ring');
-var RBTree = require('../../lib/ring/rbtree').RBTree;
+var HashRing = require('../../lib/hasher/consistent-hashing');
+var RBTree = require('../../lib/hasher/consistent-hashing/rbtree').RBTree;
 
 var test = require('tape');
 
@@ -166,7 +166,7 @@ test('servers removed out of order result in same checksum', function t(assert) 
     }
 });
 
-test('hashring consistent lookups on collision - synthetic collision', function t(assert) {
+test('HashRing consistent lookups on collision - synthetic collision', function t(assert) {
     var ring1 = new HashRing();
     var ring2 = new HashRing();
 
@@ -190,7 +190,7 @@ test('hashring consistent lookups on collision - synthetic collision', function 
     assert.end();
 });
 
-test('hashring consistent lookups on collision - real collision', function t(assert) {
+test('HashRing consistent lookups on collision - real collision', function t(assert) {
     var ring1 = new HashRing();
     var ring2 = new HashRing();
 
@@ -217,7 +217,7 @@ test('hashring consistent lookups on collision - real collision', function t(ass
     assert.end();
 });
 
-test('hashring replica point comparator', function t(assert) {
+test('HashRing replica point comparator', function t(assert) {
     var comparator = HashRing.comparator;
 
     assert.true(comparator({hash: 1}, {hash: 2}) < 0, '1 < 2');

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Uber Technologies, Inc.
+// Copyright (c) 2019 Uber Technologies, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 var LoggingLevels = require('./lib/logging/levels.js');
+var HashingStrategies = require('./lib/hasher/hashing-strategies.js');
 var util = require('util');
 
 // This Config class is meant to be a central store
@@ -150,6 +151,11 @@ Config.prototype._seed = function _seed(seed) {
     seedOrDefault('selfEvictionPingEnabled', true);
     // Ping a maximum ratio of the pingable members on self eviction
     seedOrDefault('selfEvictionMaxPingRatio', 0.4);
+
+    // Hashing strategy
+    // Use consistentHashing for backwards compatibility.
+    // Use rendezvousHashing for better ring distribution and light-weight bootstrap.
+    seedOrDefault('hashingStrategy', HashingStrategies.consistentHashing);
 
     function seedOrDefault(name, defaultVal, validator, reason) {
         var seedVal = seed[name];

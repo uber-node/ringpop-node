@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Uber Technologies, Inc.
+// Copyright (c) 2019 Uber Technologies, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,9 @@ var Dissemination = require('./lib/gossip/dissemination.js');
 var discoverProviderFactory = require('./discover-providers.js');
 var errors = require('./lib/errors.js');
 var getTChannelVersion = require('./lib/util.js').getTChannelVersion;
-var HashRing = require('./lib/ring');
+var HashingStrategies = require('./lib/hasher/hashing-strategies');
+var HashRing = require('./lib/hasher/consistent-hashing');
+var RendezvousHasher = require('./lib/hasher/rendezvous-hashing');
 var initMembership = require('./lib/membership/index.js');
 var LoggerFactory = require('./lib/logging/logger_factory.js');
 var LagSampler = require('./lib/lag_sampler.js');
@@ -109,7 +111,6 @@ function RingPop(options) {
     }
     this.timers = options.timers || timers;
     this.setTimeout = options.setTimeout || timers.setTimeout;
-    this.Ring = options.Ring || HashRing;
 
     this.isReady = false;
 
@@ -153,6 +154,13 @@ function RingPop(options) {
         enforceConsistency: options.enforceConsistency,
         enforceKeyConsistency: options.enforceKeyConsistency
     });
+
+    this.Ring = options.Ring || HashRing;
+    if (this.config.get('hashingStrategy') === HashingStrategies.rendezvousHashing) {
+        this.Ring = RendezvousHasher;
+    }
+    // HACK (always use rendezvousHasher while testing)
+    this.Ring = RendezvousHasher;
 
     this.ring = new this.Ring({
         hashFunc: this.hashFunc
